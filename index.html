@@ -90,7 +90,7 @@
   button:hover{opacity:.88;}
   .demo-note{
     margin:1.2rem 2.5rem 0 6rem; padding:9px 14px; background:var(--pending-bg); color:var(--pending);
-    border:1px solid #DEC985; border-radius:4px; font-size:12.5px; display:none;
+    border:1px solid var(--border); border-radius:6px; font-size:12.5px; display:none; line-height:1.55;
   }
   .demo-note.show{display:block;}
   /* ---- Settings gear + redesigned popup ---- */
@@ -355,7 +355,6 @@
     <button class="ghost" id="print-btn">Print</button>
   </div>
 
-  <div class="demo-note" id="demo-note">Showing sample data &mdash; add your attendance database URL in Settings to load real records.</div>
   <div class="demo-note" id="roster-note" style="display:none;"></div>
 
   <div class="summary" id="summary" style="display:none;"></div>
@@ -394,6 +393,9 @@
       <button class="set-nav" data-sec="device" aria-selected="false">
         <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 18h2"/></svg> This device
       </button>
+      <button class="set-nav" data-sec="backup" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v3h16v-3"/></svg> Backup
+      </button>
     </aside>
 
     <div class="set-body">
@@ -409,7 +411,7 @@
 
         <div class="group">
           <h3>Attendance database</h3>
-          <p class="hint">The same values as the Worker's <code>RAW_FIREBASE_URL</code> and <code>RAW_FIREBASE_CODE</code>. This is the only connection that reads and writes &mdash; settings you save here sync to <code>app_settings.json</code>, which the Worker reads on every scan.</p>
+          <p class="hint">The same values as the Worker's <code>RAW_FIREBASE_URL</code> and <code>RAW_FIREBASE_CODE</code> variables. This is the only connection that reads and writes &mdash; settings you save here sync to <code>app_settings.json</code>, which the Worker reads on every scan.</p>
           <div class="grid">
             <div class="field"><label for="r-url">Database URL</label><input id="r-url" placeholder="https://attendance-xxxx-default-rtdb.firebasedatabase.app"></div>
             <div class="field"><label for="r-code">Code</label><input id="r-code" placeholder="path segment, e.g. HAAZRI"></div>
@@ -554,6 +556,31 @@
         </div>
       </section>
 
+      <!-- ── Backup ── -->
+      <section class="set-sec" data-sec="backup">
+        <h2>Backup</h2>
+        <p class="lede">Keep a copy of this configuration, or carry it to another device without typing it all again.</p>
+
+        <div class="group">
+          <h3>Export</h3>
+          <p class="hint">Downloads one file holding the cutoff times, calendar, staff shift rules, device list and the database address.</p>
+          <div class="row">
+            <button type="button" id="export-settings-btn" class="ghost small" style="height:36px;">Download settings file</button>
+          </div>
+          <p class="testline" id="export-status"></p>
+        </div>
+
+        <div class="group">
+          <h3>Import</h3>
+          <p class="hint">Reads a file exported from here and replaces everything on this device with it. Nothing is merged, and nothing reaches the gate machine until you press Save &amp; sync.</p>
+          <div class="row">
+            <input type="file" id="import-settings-file" accept="application/json,.json" style="display:none;">
+            <button type="button" id="import-settings-btn" class="ghost small" style="height:36px;">Choose a file</button>
+          </div>
+          <p class="testline" id="import-status"></p>
+        </div>
+      </section>
+
     </div>
 
     <div class="set-foot">
@@ -587,7 +614,6 @@ let STAFF_CATEGORY = 'All';
 let ROSTER = [];
 let RECORDS = {};
 let MONTHLY = {};
-let USING_SAMPLE = false;
 let ABSENT_IDS = new Set();      // ids on that day's absentee list
 let ABSENT_READY = false;        // has the evening absent job run for this day?
 let STAFF_ALL_CATEGORIES = [];   // every category seen, so pills survive filtering
@@ -613,6 +639,14 @@ function attBase(){
   return rCode ? `${rUrl}/${rCode}` : rUrl;
 }
 function groupKey(){ return VIEW === 'student' ? 'students' : 'staff'; }
+
+// Reads from attendance/… and, if that comes back empty, retries the old
+// raw_attendance/… node — so records written before the rename still appear.
+async function attFetch(base, path){
+  const first = await fetchJson(`${base}/${path}`);
+  if(first !== null && first !== undefined) return first;
+  return fetchJson(`${base}/${path.replace(/^attendance\//, 'raw_attendance/')}`);
+}
 
 // Scan record -> roster shape
 function personFromRecord(rec){
@@ -713,48 +747,6 @@ function computeStaffDayStatus(recs, category){
 }
 
 const TODAY = todayKolkata();
-const SAMPLE_STUDENTS = [
-  {admissionNumber:'101', studentName:'Ananya Sharma', class:'5-A', busNumber:'12'},
-  {admissionNumber:'102', studentName:'Rohan Verma',   class:'5-A', busNumber:''},
-  {admissionNumber:'103', studentName:'Ishaan Kapoor', class:'5-B', busNumber:'7'},
-  {admissionNumber:'104', studentName:'Diya Mehta',    class:'5-B', busNumber:''},
-  {admissionNumber:'105', studentName:'Aarav Singh',   class:'6-A', busNumber:'18'},
-  {admissionNumber:'106', studentName:'Kiara Joshi',   class:'6-A', busNumber:''},
-  {admissionNumber:'107', studentName:'Vivaan Gupta',  class:'6-B', busNumber:'3'},
-  {admissionNumber:'108', studentName:'Myra Reddy',    class:'6-B', busNumber:''}
-];
-const SAMPLE_STAFF = [
-  {id:'ST01', name:'Ramesh Yadav',   role:'Driver'},
-  {id:'ST02', name:'Sunita Devi',    role:'Cleaner'},
-  {id:'ST03', name:'Vikram Rathore', role:'Security'},
-  {id:'ST04', name:'Pooja Nair',     role:'Teacher'},
-  {id:'ST05', name:'Ajay Malhotra',  role:'Gardner'},
-  {id:'ST06', name:'Kamla Bai',      role:'Maid'},
-  {id:'ST07', name:'Suresh Kumar',   role:'Driver Online'},
-  {id:'ST08', name:'Meena Kumari',   role:'Cleaner Online'}
-];
-const SAMPLE_RECORDS = {
-  '101':[{pin:'101', time:`${TODAY} 08:02:11`, action:'morning_entry'}],
-  '102':[{pin:'102', time:`${TODAY} 07:58:40`, action:'morning_entry'}, {pin:'102', time:`${TODAY} 10:40:02`, action:'gatepass_exit'}],
-  '103':[{pin:'103', time:`${TODAY} 08:05:33`, action:'morning_entry'}],
-  '105':[{pin:'105', time:`${TODAY} 08:11:09`, action:'morning_entry'}],
-  '106':[{pin:'106', time:`${TODAY} 08:09:47`, action:'morning_entry'}, {pin:'106', time:`${TODAY} 13:15:20`, action:'evening_exit'}],
-  '108':[{pin:'108', time:`${TODAY} 08:03:58`, action:'morning_entry'}],
-  'ST01':[
-    {pin:'ST01', time:`${TODAY} 07:00:12`, action:'morning_entry'},
-    {pin:'ST01', time:`${TODAY} 09:10:40`, action:'morning_entry'},
-    {pin:'ST01', time:`${TODAY} 13:45:02`, action:'evening_exit'},
-    {pin:'ST01', time:`${TODAY} 16:05:18`, action:'evening_exit'}
-  ],
-  'ST02':[{pin:'ST02', time:`${TODAY} 08:00:05`, action:'morning_entry'}],
-  'ST04':[{pin:'ST04', time:`${TODAY} 07:45:30`, action:'morning_entry'}]
-};
-
-function seeded(str){
-  let h = 0;
-  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
-  return (h % 100) / 100;
-}
 
 function getHolidayRules(){
   try{
@@ -926,33 +918,15 @@ async function loadDaily(){
 
   const base = attBase();
   const group = groupKey();
-  USING_SAMPLE = false;
-  ABSENT_IDS = new Set();
-  ABSENT_READY = false;
-  RECORDS = {};
-
   let scans = null, absNode = null;
   if(base){
     [scans, absNode] = await Promise.all([
-      fetchJson(`${base}/raw_attendance/${group}/${date}.json`),
+      attFetch(base, `attendance/${group}/${date}.json`),
       fetchJson(`${base}/absentees/${group}/${date}.json`)
     ]);
   }
 
   const rosterMap = {};
-
-  if(!base || (!scans && !absNode)){
-    // Nothing configured (or nothing recorded that day) — fall back to the demo set
-    if(!base){
-      USING_SAMPLE = true;
-      (VIEW === 'student' ? SAMPLE_STUDENTS : SAMPLE_STAFF).forEach(p => mergePerson(rosterMap, p));
-      Object.keys(SAMPLE_RECORDS).forEach(pin => {
-        if(rosterMap[pin]) RECORDS[pin] = SAMPLE_RECORDS[pin];
-      });
-      Object.keys(rosterMap).forEach(id => { if(!RECORDS[id]) ABSENT_IDS.add(id); });
-      ABSENT_READY = true;
-    }
-  }
 
   if(scans && typeof scans === 'object'){
     Object.values(scans).forEach(rec => {
@@ -979,7 +953,6 @@ async function loadDaily(){
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
 
-  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
   buildDailyHead();
   if(VIEW === 'student') populateClassFilter();
   renderDailyTable();
@@ -999,13 +972,12 @@ async function loadMonthly(){
 
   const base = attBase();
   const group = groupKey();
-  USING_SAMPLE = false;
 
   let scanRange = null, absRange = null;
   if(base){
     const range = `orderBy="$key"&startAt="${startDate}"&endAt="${endDate}"`;
     [scanRange, absRange] = await Promise.all([
-      fetchJson(`${base}/raw_attendance/${group}.json?${range}`),
+      attFetch(base, `attendance/${group}.json?${range}`),
       fetchJson(`${base}/absentees/${group}.json?${range}`)
     ]);
   }
@@ -1019,38 +991,11 @@ async function loadMonthly(){
     .sort()
     .filter(d => isSchoolDay(d, VIEW));
 
-  if(base && !allDays.length){
-    // Configured, but nothing recorded this month — show an empty register, not demo rows
+  if(!base || !allDays.length){
+    // Not configured yet, or nothing recorded this month
     ROSTER = [];
-    document.getElementById('demo-note').classList.toggle('show', false);
+    MONTHLY = {};
     buildMonthlyHead();
-    renderMonthlyTable();
-    return;
-  }
-
-  if(!base){
-    // Nothing configured yet — demo rows so the layout is visible
-    USING_SAMPLE = true;
-    (VIEW === 'student' ? SAMPLE_STUDENTS : SAMPLE_STAFF).forEach(p => mergePerson(rosterMap, p));
-    ROSTER = applyStaffVisibility(Object.values(rosterMap));
-    if(VIEW === 'staff') buildCategoryPills(ROSTER);
-    const totalDays = 22;
-    ROSTER.forEach(person => {
-      const id = personId(person);
-      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
-      const isTwoShift = VIEW === 'staff' && (getShiftRulesMap()[category] || {}).mode === 'shifts';
-      let present = 0, half = 0, absent = 0;
-      for(let d = 1; d <= totalDays; d++){
-        const r = seeded(id + '-' + d);
-        if(VIEW === 'student'){ r > 0.12 ? present++ : absent++; }
-        else if(isTwoShift){ if(r > 0.85) absent++; else if(r > 0.7) half++; else present++; }
-        else { r > 0.1 ? present++ : absent++; }
-      }
-      MONTHLY[id] = { present, half, absent, totalDays };
-    });
-    document.getElementById('demo-note').classList.toggle('show', true);
-    buildMonthlyHead();
-    if(VIEW === 'student') populateClassFilter();
     renderMonthlyTable();
     return;
   }
@@ -1102,7 +1047,6 @@ async function loadMonthly(){
     MONTHLY[id] = { present, half, absent, totalDays: tracked };
   });
 
-  document.getElementById('demo-note').classList.toggle('show', false);
   buildMonthlyHead();
   if(VIEW === 'student') populateClassFilter();
   renderMonthlyTable();
@@ -1236,7 +1180,7 @@ function renderDailyTable(){
     body.appendChild(tr);
   });
 
-  const unlisted = !ABSENT_READY && !USING_SAMPLE;
+  const unlisted = !ABSENT_READY;
   let dailyCards;
   if(VIEW === 'student'){
     dailyCards = [
@@ -1715,7 +1659,7 @@ document.getElementById('r-test-btn').addEventListener('click', async () => {
   const today = todayKolkata();
   const [settingsRead, todayScans] = await Promise.all([
     fetchJson(`${base}/app_settings.json`),
-    fetchJson(`${base}/raw_attendance/students/${today}.json`)
+    attFetch(base, `attendance/students/${today}.json`)
   ]);
   const scanCount = todayScans && typeof todayScans === 'object' ? Object.keys(todayScans).length : 0;
 
@@ -1750,6 +1694,80 @@ document.getElementById('pull-btn').addEventListener('click', async () => {
   showStatus('Pulled the saved settings into this form.', 'ok');
 });
 
+// ── Export / import the whole configuration ──
+function settingsFileName(){
+  return `register-settings-${todayKolkata()}.json`;
+}
+
+document.getElementById('export-settings-btn').addEventListener('click', () => {
+  const el = document.getElementById('export-status');
+  const payload = {
+    _app: 'admission-register',
+    _version: 1,
+    _exportedAt: new Date().toISOString(),
+    connection: {
+      url: document.getElementById('r-url').value.trim(),
+      code: document.getElementById('r-code').value.trim()
+    },
+    settings: collectSettingsObject()
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'}));
+  a.download = settingsFileName();
+  a.click();
+  URL.revokeObjectURL(a.href);
+  el.style.display = 'block';
+  el.className = 'testline ok';
+  el.textContent = `Saved as ${a.download}. It contains the database address, so keep it somewhere private.`;
+});
+
+document.getElementById('import-settings-btn').addEventListener('click', () => {
+  document.getElementById('import-settings-file').click();
+});
+
+document.getElementById('import-settings-file').addEventListener('change', async (e) => {
+  const el = document.getElementById('import-status');
+  el.style.display = 'block';
+  el.className = 'testline';
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+
+  let payload;
+  try{
+    payload = JSON.parse(await file.text());
+  }catch(err){
+    el.classList.add('err');
+    el.textContent = 'That file isn\u2019t readable as JSON.';
+    e.target.value = '';
+    return;
+  }
+
+  if(!payload || payload._app !== 'admission-register' || !payload.settings){
+    el.classList.add('err');
+    el.textContent = 'That file wasn\u2019t exported from this register.';
+    e.target.value = '';
+    return;
+  }
+
+  if(payload.connection && payload.connection.url){
+    localStorage.setItem(LS.rUrl, String(payload.connection.url).trim().replace(/\/+$/, ''));
+    localStorage.setItem(LS.rCode, String(payload.connection.code || '').trim().replace(/^\/+|\/+$/g, ''));
+  }
+  let applied = 0;
+  SYNCED_KEYS.forEach(key => {
+    const v = payload.settings[key];
+    if(v === undefined) return;
+    localStorage.setItem(LS[key], typeof v === 'string' ? v : JSON.stringify(v));
+    applied++;
+  });
+
+  loadSettingsFormFromLocal();
+  loadRegister();
+  e.target.value = '';
+  el.classList.add('ok');
+  el.textContent = `Imported ${applied} setting${applied === 1 ? '' : 's'} from ${file.name}. Press Save & sync to send them to the gate machine.`;
+});
+
 // ── Sidebar navigation ──
 document.querySelectorAll('.set-nav').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1763,6 +1781,8 @@ function openSettingsModal(){
   document.getElementById('status-msg').className = 'status';
   document.getElementById('status-msg').textContent = '';
   document.getElementById('r-test-status').style.display = 'none';
+  document.getElementById('import-status').style.display = 'none';
+  document.getElementById('export-status').style.display = 'none';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettingsModal(){
