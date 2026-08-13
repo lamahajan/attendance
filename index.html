@@ -183,12 +183,31 @@
   .daypick input{ position:absolute; opacity:0; width:0; height:0; }
   .daypick label:has(input:checked){ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
 
+  /* Radio set */
+  .radioset{ display:flex; flex-direction:column; gap:8px; }
+  .radioset label{
+    display:flex; gap:10px; align-items:flex-start; padding:11px 13px; cursor:pointer;
+    border:1px solid var(--border); border-radius:9px; background:var(--row-alt); font-size:12.5px; line-height:1.5;
+  }
+  .radioset label:has(input:checked){ border-color:var(--ink); background:var(--card); box-shadow:0 0 0 1px var(--ink); }
+  .radioset input{ margin-top:2px; min-width:auto; width:auto; accent-color:var(--ink); }
+  .radioset b{ display:block; font-size:13px; font-weight:600; margin-bottom:2px; }
+  .radioset span{ color:var(--ink-soft); }
+  .radioset b + br{ display:none; }
+
+  /* Category picker under holidays */
+  .catpick{ margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
+  .catpick-label{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }
+
   /* Staff shift cards */
   .shift-rule-card{ border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:var(--card); }
   .shift-rule-card .src-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
   .shift-rule-card .src-head strong{ font-size:13.5px; }
   .shift-rule-card select{ font-size:12.5px; padding:6px 9px; border:1px solid var(--border); background:var(--card); border-radius:6px; color:var(--ink); }
   .shift-rule-card .src-shifts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
+  .shift-rule-card .src-days{ margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
+  .shift-rule-card .src-days > span{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }
+  .shift-rule-card .src-days .daypick label{ min-width:44px; padding:6px 8px; font-size:12px; }
   .shift-rule-card .src-shifts .field{ min-width:128px; }
   .shift-rule-card .src-shifts .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
   .shift-rule-card .src-shifts .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
@@ -265,6 +284,8 @@
   .badge.half{background:var(--half-bg); color:var(--half);}
   .badge.bus{background:#E3EEF6; color:#2E6F8E;}
   .pct{font-family:'Inter',sans-serif; font-weight:600; font-variant-numeric:tabular-nums;}
+  .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 5px; border-radius:10px; }
+  .badge.off{background:#E7EAF2; color:#5A6382;}
   .holiday-chip{
     display:inline-flex; align-items:center; gap:7px; font-size:12.5px;
     padding:5px 6px 5px 11px; border-radius:16px; border:1px solid var(--border);
@@ -470,8 +491,21 @@
 
         <div class="group">
           <h3>Working days</h3>
-          <p class="hint">Tap a day to include it.</p>
+          <p class="hint">The school default. A staff category that works differently &mdash; security on all seven days, for instance &mdash; gets its own days under Staff shifts.</p>
           <div id="working-days-row" class="daypick"></div>
+        </div>
+
+        <div class="group">
+          <h3>Sandwich off</h3>
+          <p class="hint">A holiday or weekly off is paid on its own. It stops being paid when it is joined to an absence &mdash; a day off taken either side of it, or an absence sitting between two holidays.</p>
+          <div class="radioset" id="sandwich-set">
+            <label><input type="radio" name="sandwich" value="touch">
+              <span><b>Joined to an absence</b>Any unbroken run of offs and absences becomes unpaid. Absent on the 14th and 16th makes the 15th unpaid too; a holiday on the 14th and 16th with leave on the 15th makes all three unpaid. Coming back on the 17th ends the run.</span></label>
+            <label><input type="radio" name="sandwich" value="strict">
+              <span><b>Absent on both sides only</b>A holiday is unpaid only when the day before it and the day after it are both absences.</span></label>
+            <label><input type="radio" name="sandwich" value="off">
+              <span><b>Never</b>Holidays and weekly offs are always paid.</span></label>
+          </div>
         </div>
 
         <div class="group">
@@ -491,6 +525,10 @@
               </select>
             </div>
             <button type="button" id="add-holiday-btn" class="ghost small" style="height:36px;">Add</button>
+          </div>
+          <div class="catpick" id="holiday-cats" style="display:none;">
+            <span class="catpick-label">Only these categories &mdash; leave all unticked for every category</span>
+            <div class="cat-checks" id="holiday-cats-row"></div>
           </div>
           <div id="holiday-list" class="chip-wrap"></div>
         </div>
@@ -515,6 +553,10 @@
             </div>
             <button type="button" id="add-rule-btn" class="ghost small" style="height:36px;">Add rule</button>
           </div>
+          <div class="catpick" id="rule-cats" style="display:none;">
+            <span class="catpick-label">Only these categories &mdash; leave all unticked for every category</span>
+            <div class="cat-checks" id="rule-cats-row"></div>
+          </div>
           <div id="rule-list" class="chip-wrap"></div>
         </div>
       </section>
@@ -522,7 +564,7 @@
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
         <h2>Staff shifts</h2>
-        <p class="lede">How a staff day is judged. Any scan can count as a full day, or you can require a scan inside each shift window &mdash; miss one and the day is marked half.</p>
+        <p class="lede">How a staff day is judged, category by category. Any scan can count as a full day, or you can require a scan inside each shift window &mdash; miss one and the day is marked half. Each category can also keep its own working days.</p>
         <div id="shift-rules-grid"></div>
       </section>
 
@@ -602,6 +644,7 @@ const LS = {
   cutoffDefault:'reg_cutoff_default',
   cutoffOverrides:'reg_cutoff_overrides',
   cutoffDateOverrides:'reg_cutoff_date_overrides',
+  sandwichMode:'reg_sandwich_mode',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
   deviceName:'reg_device_name'
@@ -776,15 +819,90 @@ function nthWeekdayMatches(dateStr, weekday, nth){
   }
   return Math.ceil(day / 7) === nth;
 }
-function isSchoolDay(dateStr, forView){
-  const workingDays = getWorkingDays();
+/* =========================================================
+   Working days and holidays, per staff category.
+   Security might work all seven days while everyone else gets Sunday off,
+   and a holiday can be declared for one category only. A holiday or weekly
+   off with no category list applies to every staff category.
+   ========================================================= */
+function getCategoryDays(category){
+  const rule = getShiftRulesMap()[category];
+  if(rule && Array.isArray(rule.days) && rule.days.length) return rule.days;
+  return getWorkingDays();
+}
+function holidayApplies(h, forView, category){
+  if(!h) return false;
+  if(h.scope === 'all'){
+    if(forView !== 'staff' || !category) return true;
+    return !Array.isArray(h.cats) || !h.cats.length || h.cats.includes(category);
+  }
+  if(h.scope !== forView) return false;
+  if(forView !== 'staff' || !category) return true;
+  return !Array.isArray(h.cats) || !h.cats.length || h.cats.includes(category);
+}
+// One person's calendar: is this a day they are expected in?
+function isWorkingDayFor(dateStr, forView, category){
   const weekday = new Date(dateStr + 'T00:00:00').getDay();
-  if(!workingDays.includes(weekday)) return false;
-  const holidays = getHolidays();
-  if(holidays.some(h => h.date === dateStr && (h.scope === 'all' || h.scope === forView))) return false;
-  const rules = getHolidayRules();
-  if(rules.some(r => (r.scope === 'all' || r.scope === forView) && nthWeekdayMatches(dateStr, r.weekday, r.nth))) return false;
+  const days = (forView === 'staff' && category) ? getCategoryDays(category) : getWorkingDays();
+  if(!days.includes(weekday)) return false;
+  if(getHolidays().some(h => h.date === dateStr && holidayApplies(h, forView, category))) return false;
+  if(getHolidayRules().some(r => holidayApplies(r, forView, category) && nthWeekdayMatches(dateStr, r.weekday, r.nth))) return false;
   return true;
+}
+function isSchoolDay(dateStr, forView){ return isWorkingDayFor(dateStr, forView, ''); }
+
+/* =========================================================
+   Sandwich off
+   A holiday or weekly off is paid — unless it is joined to an absence.
+   'touch'  : any unbroken chain of off/absent days that contains at least one
+              absence turns the whole chain unpaid.
+                14 absent, 15 holiday, 16 absent  -> all three unpaid
+                14 holiday, 15 absent, 16 holiday -> all three unpaid
+                back on the 17th ends the chain; still away and the 17th joins it
+   'strict' : an off day is only absorbed when the day either side is an absence
+   'off'    : holidays are always paid
+   ========================================================= */
+function getSandwichMode(){
+  const v = localStorage.getItem(LS.sandwichMode);
+  return (v === 'off' || v === 'touch' || v === 'strict') ? v : 'touch';
+}
+// statuses: array of 'present' | 'half' | 'absent' | 'off' | 'none'
+// Returns a copy with absorbed 'off' days rewritten to 'absorbed'.
+function applySandwich(statuses, mode){
+  const out = statuses.slice();
+  if(mode === 'off') return out;
+
+  if(mode === 'strict'){
+    let i = 0;
+    while(i < out.length){
+      if(out[i] !== 'off'){ i++; continue; }
+      let j = i;
+      while(j < out.length && out[j] === 'off') j++;      // run of off days: i .. j-1
+      const before = i > 0 ? out[i-1] : null;
+      const after  = j < out.length ? out[j] : null;
+      if(before === 'absent' && after === 'absent'){
+        for(let k = i; k < j; k++) out[k] = 'absorbed';
+      }
+      i = j;
+    }
+    return out;
+  }
+
+  // 'touch' — chains of off/absent days
+  let i = 0;
+  while(i < out.length){
+    if(out[i] !== 'off' && out[i] !== 'absent'){ i++; continue; }
+    let j = i, hasAbsence = false;
+    while(j < out.length && (out[j] === 'off' || out[j] === 'absent')){
+      if(out[j] === 'absent') hasAbsence = true;
+      j++;
+    }
+    if(hasAbsence){
+      for(let k = i; k < j; k++) if(out[k] === 'off') out[k] = 'absorbed';
+    }
+    i = j;
+  }
+  return out;
 }
 
 function getDeviceName(){
@@ -816,7 +934,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','studentDefaultView','devices'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -987,12 +1105,9 @@ async function loadMonthly(){
 
   const scanDays = scanRange && typeof scanRange === 'object' ? scanRange : {};
   const absDays  = absRange  && typeof absRange  === 'object' ? absRange  : {};
-  const allDays = [...new Set([...Object.keys(scanDays), ...Object.keys(absDays)])]
-    .sort()
-    .filter(d => isSchoolDay(d, VIEW));
+  const seenDays = [...new Set([...Object.keys(scanDays), ...Object.keys(absDays)])].sort();
 
-  if(!base || !allDays.length){
-    // Not configured yet, or nothing recorded this month
+  if(!base || !seenDays.length){
     ROSTER = [];
     MONTHLY = {};
     buildMonthlyHead();
@@ -1000,11 +1115,19 @@ async function loadMonthly(){
     return;
   }
 
-  // Build the roster from everything seen this month
+  // Every date in the month, in order — the sandwich rule needs the gaps too,
+  // not only the days that happen to have records.
+  const allDates = [];
+  for(let d = 1; d <= daysInMonth; d++){
+    allDates.push(`${monthVal}-${String(d).padStart(2,'0')}`);
+  }
+  const hasData = {};
+  seenDays.forEach(d => { hasData[d] = true; });
+
   const dayScans = {};   // date -> { id: [records] }
   const dayAbsent = {};  // date -> Set(id)
 
-  allDays.forEach(day => {
+  seenDays.forEach(day => {
     const byId = {};
     Object.values(scanDays[day] || {}).forEach(rec => {
       const p = personFromRecord(rec);
@@ -1028,23 +1151,38 @@ async function loadMonthly(){
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
 
+  const mode = getSandwichMode();
+
   ROSTER.forEach(person => {
     const id = personId(person);
     const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
-    let present = 0, half = 0, absent = 0, tracked = 0;
-    allDays.forEach(day => {
+
+    // 1. One status per calendar day
+    const statuses = allDates.map(day => {
       const recs = (dayScans[day] || {})[id] || [];
-      const markedAbsent = (dayAbsent[day] || new Set()).has(id);
-      if(!recs.length && !markedAbsent) return; // person wasn't on the register that day
-      tracked++;
-      if(!recs.length){ absent++; return; }
-      if(VIEW === 'student'){ present++; return; }
-      const st = computeStaffDayStatus(recs, category);
+      if(recs.length){
+        if(VIEW === 'student') return 'present';
+        const st = computeStaffDayStatus(recs, category);
+        return st === 'absent' ? 'absent' : st;      // present | half
+      }
+      if(!isWorkingDayFor(day, VIEW, category)) return 'off';   // holiday or weekly off
+      if(!hasData[day]) return 'none';                          // machine had nothing that day
+      return (dayAbsent[day] || new Set()).has(id) ? 'absent' : 'none';
+    });
+
+    // 2. Absorb offs that are joined to an absence
+    const settled = applySandwich(statuses, mode);
+
+    let present = 0, half = 0, absent = 0, paidOff = 0, absorbed = 0;
+    settled.forEach(st => {
       if(st === 'present') present++;
       else if(st === 'half') half++;
-      else absent++;
+      else if(st === 'absent') absent++;
+      else if(st === 'absorbed'){ absorbed++; absent++; }
+      else if(st === 'off') paidOff++;
     });
-    MONTHLY[id] = { present, half, absent, totalDays: tracked };
+
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, totalDays: present + half + absent };
   });
 
   buildMonthlyHead();
@@ -1092,7 +1230,7 @@ function buildMonthlyHead(){
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Paid off</th><th>Attendance</th></tr>`;
   }
 }
 
@@ -1135,7 +1273,7 @@ function setSummary(cards){
 
 function renderDailyTable(){
   const rows = filteredRows();
-  let present = 0, exit = 0, absent = 0, half = 0;
+  let present = 0, exit = 0, absent = 0, half = 0, offDay = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
@@ -1162,9 +1300,12 @@ function renderDailyTable(){
     }else{
       const category = normalizedRole(s.role || '');
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
-      status = recs.length ? computeStaffDayStatus(recs, category) : 'absent';
+      const dayDate = document.getElementById('date-input').value || TODAY;
+      const working = isWorkingDayFor(dayDate, 'staff', category);
+      status = recs.length ? computeStaffDayStatus(recs, category) : (working ? 'absent' : 'off');
       if(status === 'present') present++;
       else if(status === 'half') half++;
+      else if(status === 'off') offDay++;
       else absent++;
       const [s1in, s1out, s2in, s2out] = sortedRecs;
       const stack = list => {
@@ -1173,6 +1314,7 @@ function renderDailyTable(){
       };
       const badge = status === 'present' ? '<span class="badge present">Present</span>'
         : status === 'half' ? '<span class="badge half">Half day</span>'
+        : status === 'off' ? '<span class="badge off">Off</span>'
         : '<span class="badge absent">Absent</span>';
       tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField || '\u2014')}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td><td>${badge}</td>`;
     }
@@ -1196,6 +1338,7 @@ function renderDailyTable(){
       {value: half, label: 'Half day', color:'var(--half)'},
       {value: absent, label: 'Absent', color:'var(--absent)'}
     ];
+    if(offDay) dailyCards.push({value: offDay, label:'Off today'});
   }
   setSummary(dailyCards);
   renderBreakdown(enriched, 'daily');
@@ -1223,7 +1366,8 @@ function renderMonthlyTable(){
     if(VIEW === 'student'){
       tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
     }else{
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+      const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}${absorbNote}</td><td class="mono">${m.paidOff||0}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
     }
     body.appendChild(tr);
   });
@@ -1234,6 +1378,7 @@ function renderMonthlyTable(){
     {value: sumPresent, label: VIEW==='student'?'Present (sum)':'Full days (sum)', color:'var(--present)'}
   ];
   if(VIEW === 'staff') cards.push({value: sumHalf, label:'Half days (sum)', color:'var(--half)'});
+  if(VIEW === 'staff') cards.push({value: rows.reduce((n, r) => n + ((MONTHLY[personId(r)]||{}).paidOff || 0), 0), label:'Paid off (sum)'});
   cards.push({value: sumAbsent, label:'Absent (sum)', color:'var(--absent)'});
   setSummary(cards);
   renderBreakdown(enriched, 'monthly');
@@ -1324,6 +1469,10 @@ function renderTable(){ MODE === 'daily' ? renderDailyTable() : renderMonthlyTab
    Settings popup (was settings.html — now a modal in this page)
    ========================================================= */
 const SCOPE_LABEL = { all:'Everyone', student:'Students only', staff:'Staff only' };
+function scopeLabel(item){
+  const base = SCOPE_LABEL[item.scope] || 'Everyone';
+  return (Array.isArray(item.cats) && item.cats.length) ? item.cats.join(', ') : base;
+}
 const NTH_LABEL = { '1':'1st', '2':'2nd', '3':'3rd', '4':'4th', '-1':'Last' };
 
 function showStatus(msg, kind){
@@ -1337,6 +1486,9 @@ function loadSettingsFormFromLocal(){
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('this-device-input').value = localStorage.getItem(LS.deviceName) || '';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
+  const sMode = getSandwichMode();
+  document.querySelectorAll('input[name="sandwich"]').forEach(r => { r.checked = (r.value === sMode); });
+  buildCategoryPickers();
   buildShiftRulesGrid();
   buildWorkingDaysRow();
   renderHolidayList();
@@ -1354,6 +1506,10 @@ function buildShiftRulesGrid(){
     const s1 = shifts[0] || {from:'', to:''};
     const s2 = shifts[1] || {from:'', to:''};
     const isShifts = rule.mode === 'shifts';
+    const days = Array.isArray(rule.days) ? rule.days : [];
+    const dayPills = WEEKDAY_NAMES.map((n, i) =>
+      `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
+    ).join('');
     return `<div class="shift-rule-card" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
         <strong>${escapeHtml(cat)}</strong>
@@ -1361,6 +1517,10 @@ function buildShiftRulesGrid(){
           <option value="any" ${!isShifts ? 'selected' : ''}>Any scan = full day</option>
           <option value="shifts" ${isShifts ? 'selected' : ''}>Time-based shifts</option>
         </select>
+      </div>
+      <div class="src-days">
+        <span>Works on${days.length ? '' : ' \u2014 nothing ticked, so this category follows the school working days'}</span>
+        <div class="daypick">${dayPills}</div>
       </div>
       <div class="src-shifts" data-cat="${escapeHtml(cat)}" style="display:${isShifts ? 'flex' : 'none'};">
         <div class="field"><label>Shift 1 from</label><input type="time" class="src-s1-from" value="${escapeHtml(s1.from)}"></div>
@@ -1378,6 +1538,38 @@ function buildShiftRulesGrid(){
   });
 }
 
+// Category tick-boxes shown under Holidays and Repeating holidays when the
+// scope is "Staff only" — leaving them all unticked means every category.
+function knownStaffCategories(){
+  return [...new Set(PREFERRED_STAFF_CATEGORY_ORDER.concat(STAFF_ALL_CATEGORIES).filter(Boolean))];
+}
+function buildCategoryPickers(){
+  const cats = knownStaffCategories();
+  ['holiday-cats-row', 'rule-cats-row'].forEach(id => {
+    const row = document.getElementById(id);
+    if(!row) return;
+    const prefix = id.split('-')[0];
+    row.innerHTML = cats.map(c =>
+      `<label><input type="checkbox" class="${prefix}-cat" value="${escapeHtml(c)}"> ${escapeHtml(c)}</label>`
+    ).join('');
+  });
+  syncCategoryPickerVisibility();
+}
+function syncCategoryPickerVisibility(){
+  const hs = document.getElementById('holiday-scope-input').value;
+  document.getElementById('holiday-cats').style.display = hs === 'staff' ? 'block' : 'none';
+  const rs = document.getElementById('rule-scope-input').value;
+  document.getElementById('rule-cats').style.display = rs === 'staff' ? 'block' : 'none';
+}
+function pickedCategories(prefix){
+  return [...document.querySelectorAll('.' + prefix + '-cat:checked')].map(cb => cb.value);
+}
+function clearPickedCategories(prefix){
+  document.querySelectorAll('.' + prefix + '-cat:checked').forEach(cb => { cb.checked = false; });
+}
+document.getElementById('holiday-scope-input').addEventListener('change', syncCategoryPickerVisibility);
+document.getElementById('rule-scope-input').addEventListener('change', syncCategoryPickerVisibility);
+
 function buildWorkingDaysRow(){
   const active = getWorkingDays();
   document.getElementById('working-days-row').innerHTML = WEEKDAY_NAMES.map((name, idx) => `
@@ -1390,7 +1582,7 @@ function renderHolidayList(){
   const wrap = document.getElementById('holiday-list');
   if(!holidays.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No fixed-date holidays added yet.</span>'; return; }
   wrap.innerHTML = holidays.map((h, idx) => `
-    <span class="chip">${escapeHtml(h.date)} <span class="scope">&middot; ${SCOPE_LABEL[h.scope] || 'Everyone'}</span>
+    <span class="chip">${escapeHtml(h.date)} <span class="scope">&middot; ${escapeHtml(scopeLabel(h))}</span>
       <button type="button" data-idx="${idx}" title="Remove">&times;</button></span>`).join('');
   wrap.querySelectorAll('button[data-idx]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1417,13 +1609,19 @@ document.getElementById('add-holiday-btn').addEventListener('click', () => {
     const end = new Date(endDate + 'T00:00:00');
     while(cur <= end){ dates.push(cur.toLocaleDateString('en-CA')); cur.setDate(cur.getDate() + 1); }
   }else{ dates.push(date); }
+  const cats = scope === 'staff' ? pickedCategories('holiday') : [];
   const holidays = getHolidays();
-  dates.forEach(d => { if(!holidays.some(h => h.date === d && h.scope === scope)) holidays.push({ date: d, scope }); });
+  dates.forEach(d => {
+    if(!holidays.some(h => h.date === d && h.scope === scope && String(h.cats||'') === String(cats||''))){
+      holidays.push(cats.length ? { date: d, scope, cats } : { date: d, scope });
+    }
+  });
   localStorage.setItem(LS.holidays, JSON.stringify(holidays));
   document.getElementById('holiday-date-input').value = '';
   document.getElementById('holiday-end-input').value = '';
   document.getElementById('holiday-range-toggle').checked = false;
   document.getElementById('holiday-end-field').style.display = 'none';
+  clearPickedCategories('holiday');
   renderHolidayList();
 });
 
@@ -1435,7 +1633,7 @@ function renderRuleList(){
   const wrap = document.getElementById('rule-list');
   if(!rules.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No recurring holidays added yet.</span>'; return; }
   wrap.innerHTML = rules.map((r, idx) => `
-    <span class="chip">${NTH_LABEL[String(r.nth)] || r.nth} ${WEEKDAY_NAMES[r.weekday]} of every month <span class="scope">&middot; ${SCOPE_LABEL[r.scope] || 'Everyone'}</span>
+    <span class="chip">${NTH_LABEL[String(r.nth)] || r.nth} ${WEEKDAY_NAMES[r.weekday]} of every month <span class="scope">&middot; ${escapeHtml(scopeLabel(r))}</span>
       <button type="button" data-idx="${idx}" title="Remove">&times;</button></span>`).join('');
   wrap.querySelectorAll('button[data-idx]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1450,10 +1648,12 @@ document.getElementById('add-rule-btn').addEventListener('click', () => {
   const nth = parseInt(document.getElementById('rule-nth-input').value, 10);
   const weekday = parseInt(document.getElementById('rule-weekday-input').value, 10);
   const scope = document.getElementById('rule-scope-input').value;
+  const cats = scope === 'staff' ? pickedCategories('rule') : [];
   const rules = getHolidayRules();
-  if(!rules.some(r => r.nth === nth && r.weekday === weekday && r.scope === scope)){
-    rules.push({ nth, weekday, scope });
+  if(!rules.some(r => r.nth === nth && r.weekday === weekday && r.scope === scope && String(r.cats||'') === String(cats||''))){
+    rules.push(cats.length ? { nth, weekday, scope, cats } : { nth, weekday, scope });
     localStorage.setItem(LS.holidayRules, JSON.stringify(rules));
+    clearPickedCategories('rule');
     renderRuleList();
   }
 });
@@ -1597,6 +1797,8 @@ function collectSettingsObject(){
     }else{
       shiftRulesObj[cat] = { mode:'any' };
     }
+    const days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
+    if(days.length) shiftRulesObj[cat].days = days;
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
@@ -1607,6 +1809,7 @@ function collectSettingsObject(){
     cutoffDefault: document.getElementById('cutoff-default-input').value || '11:00',
     cutoffOverrides: getCutoffOverrides(),
     cutoffDateOverrides: getCutoffDateOverrides(),
+    sandwichMode: (document.querySelector('input[name="sandwich"]:checked') || {}).value || 'touch',
     studentDefaultView: document.getElementById('default-view-input').value,
     devices: getDevices()
   };
@@ -1625,6 +1828,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.cutoffDefault, settings.cutoffDefault);
   localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
   localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
+  localStorage.setItem(LS.sandwichMode, settings.sandwichMode);
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
 
   if(!rUrl){
