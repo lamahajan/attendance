@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admission Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --paper-line:#E7E9F0;
+    --ink:#1B2036;
+    --ink-soft:#6B7280;
+    --rule-red:#33437A;
+    --present:#0F8F63;
+    --present-bg:#E1F5EC;
+    --absent:#C5384F;
+    --absent-bg:#FBE7EA;
+    --pending-bg:#E8ECFB;
+    --pending:#4451B8;
+    --half-bg:#FCF0D9;
+    --half:#A4720C;
+    --row-alt:#F4F6FB;
+    --card:#FFFFFF;
+    --border:#DDE1EC;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#EEF0F6;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    padding:2.5rem 1rem 4rem;
+  }
+  .book{
+    max-width:1120px;
+    margin:0 auto;
+    background:var(--paper);
+    border-radius:6px;
+    box-shadow:0 1px 0 #fff inset, 0 18px 40px rgba(27,32,54,0.12);
+    position:relative;
+    padding:0 0 2rem;
+    overflow:hidden;
+    border:1px solid var(--border);
+  }
+  .margin-rule{ position:absolute; top:0; bottom:0; left:64px; width:2px; background:var(--rule-red); opacity:0.35; }
+  .holes{ position:absolute; top:0; bottom:0; left:28px; width:10px; display:flex; flex-direction:column; justify-content:space-evenly; padding:2rem 0; }
+  .holes span{ width:10px; height:10px; border-radius:50%; background:var(--row-alt); box-shadow:inset 0 1px 2px rgba(27,32,54,0.15); }
+  header{ padding:2.25rem 2.5rem 0 6rem; border-bottom:2px solid var(--rule-red); }
+  .eyebrow{ font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--rule-red); margin:0 0 .4rem; font-weight:600; }
+  h1{ font-family:'Inter',sans-serif; font-weight:800; font-size:32px; margin:0 0 .3rem; letter-spacing:.01em; color:var(--ink); }
+  .sub{ font-size:14px; color:var(--ink-soft); margin:0 0 1.1rem; }
+  .tabs{ display:flex; gap:2px; }
+  .tab{
+    font-family:'Inter',sans-serif; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    padding:9px 20px; background:var(--row-alt); color:var(--ink-soft);
+    border:1px solid var(--border); border-bottom:none; border-radius:6px 6px 0 0;
+    cursor:pointer; position:relative; top:2px;
+  }
+  .tab.active{ background:var(--paper); color:var(--rule-red); font-weight:700; border-color:var(--rule-red); }
+  .category-pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top:1.1rem; }
+  .pill{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
+    padding:7px 15px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--card); color:var(--ink); cursor:pointer; transition:all .12s ease;
+  }
+  .pill:hover{ border-color:var(--rule-red); }
+  .pill.active{ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  .controls{ padding:1.4rem 2.5rem 0 6rem; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  .view-switch{ display:flex; border:1px solid var(--ink); border-radius:3px; overflow:hidden; height:36px; }
+  .view-switch button{
+    border:none; border-radius:0; background:var(--card); color:var(--ink);
+    font-size:12.5px; padding:0 14px; height:100%;
+  }
+  .view-switch button.on{ background:var(--ink); color:var(--paper); }
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{ font-family:'Inter',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); }
+  .field input, .field select{
+    font-family:'Inter',sans-serif; font-size:14px; padding:8px 10px;
+    border:1px solid var(--border); background:var(--card); border-radius:3px; color:var(--ink); min-width:140px;
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--rule-red); outline-offset:1px;}
+  button{
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper); border-radius:3px; cursor:pointer;
+  }
+  button.ghost{background:transparent; color:var(--ink); border:1px solid var(--border);}
+  button:hover{opacity:.88;}
+  .demo-note{
+    margin:1.2rem 2.5rem 0 6rem; padding:9px 14px; background:var(--pending-bg); color:var(--pending);
+    border:1px solid #DEC985; border-radius:4px; font-size:12.5px; display:none;
+  }
+  .demo-note.show{display:block;}
+  .settings-panel{ margin:1.5rem 2.5rem 0 6rem; background:var(--card); border:1px solid var(--border); border-radius:4px; padding:1.2rem; display:none; }
+  .settings-panel.open{display:block;}
+  .settings-panel .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:12px; }
+  .settings-panel h3{ font-family:'Inter',sans-serif; font-size:15px; margin:1.1rem 0 .6rem; }
+  .settings-panel h3:first-child{margin-top:0;}
+  .settings-panel .hint{ font-size:11.5px; color:var(--ink-soft); margin:-8px 0 12px; }
+  .breakdown-wrap{ margin:1.3rem 2.5rem 0 6rem; display:flex; flex-wrap:wrap; gap:16px; }
+  .breakdown-card{ flex:1; min-width:260px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  .breakdown-card h4{
+    margin:0; padding:9px 12px; font-family:'Inter',sans-serif; font-size:10.5px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--rule-red); background:var(--row-alt);
+    border-bottom:1px solid var(--border);
+  }
+  .breakdown-card table{ width:100%; margin:0; font-size:12.5px; }
+  .breakdown-card thead th{ font-size:9.5px; padding:6px 10px; }
+  .breakdown-card tbody td{ padding:6px 10px; }
+  .summary{ display:flex; gap:1px; margin:1.5rem 2.5rem 0 6rem; border:1px solid var(--border); border-radius:3px; overflow:hidden; }
+  .stat{ flex:1; background:var(--card); padding:12px 16px; border-right:1px solid var(--border); }
+  .stat:last-child{border-right:none;}
+  .stat .n{font-family:'Inter',sans-serif; font-weight:700; font-size:22px;}
+  .stat .l{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em;}
+  table{ width:calc(100% - 6rem - 2.5rem); margin:1.5rem 2.5rem 0 6rem; border-collapse:collapse; font-size:13.5px; }
+  thead th{
+    text-align:left; font-family:'Inter',sans-serif; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:2px solid var(--ink); padding:8px 10px;
+  }
+  tbody td{ padding:9px 10px; border-bottom:1px solid var(--paper-line); vertical-align:middle; line-height:1.6; }
+  tbody tr:nth-child(even){background:var(--row-alt);}
+  td.mono, th.mono-col{font-family:'Inter',sans-serif; font-size:12.5px; font-variant-numeric:tabular-nums;}
+  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
+  .badge.present{background:var(--present-bg); color:var(--present);}
+  .badge.absent{background:var(--absent-bg); color:var(--absent);}
+  .badge.gatepass{background:var(--pending-bg); color:var(--pending);}
+  .badge.half{background:var(--half-bg); color:var(--half);}
+  .badge.bus{background:#E3EEF6; color:#2E6F8E;}
+  .pct{font-family:'Inter',sans-serif; font-weight:600; font-variant-numeric:tabular-nums;}
+  .holiday-chip{
+    display:inline-flex; align-items:center; gap:7px; font-size:12.5px;
+    padding:5px 6px 5px 11px; border-radius:16px; border:1px solid var(--border);
+    background:var(--row-alt); color:var(--ink);
+  }
+  .holiday-chip .scope{ color:var(--ink-soft); font-size:11px; }
+  .holiday-chip button{
+    all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:var(--absent);
+    font-size:14px; line-height:1;
+  }
+  .holiday-chip button:hover{ background:var(--absent-bg); }
+  .empty{ margin:2rem 2.5rem 0 6rem; padding:2rem; text-align:center; color:var(--ink-soft); border:1px dashed var(--border); border-radius:4px; font-size:14px; }
+  @media print{
+    body{background:#fff; padding:0;}
+    .controls, .settings-panel, button, .demo-note{display:none !important;}
+    .book{box-shadow:none; max-width:100%;}
+    .margin-rule, .holes{display:none;}
+    header{padding-left:2.5rem;}
+    .controls, .summary, table{margin-left:2.5rem;}
+  }
+  @media (max-width: 640px){
+    .margin-rule, .holes{display:none;}
+    header, .controls, .summary, table, .settings-panel, .demo-note{padding-left:1.5rem; margin-left:1rem;}
+    table{width:calc(100% - 2rem);}
+  }
+</style>
+</head>
+<body>
+
+<div class="book">
+  <div class="holes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div class="margin-rule"></div>
+
+  <header>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px;">
+      <div>
+        <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
+        <h1>Admission Register</h1>
+        <p class="sub" id="date-label">Loading&hellip;</p>
+      </div>
+      <div style="display:flex; gap:14px;">
+        <div class="field" id="date-field">
+          <label for="date-input">Date</label>
+          <input type="date" id="date-input">
+        </div>
+        <div class="field" id="month-field" style="display:none;">
+          <label for="month-input">Month</label>
+          <input type="month" id="month-input">
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-type="student">Students</div>
+      <div class="tab" data-type="staff">Staff</div>
+    </div>
+    <div class="category-pills" id="category-pills" style="display:none;"></div>
+  </header>
+
+  <div class="controls">
+    <div class="view-switch" id="mode-switch">
+      <button id="view-daily" class="on">Daily</button>
+      <button id="view-monthly">Monthly</button>
+    </div>
+    <div class="view-switch" id="display-switch">
+      <button id="display-both" class="on">Both</button>
+      <button id="display-summary">Summary</button>
+      <button id="display-list">List</button>
+    </div>
+    <div class="field" id="category-field">
+      <label for="category-filter" id="category-label">Class</label>
+      <select id="category-filter"><option value="">All classes</option></select>
+    </div>
+    <div class="field" style="min-width:200px;">
+      <label for="search-input">Search</label>
+      <input type="text" id="search-input" placeholder="Name or ID">
+    </div>
+    <button class="ghost" id="refresh-btn">&#8635; Refresh</button>
+    <button class="ghost" id="print-btn">Print</button>
+    <button class="ghost" id="settings-btn">Settings</button>
+  </div>
+
+  <div class="demo-note" id="demo-note">Showing sample data &mdash; add your Firebase URLs in Settings to load real records.</div>
+
+  <div class="settings-panel" id="settings-panel">
+    <h3>Students data source</h3>
+    <div class="grid">
+      <div class="field"><label for="s-url">Students Firebase URL</label><input id="s-url" placeholder="https://project.firebaseio.com"></div>
+      <div class="field"><label for="s-code">Students code</label><input id="s-code" placeholder="secret path segment"></div>
+    </div>
+    <h3>Staff data source (StaffFlow)</h3>
+    <div class="grid">
+      <div class="field"><label for="st-url">Staff Firebase URL</label><input id="st-url" placeholder="https://project.firebaseio.com"></div>
+      <div class="field"><label for="st-code">Staff path prefix</label><input id="st-code" placeholder="e.g. sf8 (default)"></div>
+    </div>
+    <h3>Raw attendance (shared)</h3>
+    <div class="grid">
+      <div class="field"><label for="r-url">Raw attendance Firebase URL</label><input id="r-url" placeholder="https://project.firebaseio.com"></div>
+      <div class="field"><label for="r-code">Raw attendance code</label><input id="r-code" placeholder="secret path segment (optional)"></div>
+    </div>
+    <h3>Staff shift rules</h3>
+    <p class="hint">For each category, set how many hours between a staff member's first and last scan of the day count as a full day. Leave a category at 0 to just require any one scan for a full day (no half-day tracking for that category).</p>
+    <div class="grid" id="shift-hours-grid"></div>
+
+    <h3>School calendar (for monthly totals)</h3>
+    <p class="hint">A date only counts as a school day in the Monthly view if it falls on a working day below AND isn't listed as a holiday &mdash; even if a stray scan happened that day.</p>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Working days</label>
+      <div id="working-days-row" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;"></div>
+    </div>
+    <div class="field">
+      <label>Holidays</label>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-top:4px;">
+        <input type="date" id="holiday-date-input" style="min-width:150px;">
+        <select id="holiday-scope-input" style="min-width:150px;">
+          <option value="all">Everyone</option>
+          <option value="student">Students only</option>
+          <option value="staff">Staff only</option>
+        </select>
+        <button type="button" id="add-holiday-btn" class="ghost" style="height:36px;">+ Add</button>
+      </div>
+      <div id="holiday-list" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;"></div>
+    </div>
+
+    <button id="save-settings-btn">Save &amp; reload</button>
+  </div>
+
+  <div class="summary" id="summary" style="display:none;"></div>
+
+  <div class="breakdown-wrap" id="breakdown-wrap"></div>
+
+  <table id="register-table" style="display:none;">
+    <thead id="register-head"></thead>
+    <tbody id="register-body"></tbody>
+  </table>
+
+  <div class="empty" id="empty-msg" style="display:none;"></div>
+</div>
+
+<script>
+const LS = {
+  sUrl:'reg_students_url', sCode:'reg_students_code',
+  stUrl:'reg_staff_url',   stCode:'reg_staff_code',
+  rUrl:'reg_raw_url',      rCode:'reg_raw_code',
+  shiftHours:'reg_shift_hours',
+  workingDays:'reg_working_days',
+  holidays:'reg_holidays'
+};
+
+let VIEW = 'student';
+let MODE = 'daily';
+let DISPLAY = 'both';
+let STAFF_CATEGORY = 'All';
+let ROSTER = [];
+let RECORDS = {};
+let MONTHLY = {};
+let USING_SAMPLE = false;
+
+function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function timeOnly(t){ if(!t) return ''; const m=String(t).match(/(\d{1,2}:\d{2}:\d{2})/); return m?m[1]:t; }
+async function fetchJson(url){ try{ const r=await fetch(url); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+function parseTimeMs(t){ if(!t) return null; const iso = String(t).trim().replace(' ','T'); const d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime(); }
+
+const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Maid','Cleaner','Driver','Security','Gardner'];
+const ROLE_MERGE_MAP = { 'Driver Online': 'Driver', 'Cleaner Online': 'Cleaner' };
+const DEFAULT_SHIFT_HOURS = { Teacher:0, Maid:0, Cleaner:6, Driver:6, Security:0, Gardner:0 };
+function normalizedRole(role){ return ROLE_MERGE_MAP[role] || role; }
+function getShiftHoursMap(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.shiftHours) || '{}');
+    return { ...DEFAULT_SHIFT_HOURS, ...stored };
+  }catch(e){ return { ...DEFAULT_SHIFT_HOURS }; }
+}
+
+const WEEKDAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function getWorkingDays(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.workingDays) || 'null');
+    if(Array.isArray(stored)) return stored;
+  }catch(e){}
+  return [1,2,3,4,5,6];
+}
+function getHolidays(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.holidays) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  }catch(e){ return []; }
+}
+function isSchoolDay(dateStr, forView){
+  const workingDays = getWorkingDays();
+  const weekday = new Date(dateStr + 'T00:00:00').getDay();
+  if(!workingDays.includes(weekday)) return false;
+  const holidays = getHolidays();
+  const isHoliday = holidays.some(h => h.date === dateStr && (h.scope === 'all' || h.scope === forView));
+  return !isHoliday;
+}
+
+function computeStaffDayStatus(recs, category){
+  if(!recs.length) return 'absent';
+  const threshold = getShiftHoursMap()[category] || 0;
+  if(threshold <= 0) return 'present';
+  const times = recs.map(r => parseTimeMs(r.time)).filter(t => t != null).sort((a,b) => a-b);
+  if(!times.length) return 'present';
+  const hoursWorked = (times[times.length-1] - times[0]) / 3600000;
+  return hoursWorked >= threshold ? 'present' : 'half';
+}
+
+const TODAY = todayKolkata();
+const SAMPLE_STUDENTS = [
+  {admissionNumber:'101', studentName:'Ananya Sharma', class:'5-A', busNumber:'12'},
+  {admissionNumber:'102', studentName:'Rohan Verma',   class:'5-A', busNumber:''},
+  {admissionNumber:'103', studentName:'Ishaan Kapoor', class:'5-B', busNumber:'7'},
+  {admissionNumber:'104', studentName:'Diya Mehta',    class:'5-B', busNumber:''},
+  {admissionNumber:'105', studentName:'Aarav Singh',   class:'6-A', busNumber:'18'},
+  {admissionNumber:'106', studentName:'Kiara Joshi',   class:'6-A', busNumber:''},
+  {admissionNumber:'107', studentName:'Vivaan Gupta',  class:'6-B', busNumber:'3'},
+  {admissionNumber:'108', studentName:'Myra Reddy',    class:'6-B', busNumber:''}
+];
+const SAMPLE_STAFF = [
+  {id:'ST01', name:'Ramesh Yadav',   role:'Driver'},
+  {id:'ST02', name:'Sunita Devi',    role:'Cleaner'},
+  {id:'ST03', name:'Vikram Rathore', role:'Security'},
+  {id:'ST04', name:'Pooja Nair',     role:'Teacher'},
+  {id:'ST05', name:'Ajay Malhotra',  role:'Gardner'},
+  {id:'ST06', name:'Kamla Bai',      role:'Maid'},
+  {id:'ST07', name:'Suresh Kumar',   role:'Driver Online'},
+  {id:'ST08', name:'Meena Kumari',   role:'Cleaner Online'}
+];
+const SAMPLE_RECORDS = {
+  '101':[{pin:'101', time:`${TODAY} 08:02:11`, action:'morning_entry'}],
+  '102':[{pin:'102', time:`${TODAY} 07:58:40`, action:'morning_entry'}, {pin:'102', time:`${TODAY} 10:40:02`, action:'gatepass_exit'}],
+  '103':[{pin:'103', time:`${TODAY} 08:05:33`, action:'morning_entry'}],
+  '105':[{pin:'105', time:`${TODAY} 08:11:09`, action:'morning_entry'}],
+  '106':[{pin:'106', time:`${TODAY} 08:09:47`, action:'morning_entry'}, {pin:'106', time:`${TODAY} 13:15:20`, action:'evening_exit'}],
+  '108':[{pin:'108', time:`${TODAY} 08:03:58`, action:'morning_entry'}],
+  'ST01':[
+    {pin:'ST01', time:`${TODAY} 07:00:12`, action:'morning_entry'},
+    {pin:'ST01', time:`${TODAY} 09:10:40`, action:'morning_entry'},
+    {pin:'ST01', time:`${TODAY} 13:45:02`, action:'evening_exit'},
+    {pin:'ST01', time:`${TODAY} 16:05:18`, action:'evening_exit'}
+  ],
+  'ST02':[{pin:'ST02', time:`${TODAY} 08:00:05`, action:'morning_entry'}],
+  'ST04':[{pin:'ST04', time:`${TODAY} 07:45:30`, action:'morning_entry'}]
+};
+
+function seeded(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; }
+  return (h % 100) / 100;
+}
+
+function loadSettingsIntoForm(){
+  document.getElementById('s-url').value  = localStorage.getItem(LS.sUrl)  || '';
+  document.getElementById('s-code').value = localStorage.getItem(LS.sCode) || '';
+  document.getElementById('st-url').value = localStorage.getItem(LS.stUrl) || '';
+  document.getElementById('st-code').value= localStorage.getItem(LS.stCode)|| '';
+  document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
+  document.getElementById('r-code').value = localStorage.getItem(LS.rCode)|| '';
+  buildShiftHoursGrid();
+  buildWorkingDaysRow();
+  renderHolidayList();
+}
+
+function buildShiftHoursGrid(){
+  const map = getShiftHoursMap();
+  const grid = document.getElementById('shift-hours-grid');
+  grid.innerHTML = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => `
+    <div class="field">
+      <label for="shift-hrs-${cat}">${escapeHtml(cat)} &mdash; hours for full day</label>
+      <input type="number" min="0" step="0.5" id="shift-hrs-${cat}" data-cat="${escapeHtml(cat)}" value="${map[cat] || 0}">
+    </div>
+  `).join('');
+}
+
+function buildWorkingDaysRow(){
+  const active = getWorkingDays();
+  const row = document.getElementById('working-days-row');
+  row.innerHTML = WEEKDAY_NAMES.map((name, idx) => `
+    <label style="display:flex; align-items:center; gap:5px; font-size:13px; padding:6px 10px; border:1px solid var(--border); border-radius:3px; background:var(--card); cursor:pointer;">
+      <input type="checkbox" class="working-day-cb" data-day="${idx}" ${active.includes(idx) ? 'checked' : ''} style="min-width:auto;">
+      ${name}
+    </label>
+  `).join('');
+}
+
+const SCOPE_LABEL = { all:'Everyone', student:'Students only', staff:'Staff only' };
+function renderHolidayList(){
+  const holidays = getHolidays().sort((a,b) => a.date.localeCompare(b.date));
+  const wrap = document.getElementById('holiday-list');
+  if(!holidays.length){
+    wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No holidays added yet.</span>';
+    return;
+  }
+  wrap.innerHTML = holidays.map((h, idx) => `
+    <span class="holiday-chip">
+      ${escapeHtml(h.date)} <span class="scope">&middot; ${SCOPE_LABEL[h.scope] || 'Everyone'}</span>
+      <button type="button" data-idx="${idx}" title="Remove">&times;</button>
+    </span>
+  `).join('');
+  wrap.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const holidays = getHolidays().sort((a,b) => a.date.localeCompare(b.date));
+      holidays.splice(parseInt(btn.dataset.idx, 10), 1);
+      localStorage.setItem(LS.holidays, JSON.stringify(holidays));
+      renderHolidayList();
+    });
+  });
+}
+
+document.getElementById('add-holiday-btn').addEventListener('click', () => {
+  const date = document.getElementById('holiday-date-input').value;
+  const scope = document.getElementById('holiday-scope-input').value;
+  if(!date) return;
+  const holidays = getHolidays();
+  if(holidays.some(h => h.date === date && h.scope === scope)) return;
+  holidays.push({ date, scope });
+  localStorage.setItem(LS.holidays, JSON.stringify(holidays));
+  document.getElementById('holiday-date-input').value = '';
+  renderHolidayList();
+});
+
+document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-panel').classList.toggle('open'));
+document.getElementById('save-settings-btn').addEventListener('click', () => {
+  localStorage.setItem(LS.sUrl,  document.getElementById('s-url').value.trim());
+  localStorage.setItem(LS.sCode, document.getElementById('s-code').value.trim());
+  localStorage.setItem(LS.stUrl, document.getElementById('st-url').value.trim());
+  localStorage.setItem(LS.stCode,document.getElementById('st-code').value.trim());
+  localStorage.setItem(LS.rUrl,  document.getElementById('r-url').value.trim());
+  localStorage.setItem(LS.rCode, document.getElementById('r-code').value.trim());
+  const shiftHoursObj = {};
+  PREFERRED_STAFF_CATEGORY_ORDER.forEach(cat => {
+    const el = document.getElementById(`shift-hrs-${cat}`);
+    shiftHoursObj[cat] = el ? (parseFloat(el.value) || 0) : 0;
+  });
+  localStorage.setItem(LS.shiftHours, JSON.stringify(shiftHoursObj));
+  const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
+  localStorage.setItem(LS.workingDays, JSON.stringify(workingDays));
+  document.getElementById('settings-panel').classList.remove('open');
+  loadRegister();
+});
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    VIEW = tab.dataset.type;
+    STAFF_CATEGORY = 'All';
+    document.getElementById('search-input').placeholder = VIEW === 'student' ? 'Name or admission no.' : 'Name or staff ID';
+    document.getElementById('category-field').style.display = VIEW === 'student' ? 'flex' : 'none';
+    document.getElementById('category-pills').style.display = VIEW === 'staff' ? 'flex' : 'none';
+    updateModeSwitchVisibility();
+    updateDisplaySwitchVisibility();
+    loadRegister();
+  });
+});
+
+function updateModeSwitchVisibility(){
+  document.getElementById('mode-switch').style.display = VIEW === 'student' ? 'none' : 'flex';
+  if(VIEW === 'student' && MODE !== 'daily'){
+    MODE = 'daily';
+    document.getElementById('view-daily').classList.add('on');
+    document.getElementById('view-monthly').classList.remove('on');
+    document.getElementById('date-field').style.display = 'flex';
+    document.getElementById('month-field').style.display = 'none';
+  }
+}
+
+function updateDisplaySwitchVisibility(){
+  const show = VIEW === 'student' && MODE === 'daily';
+  document.getElementById('display-switch').style.display = show ? 'flex' : 'none';
+  if(!show && DISPLAY !== 'both') setDisplay('both');
+}
+
+function setDisplay(d){
+  DISPLAY = d;
+  document.getElementById('display-both').classList.toggle('on', d === 'both');
+  document.getElementById('display-summary').classList.toggle('on', d === 'summary');
+  document.getElementById('display-list').classList.toggle('on', d === 'list');
+  applyDisplayMode();
+}
+document.getElementById('display-both').addEventListener('click', () => setDisplay('both'));
+document.getElementById('display-summary').addEventListener('click', () => setDisplay('summary'));
+document.getElementById('display-list').addEventListener('click', () => setDisplay('list'));
+
+function applyDisplayMode(){
+  const insightsOn = DISPLAY !== 'list';
+  const listOn = DISPLAY !== 'summary';
+  document.getElementById('summary').style.display = (insightsOn && document.getElementById('summary').dataset.has) ? 'flex' : 'none';
+  document.getElementById('breakdown-wrap').style.display = insightsOn ? 'flex' : 'none';
+  document.getElementById('register-table').style.display = (listOn && document.getElementById('register-table').dataset.has) ? 'table' : 'none';
+}
+
+document.getElementById('view-daily').addEventListener('click', () => setMode('daily'));
+document.getElementById('view-monthly').addEventListener('click', () => setMode('monthly'));
+function setMode(m){
+  MODE = m;
+  document.getElementById('view-daily').classList.toggle('on', m === 'daily');
+  document.getElementById('view-monthly').classList.toggle('on', m === 'monthly');
+  document.getElementById('date-field').style.display = m === 'daily' ? 'flex' : 'none';
+  document.getElementById('month-field').style.display = m === 'monthly' ? 'flex' : 'none';
+  updateDisplaySwitchVisibility();
+  loadRegister();
+}
+
+document.getElementById('date-input').value = TODAY;
+document.getElementById('month-input').value = TODAY.slice(0,7);
+document.getElementById('refresh-btn').addEventListener('click', loadRegister);
+document.getElementById('print-btn').addEventListener('click', () => window.print());
+document.getElementById('date-input').addEventListener('change', loadRegister);
+document.getElementById('month-input').addEventListener('change', loadRegister);
+document.getElementById('category-filter').addEventListener('change', renderTable);
+document.getElementById('search-input').addEventListener('input', renderTable);
+
+async function loadRoster(){
+  USING_SAMPLE = false;
+  if(VIEW === 'student'){
+    const sUrl = localStorage.getItem(LS.sUrl);
+    const sCode = localStorage.getItem(LS.sCode) || '';
+    let students = sUrl ? await fetchJson(`${sUrl}/${sCode}/students.json`) : null;
+    if(!Array.isArray(students) || !students.length){ students = SAMPLE_STUDENTS; USING_SAMPLE = true; }
+    ROSTER = students.filter(Boolean);
+  }else{
+    const stUrl = localStorage.getItem(LS.stUrl);
+    const stPrefix = localStorage.getItem(LS.stCode) || 'sf8';
+    let staffRaw = stUrl ? await fetchJson(`${stUrl}/${stPrefix}/${stPrefix}_s.json`) : null;
+    let staffArr = staffRaw ? (Array.isArray(staffRaw) ? staffRaw : Object.values(staffRaw)) : null;
+    if(!Array.isArray(staffArr) || !staffArr.length){ staffArr = SAMPLE_STAFF; USING_SAMPLE = true; }
+    const allStaff = staffArr.filter(s => s && s.id && s.name);
+    buildCategoryPills(allStaff);
+    ROSTER = STAFF_CATEGORY === 'All' ? allStaff : allStaff.filter(s => normalizedRole(s.role || '') === STAFF_CATEGORY);
+  }
+}
+
+function buildCategoryPills(allStaff){
+  const found = [...new Set(allStaff.map(s => normalizedRole(s.role)).filter(Boolean))];
+  const ordered = PREFERRED_STAFF_CATEGORY_ORDER.filter(c => found.includes(c));
+  const extras = found.filter(c => !PREFERRED_STAFF_CATEGORY_ORDER.includes(c)).sort();
+  const categories = ['All', ...ordered, ...extras];
+  const wrap = document.getElementById('category-pills');
+  wrap.innerHTML = categories.map(c =>
+    `<span class="pill ${c === STAFF_CATEGORY ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`
+  ).join('');
+  wrap.querySelectorAll('.pill').forEach(p => {
+    p.addEventListener('click', () => {
+      STAFF_CATEGORY = p.dataset.cat;
+      loadRegister();
+    });
+  });
+}
+
+async function loadRegister(){
+  await loadRoster();
+  if(MODE === 'daily') await loadDaily();
+  else await loadMonthly();
+}
+
+async function loadDaily(){
+  const date = document.getElementById('date-input').value || TODAY;
+  document.getElementById('date-label').textContent =
+    new Date(date + 'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const rUrl = localStorage.getItem(LS.rUrl);
+  const rCode = localStorage.getItem(LS.rCode) || '';
+  let rawRecords = rUrl ? await fetchJson(`${rUrl}/${rCode}/raw_attendance/${date}.json`) : null;
+  RECORDS = {};
+  if(rawRecords && typeof rawRecords === 'object' && !USING_SAMPLE){
+    Object.values(rawRecords).forEach(rec => {
+      if(!rec || !rec.pin) return;
+      const pin = String(rec.pin);
+      if(!RECORDS[pin]) RECORDS[pin] = [];
+      RECORDS[pin].push(rec);
+    });
+  }else{
+    RECORDS = SAMPLE_RECORDS;
+  }
+  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
+  buildDailyHead();
+  if(VIEW === 'student') populateClassFilter();
+  renderDailyTable();
+}
+
+async function loadMonthly(){
+  const monthVal = document.getElementById('month-input').value || TODAY.slice(0,7);
+  const [y, m] = monthVal.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const startDate = `${monthVal}-01`;
+  const endDate = `${monthVal}-${String(daysInMonth).padStart(2,'0')}`;
+  document.getElementById('date-label').textContent =
+    new Date(y, m - 1, 1).toLocaleDateString('en-IN',{month:'long', year:'numeric'}) + ' \u2014 monthly summary';
+  const rUrl = localStorage.getItem(LS.rUrl);
+  const rCode = localStorage.getItem(LS.rCode) || '';
+  let monthData = null;
+  if(rUrl && !USING_SAMPLE){
+    monthData = await fetchJson(`${rUrl}/${rCode}/raw_attendance.json?orderBy="$key"&startAt="${startDate}"&endAt="${endDate}"`);
+  }
+  MONTHLY = {};
+  if(monthData && typeof monthData === 'object' && Object.keys(monthData).length){
+    const schoolDays = Object.keys(monthData).sort().filter(d => isSchoolDay(d, VIEW));
+    ROSTER.forEach(person => {
+      const id = VIEW === 'student' ? String(person.admissionNumber) : String(person.id);
+      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
+      let present = 0, half = 0, absent = 0, trackedDays = 0;
+      schoolDays.forEach(day => {
+        const dayRecs = Object.values(monthData[day] || {}).filter(r => r && String(r.pin) === id);
+        if(VIEW === 'student'){
+          const hasEntry = dayRecs.some(r => r.action === 'morning_entry' || r.action === 'gatepass_exit' || r.action === 'evening_exit');
+          if(hasEntry){ present++; trackedDays++; }
+          else if(person.busNumber){ }
+          else { absent++; trackedDays++; }
+        }else{
+          trackedDays++;
+          const dayStatus = computeStaffDayStatus(dayRecs, category);
+          if(dayStatus === 'present') present++;
+          else if(dayStatus === 'half') half++;
+          else absent++;
+        }
+      });
+      MONTHLY[id] = { present, half, absent, totalDays: trackedDays };
+    });
+    USING_SAMPLE = false;
+  }else{
+    const totalDays = 22;
+    ROSTER.forEach(person => {
+      const id = VIEW === 'student' ? String(person.admissionNumber) : String(person.id);
+      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
+      const isTwoShift = VIEW === 'staff' && (getShiftHoursMap()[category] || 0) > 0;
+      let present = 0, half = 0, absent = 0;
+      for(let d = 1; d <= totalDays; d++){
+        const r = seeded(id + '-' + d);
+        if(VIEW === 'student'){
+          r > 0.12 ? present++ : absent++;
+        }else if(isTwoShift){
+          if(r > 0.85) absent++;
+          else if(r > 0.7) half++;
+          else present++;
+        }else{
+          r > 0.1 ? present++ : absent++;
+        }
+      }
+      MONTHLY[id] = { present, half, absent, totalDays };
+    });
+    USING_SAMPLE = true;
+  }
+  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
+  buildMonthlyHead();
+  if(VIEW === 'student') populateClassFilter();
+  renderMonthlyTable();
+}
+
+function buildDailyHead(){
+  const head = document.getElementById('register-head');
+  if(VIEW === 'student'){
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th></tr>`;
+  }else{
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">In</th><th class="mono-col">Out</th></tr>`;
+  }
+}
+function buildMonthlyHead(){
+  const head = document.getElementById('register-head');
+  if(VIEW === 'student'){
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
+  }else{
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
+  }
+}
+
+function populateClassFilter(){
+  const sel = document.getElementById('category-filter');
+  const label = document.getElementById('category-label');
+  const current = sel.value;
+  label.textContent = 'Class';
+  const values = [...new Set(ROSTER.map(s => s.class).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All classes</option>' + values.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  sel.value = values.includes(current) ? current : '';
+}
+
+function filteredRows(){
+  const categoryFilter = VIEW === 'student' ? document.getElementById('category-filter').value : '';
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  let rows = ROSTER.filter(s => {
+    if(categoryFilter && s.class !== categoryFilter) return false;
+    const idField = VIEW === 'student' ? s.admissionNumber : s.id;
+    const nameField = VIEW === 'student' ? s.studentName : s.name;
+    if(q){
+      const hay = `${nameField || ''} ${idField || ''}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  rows.sort((a,b) => {
+    const av = VIEW === 'student' ? a.admissionNumber : a.id;
+    const bv = VIEW === 'student' ? b.admissionNumber : b.id;
+    return String(av).localeCompare(String(bv), undefined, {numeric:true});
+  });
+  return rows;
+}
+
+function setSummary(cards){
+  const el = document.getElementById('summary');
+  el.innerHTML = cards.map(c => `<div class="stat"><div class="n" style="${c.color?`color:${c.color};`:''}">${c.value}</div><div class="l">${c.label}</div></div>`).join('');
+  el.style.display = 'flex';
+}
+
+function renderDailyTable(){
+  const rows = filteredRows();
+  let present = 0, exit = 0, absent = 0, bus = 0, half = 0;
+  const body = document.getElementById('register-body');
+  body.innerHTML = '';
+  const enriched = [];
+
+  rows.forEach((s, i) => {
+    const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
+    const nameField = VIEW === 'student' ? s.studentName : s.name;
+    const recs = RECORDS[idField] || [];
+    let status, tr = document.createElement('tr');
+
+    if(VIEW === 'student'){
+      const inRec = recs.find(r => r.action === 'morning_entry');
+      const outRec = recs.find(r => r.action === 'gatepass_exit' || r.action === 'evening_exit');
+      status = 'absent';
+      if(outRec) status = 'gatepass';
+      else if(inRec) status = 'present';
+      else if(s.busNumber) status = 'bus';
+      if(status === 'present') present++;
+      else if(status === 'gatepass') exit++;
+      else if(status === 'bus') bus++;
+      else absent++;
+      const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : (s.busNumber ? '<span class="badge bus">IN BUS</span>' : '\u2014');
+      const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : (s.busNumber ? '<span class="badge bus">IN BUS</span>' : '\u2014');
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td>`;
+    }else{
+      const category = normalizedRole(s.role || '');
+      const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
+      status = computeStaffDayStatus(recs, category);
+      if(status === 'present') present++;
+      else if(status === 'half') half++;
+      else absent++;
+      const [s1in, s1out, s2in, s2out] = sortedRecs;
+      const stack = list => {
+        const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)));
+        return lines.length ? lines.join('<br>') : '\u2014';
+      };
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td>`;
+    }
+    enriched.push({ s, status });
+    body.appendChild(tr);
+  });
+
+  let dailyCards;
+  if(VIEW === 'student'){
+    dailyCards = [
+      {value: rows.length, label: 'Total students'},
+      {value: present, label: 'Present', color:'var(--present)'},
+      {value: exit, label: 'Gatepass exit', color:'var(--pending)'},
+      {value: bus, label: 'In bus', color:'#2E6F8E'},
+      {value: absent, label: 'Not marked', color:'var(--absent)'}
+    ];
+  }else{
+    dailyCards = [
+      {value: rows.length, label: 'Total staff'},
+      {value: present, label: 'Present', color:'var(--present)'},
+      {value: absent, label: 'Absent', color:'var(--absent)'},
+      {value: half, label: 'Half day', color:'var(--half)'}
+    ];
+  }
+  setSummary(dailyCards);
+  if(!(VIEW === 'staff' && MODE === 'daily')) renderBreakdown(enriched, 'daily');
+  else document.getElementById('breakdown-wrap').innerHTML = '';
+  finishRender(rows.length);
+}
+
+function renderMonthlyTable(){
+  const rows = filteredRows();
+  const body = document.getElementById('register-body');
+  body.innerHTML = '';
+  let sumPresent = 0, sumHalf = 0, sumAbsent = 0, totalDays = 0;
+  const enriched = [];
+
+  rows.forEach((s, i) => {
+    const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
+    const nameField = VIEW === 'student' ? s.studentName : s.name;
+    const m = MONTHLY[idField] || {present:0, half:0, absent:0, totalDays:0};
+    totalDays = Math.max(totalDays, m.totalDays);
+    sumPresent += m.present; sumHalf += m.half || 0; sumAbsent += m.absent;
+    const effectivePresent = m.present + (m.half || 0) * 0.5;
+    const pct = m.totalDays ? Math.round((effectivePresent / m.totalDays) * 100) : 0;
+    const pctColor = pct >= 90 ? 'var(--present)' : pct >= 75 ? 'var(--half)' : 'var(--absent)';
+    enriched.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct });
+    const tr = document.createElement('tr');
+    if(VIEW === 'student'){
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+    }else{
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+    }
+    body.appendChild(tr);
+  });
+
+  const cards = [
+    {value: rows.length, label: VIEW==='student'?'Total students':'Total staff'},
+    {value: totalDays, label: 'School days'},
+    {value: sumPresent, label: VIEW==='student'?'Present (sum)':'Full days (sum)', color:'var(--present)'}
+  ];
+  if(VIEW === 'staff') cards.push({value: sumHalf, label:'Half days (sum)', color:'var(--half)'});
+  cards.push({value: sumAbsent, label:'Absent (sum)', color:'var(--absent)'});
+  setSummary(cards);
+  renderBreakdown(enriched, 'monthly');
+  finishRender(rows.length);
+}
+
+function renderBreakdown(enriched, mode){
+  const wrap = document.getElementById('breakdown-wrap');
+  wrap.innerHTML = '';
+  if(!enriched.length) return;
+  const groupFields = VIEW === 'student'
+    ? [{key:'class', label:'By class'}, {key:'busNumber', label:'By bus'}]
+    : [{key:'role', label:'By category'}];
+
+  groupFields.forEach(gf => {
+    const map = {};
+    enriched.forEach(r => {
+      const rawKey = r.s[gf.key] || '\u2014';
+      const key = (VIEW === 'staff' && gf.key === 'role') ? normalizedRole(rawKey) : rawKey;
+      if(!map[key]) map[key] = {total:0, present:0, exit:0, bus:0, half:0, absent:0, pctSum:0};
+      const g = map[key];
+      g.total++;
+      if(mode === 'daily'){
+        if(r.status === 'present') g.present++;
+        else if(r.status === 'gatepass') g.exit++;
+        else if(r.status === 'bus') g.bus++;
+        else if(r.status === 'absent') g.absent++;
+      }else{
+        g.present += r.present; g.half += r.half; g.absent += r.absent; g.pctSum += r.pct;
+      }
+    });
+    const groups = Object.keys(map).sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
+    const card = document.createElement('div');
+    card.className = 'breakdown-card';
+    let headCols, bodyRows;
+    if(mode === 'daily'){
+      headCols = VIEW === 'student'
+        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th><th class="mono-col">In bus</th><th class="mono-col">Absent</th>'
+        : '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Absent</th>';
+      bodyRows = groups.map(k => {
+        const g = map[k];
+        return VIEW === 'student'
+          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td><td class="mono" style="color:#2E6F8E">${g.bus}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`
+          : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`;
+      }).join('');
+    }else{
+      headCols = VIEW === 'student'
+        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th class="mono-col">Avg %</th>'
+        : '<th class="mono-col">Total</th><th class="mono-col">Full</th><th class="mono-col">Half</th><th class="mono-col">Absent</th><th class="mono-col">Avg %</th>';
+      bodyRows = groups.map(k => {
+        const g = map[k];
+        const avg = g.total ? Math.round(g.pctSum / g.total) : 0;
+        const avgColor = avg >= 90 ? 'var(--present)' : avg >= 75 ? 'var(--half)' : 'var(--absent)';
+        return VIEW === 'student'
+          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--absent)">${g.absent}</td><td class="mono" style="color:${avgColor}">${avg}%</td></tr>`
+          : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--half)">${g.half}</td><td class="mono" style="color:var(--absent)">${g.absent}</td><td class="mono" style="color:${avgColor}">${avg}%</td></tr>`;
+      }).join('');
+    }
+    card.innerHTML = `<h4>${gf.label}</h4><table><thead><tr><th>Group</th>${headCols}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+    wrap.appendChild(card);
+  });
+}
+
+function finishRender(count){
+  const hasData = count > 0;
+  document.getElementById('register-table').dataset.has = hasData ? '1' : '';
+  document.getElementById('summary').dataset.has = hasData ? '1' : '';
+  applyDisplayMode();
+  document.getElementById('empty-msg').style.display = hasData ? 'none' : 'block';
+  if(!hasData) document.getElementById('empty-msg').textContent = 'No records match this view.';
+}
+
+function renderTable(){ MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
+
+loadSettingsIntoForm();
+updateModeSwitchVisibility();
+updateDisplaySwitchVisibility();
+loadRegister();
+</script>
+
+</body>
+</html>
