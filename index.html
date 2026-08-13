@@ -81,6 +81,7 @@
     border:1px solid var(--border); background:var(--card); border-radius:3px; color:var(--ink); min-width:140px;
   }
   .field input:focus, .field select:focus{outline:2px solid var(--rule-red); outline-offset:1px;}
+  .field input[readonly]{background:var(--row-alt); color:var(--ink-soft);}
   button{
     font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
     border:1px solid var(--ink); background:var(--ink); color:var(--paper); border-radius:3px; cursor:pointer;
@@ -270,7 +271,6 @@
     </div>
     <button class="ghost" id="refresh-btn">&#8635; Refresh</button>
     <button class="ghost" id="print-btn">Print</button>
-    <button class="ghost" id="device-btn" title="This device's name — used by Settings to hide categories per device"></button>
   </div>
 
   <div class="demo-note" id="demo-note">Showing sample data &mdash; add your Firebase URLs in Settings to load real records.</div>
@@ -303,10 +303,17 @@
     <h3>Staff data source (StaffFlow)</h3>
     <div class="grid">
       <div class="field"><label for="st-url">Staff Firebase URL</label><input id="st-url" placeholder="https://project.firebaseio.com"></div>
-      <div class="field"><label for="st-code">Staff path prefix</label><input id="st-code" placeholder="e.g. sf8 (default)"></div>
       <div class="field"><label for="st-key">Staff Firebase API key / auth secret</label><input id="st-key" placeholder="optional &mdash; sent as ?auth="></div>
     </div>
-    <p class="hint">If the StaffFlow database rules require authentication, paste the database secret or an auth token here &mdash; it's appended to staff requests as <code>?auth=</code>.</p>
+    <p class="hint">No need to know the internal path &mdash; give the URL (and API key if the database needs one) and the register finds the staff list on its own the first time it loads. If the DB rules require authentication, paste the database secret or an auth token above &mdash; it's appended to staff requests as <code>?auth=</code>.</p>
+    <div class="row" style="margin-bottom:12px;">
+      <div class="field" style="min-width:260px;">
+        <label>Detected staff path</label>
+        <input id="st-path-display" readonly placeholder="Not detected yet — will run on next load">
+      </div>
+      <button type="button" id="st-redetect-btn" class="ghost small" style="height:36px;">&#8635; Re-detect</button>
+    </div>
+    <p class="hint" id="st-detect-status" style="display:none;"></p>
 
     <h3>Raw attendance (shared)</h3>
     <div class="grid">
@@ -410,7 +417,7 @@
 <script>
 const LS = {
   sUrl:'reg_students_url', sCode:'reg_students_code',
-  stUrl:'reg_staff_url',   stCode:'reg_staff_code', stKey:'reg_staff_key',
+  stUrl:'reg_staff_url',   stCode:'reg_staff_code', stKey:'reg_staff_key', stPath:'reg_staff_path',
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
@@ -435,6 +442,89 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replac
 function timeOnly(t){ if(!t) return ''; const m=String(t).match(/(\d{1,2}:\d{2}:\d{2})/); return m?m[1]:t; }
 async function fetchJson(url){ try{ const r=await fetch(url); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 function parseTimeMs(t){ if(!t) return null; const iso = String(t).trim().replace(' ','T'); const d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime(); }
+
+/* =========================================================
+   Staff Firebase path auto-detection
+   The person only gives a Firebase URL (+ optional API key) — we don't make them
+   figure out the internal path (e.g. "sf8/sf8_s"). We crawl the tree ourselves
+   looking for a node that "looks like" a staff list, and remember the path once found.
+   ========================================================= */
+function buildQuery(params){
+  const parts = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`);
+  return parts.length ? '?' + parts.join('&') : '';
+}
+function looksLikeStaffRecord(rec){
+  if(!rec || typeof rec !== 'object') return false;
+  const keys = Object.keys(rec).map(k => k.toLowerCase());
+  const hasId = keys.some(k => k === 'id' || k.endsWith('id'));
+  const hasName = keys.some(k => k === 'name' || k.endsWith('name'));
+  return hasId && hasName;
+}
+function looksLikeStaffList(data){
+  if(!data || typeof data !== 'object') return false;
+  const values = (Array.isArray(data) ? data : Object.values(data)).filter(Boolean);
+  if(!values.length) return false;
+  const sample = values.slice(0, 5);
+  const hits = sample.filter(looksLikeStaffRecord).length;
+  return hits >= Math.ceil(sample.length / 2);
+}
+function normalizeStaffList(data){
+  const values = (Array.isArray(data) ? data : Object.values(data || {})).filter(Boolean);
+  return values.map(rec => {
+    if(!rec || typeof rec !== 'object') return null;
+    const keys = Object.keys(rec);
+    const idKey = keys.find(k => k.toLowerCase() === 'id') || keys.find(k => k.toLowerCase().endsWith('id'));
+    const nameKey = keys.find(k => k.toLowerCase() === 'name') || keys.find(k => k.toLowerCase().endsWith('name'));
+    const roleKey = keys.find(k => /^(role|designation|category|post|department)$/i.test(k)) || keys.find(k => /(role|designation|category|post|department)$/i.test(k));
+    if(!idKey || !nameKey) return null;
+    return { id: rec[idKey], name: rec[nameKey], role: roleKey ? rec[roleKey] : '' };
+  }).filter(Boolean);
+}
+// Breadth-first crawl of the staff Firebase, a couple of levels deep, using ?shallow=true
+// listings to avoid downloading big unrelated subtrees (e.g. attendance logs) in full.
+async function autoDetectStaffPath(stUrl, stKey){
+  const authQ = stKey ? { auth: stKey } : {};
+  const queue = [''];
+  const visited = new Set();
+  let steps = 0;
+  while(queue.length && steps < 40){
+    const path = queue.shift();
+    steps++;
+    const shallow = await fetchJson(`${stUrl}/${path ? path + '.json' : '.json'}${buildQuery({ shallow:'true', ...authQ })}`);
+    if(!shallow || typeof shallow !== 'object') continue;
+    const childKeys = Object.keys(shallow);
+    if(childKeys.length > 300) continue; // unlikely to contain a small staff list, skip
+    for(const key of childKeys){
+      const childPath = path ? `${path}/${key}` : key;
+      if(visited.has(childPath)) continue;
+      visited.add(childPath);
+      const childShallow = await fetchJson(`${stUrl}/${childPath}.json${buildQuery({ shallow:'true', ...authQ })}`);
+      if(!childShallow || typeof childShallow !== 'object') continue; // plain leaf value, not a list
+      const grandKeys = Object.keys(childShallow);
+      if(!grandKeys.length || grandKeys.length > 500) continue; // empty or too big (e.g. raw attendance logs)
+      const full = await fetchJson(`${stUrl}/${childPath}.json${buildQuery(authQ)}`);
+      if(looksLikeStaffList(full)) return { path: childPath, data: full };
+      if(childPath.split('/').length < 3) queue.push(childPath);
+    }
+  }
+  return null;
+}
+// Tries the cached path first (fast path); falls back to a fresh crawl if it's missing,
+// stale, or empty — and caches whatever it finds for next time.
+async function loadStaffArray(stUrl, stKey){
+  if(!stUrl) return null;
+  const cachedPath = localStorage.getItem(LS.stPath);
+  if(cachedPath){
+    const cached = await fetchJson(`${stUrl}/${cachedPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
+    if(looksLikeStaffList(cached)) return normalizeStaffList(cached);
+  }
+  const found = await autoDetectStaffPath(stUrl, stKey);
+  if(found){
+    localStorage.setItem(LS.stPath, found.path);
+    return normalizeStaffList(found.data);
+  }
+  return null;
+}
 
 const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Maid','Cleaner','Driver','Security','Gardner'];
 const ROLE_MERGE_MAP = { 'Driver Online': 'Driver', 'Cleaner Online': 'Cleaner' };
@@ -572,10 +662,11 @@ function isSchoolDay(dateStr, forView){
 }
 
 function getDeviceName(){
+  // No visible UI or prompt for this — silently auto-generate on first run, and let the
+  // person rename it privately via the "This device" field inside the Settings popup.
   let name = localStorage.getItem(LS.deviceName);
   if(!name){
-    name = prompt('Name this device (used by Settings to control which staff categories show here), e.g. "Reception Desk" or "Gate iPad":', 'Device ' + Math.floor(Math.random()*900+100));
-    name = (name || 'Unnamed device').trim() || 'Unnamed device';
+    name = 'Device ' + Math.floor(Math.random()*900+100);
     localStorage.setItem(LS.deviceName, name);
   }
   return name;
@@ -599,7 +690,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['sUrl','sCode','stUrl','stCode','stKey','shiftHours','workingDays','holidays','holidayRules','studentDefaultView','devices'];
+const SYNCED_KEYS = ['sUrl','sCode','stUrl','stKey','stPath','shiftHours','workingDays','holidays','holidayRules','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
   const rUrl = localStorage.getItem(LS.rUrl);
   const rCode = localStorage.getItem(LS.rCode) || '';
@@ -610,19 +701,6 @@ async function syncSettingsFromCloud(){
     if(remote[key] === undefined) return;
     const val = typeof remote[key] === 'string' ? remote[key] : JSON.stringify(remote[key]);
     localStorage.setItem(LS[key], val);
-  });
-}
-
-function initDeviceButton(){
-  const btn = document.getElementById('device-btn');
-  const refresh = () => { btn.textContent = '\u{1F4F1} ' + getDeviceName(); };
-  refresh();
-  btn.addEventListener('click', () => {
-    const name = prompt('Rename this device:', getDeviceName());
-    if(name && name.trim()){
-      localStorage.setItem(LS.deviceName, name.trim());
-      refresh();
-    }
   });
 }
 
@@ -710,11 +788,8 @@ async function loadRoster(){
     ROSTER = students.filter(Boolean);
   }else{
     const stUrl = localStorage.getItem(LS.stUrl);
-    const stPrefix = localStorage.getItem(LS.stCode) || 'sf8';
     const stKey = localStorage.getItem(LS.stKey) || '';
-    const stQuery = stKey ? `?auth=${encodeURIComponent(stKey)}` : '';
-    let staffRaw = stUrl ? await fetchJson(`${stUrl}/${stPrefix}/${stPrefix}_s.json${stQuery}`) : null;
-    let staffArr = staffRaw ? (Array.isArray(staffRaw) ? staffRaw : Object.values(staffRaw)) : null;
+    let staffArr = stUrl ? await loadStaffArray(stUrl, stKey) : null;
     if(!Array.isArray(staffArr) || !staffArr.length){ staffArr = SAMPLE_STAFF; USING_SAMPLE = true; }
     const allStaff = staffArr.filter(s => s && s.id && s.name);
     const hiddenCats = getHiddenStaffCategoriesForThisDevice();
@@ -1089,8 +1164,8 @@ function loadSettingsFormFromLocal(){
   document.getElementById('s-url').value  = localStorage.getItem(LS.sUrl)  || '';
   document.getElementById('s-code').value = localStorage.getItem(LS.sCode) || '';
   document.getElementById('st-url').value = localStorage.getItem(LS.stUrl) || '';
-  document.getElementById('st-code').value= localStorage.getItem(LS.stCode)|| '';
   document.getElementById('st-key').value = localStorage.getItem(LS.stKey) || '';
+  document.getElementById('st-path-display').value = localStorage.getItem(LS.stPath) || '';
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode)|| '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
@@ -1284,7 +1359,6 @@ function collectSettingsObject(){
     sUrl: document.getElementById('s-url').value.trim(),
     sCode: document.getElementById('s-code').value.trim(),
     stUrl: document.getElementById('st-url').value.trim(),
-    stCode: document.getElementById('st-code').value.trim(),
     stKey: document.getElementById('st-key').value.trim(),
     shiftHours: shiftRulesObj,
     workingDays,
@@ -1301,17 +1375,29 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
   const deviceName = document.getElementById('this-device-input').value.trim();
-  if(deviceName){ localStorage.setItem(LS.deviceName, deviceName); initDeviceButton(); }
+  if(deviceName){ localStorage.setItem(LS.deviceName, deviceName); }
+
+  const prevStUrl = localStorage.getItem(LS.stUrl) || '';
+  const prevStKey = localStorage.getItem(LS.stKey) || '';
 
   const settings = collectSettingsObject();
   localStorage.setItem(LS.sUrl, settings.sUrl);
   localStorage.setItem(LS.sCode, settings.sCode);
   localStorage.setItem(LS.stUrl, settings.stUrl);
-  localStorage.setItem(LS.stCode, settings.stCode);
   localStorage.setItem(LS.stKey, settings.stKey);
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
   localStorage.setItem(LS.workingDays, JSON.stringify(settings.workingDays));
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
+
+  // If the staff URL/key changed, the previously detected path is no longer trustworthy.
+  if(settings.stUrl !== prevStUrl || settings.stKey !== prevStKey){
+    localStorage.removeItem(LS.stPath);
+    document.getElementById('st-path-display').value = '';
+  }
+  if(settings.stUrl && !localStorage.getItem(LS.stPath)){
+    await detectStaffPathAndReport();
+  }
+  settings.stPath = localStorage.getItem(LS.stPath) || '';
 
   if(!rUrl){
     showStatus('Saved on this device only. Add a Raw attendance Firebase URL above to sync across devices.', 'info');
@@ -1327,8 +1413,29 @@ document.getElementById('save-btn').addEventListener('click', async () => {
       showStatus('Saved on this device, but syncing to Firebase failed \u2014 check the URL and that its rules allow writes.', 'err');
     }
   }
-  loadRegister(); // reflect any shift-rule/calendar changes immediately behind the modal
+  loadRegister(); // reflect any shift-rule/calendar/staff-path changes immediately behind the modal
 });
+
+async function detectStaffPathAndReport(){
+  const statusEl = document.getElementById('st-detect-status');
+  const stUrl = document.getElementById('st-url').value.trim();
+  const stKey = document.getElementById('st-key').value.trim();
+  if(!stUrl){ statusEl.style.display = 'none'; return; }
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Looking for the staff list in this database\u2026';
+  const found = await autoDetectStaffPath(stUrl, stKey);
+  if(found){
+    localStorage.setItem(LS.stPath, found.path);
+    document.getElementById('st-path-display').value = found.path;
+    const count = (Array.isArray(found.data) ? found.data : Object.values(found.data)).filter(Boolean).length;
+    statusEl.textContent = `Found it: "${found.path}" (looks like ${count} staff record${count === 1 ? '' : 's'}).`;
+  }else{
+    localStorage.removeItem(LS.stPath);
+    document.getElementById('st-path-display').value = '';
+    statusEl.textContent = 'Couldn\u2019t find a staff-shaped list automatically \u2014 double check the URL/API key, or that the database actually has staff records in it.';
+  }
+}
+document.getElementById('st-redetect-btn').addEventListener('click', detectStaffPathAndReport);
 
 document.getElementById('pull-btn').addEventListener('click', async () => {
   const rUrl = document.getElementById('r-url').value.trim();
@@ -1348,6 +1455,7 @@ document.getElementById('pull-btn').addEventListener('click', async () => {
 function openSettingsModal(){
   loadSettingsFormFromLocal();
   document.getElementById('status-msg').className = 'status';
+  document.getElementById('st-detect-status').style.display = 'none';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettingsModal(){
@@ -1362,7 +1470,6 @@ document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('open')) closeSettingsModal();
 });
 
-initDeviceButton();
 updateModeSwitchVisibility();
 updateDisplaySwitchVisibility();
 syncSettingsFromCloud().finally(() => {
