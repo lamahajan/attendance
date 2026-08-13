@@ -28,77 +28,95 @@
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:#EEF0F6;
+    background:#EFF1F6;
     font-family:'Inter',sans-serif;
     color:var(--ink);
-    padding:2.5rem 1rem 4rem;
+    padding:26px 18px 72px;
+    -webkit-font-smoothing:antialiased;
   }
-  .book{
-    max-width:1120px;
-    margin:0 auto;
-    background:var(--paper);
-    border-radius:6px;
-    box-shadow:0 1px 0 #fff inset, 0 18px 40px rgba(27,32,54,0.12);
-    position:relative;
-    padding:0 0 2rem;
-    overflow:hidden;
-    border:1px solid var(--border);
+  .book{ max-width:1180px; margin:0 auto; }
+
+  /* ── Header card ── */
+  .page-head{
+    background:var(--paper); border:1px solid var(--border); border-radius:14px;
+    padding:22px 26px 0; margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(27,32,54,.04);
   }
-  .margin-rule{ position:absolute; top:0; bottom:0; left:64px; width:2px; background:var(--rule-red); opacity:0.35; }
-  .holes{ position:absolute; top:0; bottom:0; left:28px; width:10px; display:flex; flex-direction:column; justify-content:space-evenly; padding:2rem 0; }
-  .holes span{ width:10px; height:10px; border-radius:50%; background:var(--row-alt); box-shadow:inset 0 1px 2px rgba(27,32,54,0.15); }
-  header{ padding:2.25rem 2.5rem 0 6rem; border-bottom:2px solid var(--rule-red); }
-  .eyebrow{ font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--rule-red); margin:0 0 .4rem; font-weight:600; }
-  h1{ font-family:'Inter',sans-serif; font-weight:800; font-size:32px; margin:0 0 .3rem; letter-spacing:.01em; color:var(--ink); }
-  .sub{ font-size:14px; color:var(--ink-soft); margin:0 0 1.1rem; }
-  .tabs{ display:flex; gap:2px; }
+  .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
+  .eyebrow{
+    font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-soft); margin:0 0 5px; font-weight:600;
+  }
+  h1{ font-weight:700; font-size:25px; margin:0 0 3px; letter-spacing:-.02em; color:var(--ink); }
+  .sub{ font-size:13.5px; color:var(--ink-soft); margin:0; }
+  .head-actions{ display:flex; gap:10px; align-items:flex-end; }
+
+  /* ── Tabs as a segmented control ── */
+  .tabs{ display:flex; gap:2px; padding:3px; margin:20px 0 0; width:fit-content; background:var(--row-alt); border-radius:10px; }
   .tab{
-    font-family:'Inter',sans-serif; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
-    padding:9px 20px; background:var(--row-alt); color:var(--ink-soft);
-    border:1px solid var(--border); border-bottom:none; border-radius:6px 6px 0 0;
-    cursor:pointer; position:relative; top:2px;
+    font-size:13px; font-weight:500; padding:7px 20px; border-radius:8px;
+    color:var(--ink-soft); cursor:pointer; transition:.15s; user-select:none;
   }
-  .tab.active{ background:var(--paper); color:var(--rule-red); font-weight:700; border-color:var(--rule-red); }
-  .category-pills{ display:flex; flex-wrap:wrap; gap:8px; margin-top:1.1rem; }
+  .tab:hover{ color:var(--ink); }
+  .tab.active{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(27,32,54,.12); }
+  .category-pills{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
   .pill{
-    font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
-    padding:7px 15px; border-radius:8px; border:1.5px solid var(--border);
-    background:var(--card); color:var(--ink); cursor:pointer; transition:all .12s ease;
+    font-size:12.5px; font-weight:500; padding:6px 13px; border-radius:999px;
+    border:1px solid var(--border); background:var(--card); color:var(--ink-soft);
+    cursor:pointer; transition:.15s;
   }
-  .pill:hover{ border-color:var(--rule-red); }
+  .pill:hover{ border-color:var(--ink-soft); color:var(--ink); }
   .pill.active{ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
-  .controls{ padding:1.4rem 2.5rem 0 6rem; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
-  .view-switch{ display:flex; border:1px solid var(--ink); border-radius:3px; overflow:hidden; height:36px; }
+  .page-head .tabs, .page-head .category-pills{ position:relative; }
+  .page-head::after{ content:''; display:block; height:18px; }
+
+  /* ── Controls bar ── */
+  .controls{
+    background:var(--paper); border:1px solid var(--border); border-radius:14px;
+    padding:16px 20px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;
+    box-shadow:0 1px 2px rgba(27,32,54,.04);
+  }
+  .view-switch{ display:flex; gap:2px; padding:3px; background:var(--row-alt); border-radius:9px; height:38px; }
   .view-switch button{
-    border:none; border-radius:0; background:var(--card); color:var(--ink);
-    font-size:12.5px; padding:0 14px; height:100%;
+    border:none; border-radius:7px; background:transparent; color:var(--ink-soft);
+    font-size:12.5px; font-weight:500; padding:0 14px; height:100%;
   }
-  .view-switch button.on{ background:var(--ink); color:var(--paper); }
+  .view-switch button.on{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(27,32,54,.12); }
+  .view-switch button:hover{ opacity:1; color:var(--ink); }
+
   .field{display:flex; flex-direction:column; gap:5px;}
-  .field label{ font-family:'Inter',sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-soft); }
+  .field label{ font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); font-weight:600; }
   .field input, .field select{
-    font-family:'Inter',sans-serif; font-size:14px; padding:8px 10px;
-    border:1px solid var(--border); background:var(--card); border-radius:3px; color:var(--ink); min-width:140px;
+    font-family:'Inter',sans-serif; font-size:13.5px; padding:8px 11px; height:38px;
+    border:1px solid var(--border); background:var(--card); border-radius:8px; color:var(--ink); min-width:140px;
+    transition:border-color .15s, box-shadow .15s;
   }
-  .field input:focus, .field select:focus{outline:2px solid var(--rule-red); outline-offset:1px;}
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--ink); box-shadow:0 0 0 3px rgba(27,32,54,.08); }
   .field input[readonly]{background:var(--row-alt); color:var(--ink-soft);}
+
   button{
-    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:9px 16px;
-    border:1px solid var(--ink); background:var(--ink); color:var(--paper); border-radius:3px; cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:0 16px; height:38px;
+    border:1px solid var(--ink); background:var(--ink); color:var(--paper); border-radius:8px; cursor:pointer;
+    transition:.15s;
   }
-  button.ghost{background:transparent; color:var(--ink); border:1px solid var(--border);}
-  button:hover{opacity:.88;}
+  button.ghost{background:var(--card); color:var(--ink); border:1px solid var(--border);}
+  button.ghost:hover{ border-color:var(--ink-soft); }
+  button:hover{opacity:.9;}
+  button.small{ font-size:12.5px; padding:0 13px; }
+
   .demo-note{
-    margin:1.2rem 2.5rem 0 6rem; padding:9px 14px; background:var(--pending-bg); color:var(--pending);
-    border:1px solid var(--border); border-radius:6px; font-size:12.5px; display:none; line-height:1.55;
+    padding:11px 16px; background:var(--pending-bg); color:var(--pending);
+    border:1px solid transparent; border-radius:10px; font-size:12.5px; display:none;
+    line-height:1.55; margin-bottom:14px;
   }
   .demo-note.show{display:block;}
+
   /* ---- Settings gear + redesigned popup ---- */
   .gear-btn{
-    display:flex; align-items:center; justify-content:center; width:36px; height:36px;
-    padding:0; background:var(--card); border:1px solid var(--border); border-radius:3px; color:var(--ink);
+    display:flex; align-items:center; justify-content:center; width:38px; height:38px;
+    padding:0; background:var(--card); border:1px solid var(--border); border-radius:8px; color:var(--ink-soft);
   }
-  .gear-btn:hover{opacity:.88; border-color:var(--rule-red);}
+  .gear-btn:hover{opacity:1; border-color:var(--ink-soft); color:var(--ink);}
   .gear-btn svg{width:18px; height:18px; stroke:currentColor;}
 
   .modal-overlay{
@@ -229,6 +247,23 @@
   .cat-checks label:has(input:checked){ background:var(--absent-bg); border-color:var(--absent); color:var(--absent); }
   .cat-checks input{ accent-color:var(--absent); }
 
+  /* Lock screen */
+  .set-lock{
+    position:absolute; inset:0; z-index:6; background:var(--paper);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; padding:32px; text-align:center;
+  }
+  .set-lock.on{ display:flex; }
+  .set-lock .lock-icon{ width:34px; height:34px; stroke:var(--ink-soft); fill:none; stroke-width:1.6; margin-bottom:4px; }
+  .set-lock h3{ margin:0; font-size:18px; font-weight:600; letter-spacing:-.01em; }
+  .set-lock p{ margin:0; font-size:13px; color:var(--ink-soft); max-width:38ch; line-height:1.55; }
+  .set-lock .lock-row{ display:flex; gap:8px; margin-top:8px; }
+  .set-lock input{
+    font-size:14px; padding:9px 12px; border:1px solid var(--border);
+    border-radius:8px; background:var(--card); color:var(--ink); min-width:210px;
+  }
+  .set-lock .lock-msg{ min-height:18px; font-size:12.5px; color:var(--absent); }
+
   /* Footer */
   .set-foot{
     grid-column:2; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
@@ -254,80 +289,92 @@
     .set-body{ padding:20px 18px 24px; }
     .set-foot{ grid-column:1; padding:12px 18px; }
   }
-  .breakdown-wrap{ margin:1.3rem 2.5rem 0 6rem; display:flex; flex-wrap:wrap; gap:16px; }
-  .breakdown-card{ flex:1; min-width:260px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+  /* ── Stat cards ── */
+  .summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+  .stat{
+    background:var(--paper); border:1px solid var(--border); border-radius:14px; padding:15px 18px;
+    box-shadow:0 1px 2px rgba(27,32,54,.04);
+  }
+  .stat .n{ font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .stat .l{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; font-weight:600; }
+
+  /* ── Breakdown ── */
+  .breakdown-wrap{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
+  .breakdown-card{
+    flex:1; min-width:280px; background:var(--paper); border:1px solid var(--border);
+    border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(27,32,54,.04);
+  }
   .breakdown-card h4{
-    margin:0; padding:9px 12px; font-family:'Inter',sans-serif; font-size:10.5px;
-    letter-spacing:.08em; text-transform:uppercase; color:var(--rule-red); background:var(--row-alt);
-    border-bottom:1px solid var(--border);
+    margin:0; padding:12px 18px; font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--paper-line);
   }
   .breakdown-card table{ width:100%; margin:0; font-size:12.5px; }
-  .breakdown-card thead th{ font-size:9.5px; padding:6px 10px; }
-  .breakdown-card tbody td{ padding:6px 10px; }
-  .summary{ display:flex; gap:1px; margin:1.5rem 2.5rem 0 6rem; border:1px solid var(--border); border-radius:3px; overflow:hidden; }
-  .stat{ flex:1; background:var(--card); padding:12px 16px; border-right:1px solid var(--border); }
-  .stat:last-child{border-right:none;}
-  .stat .n{font-family:'Inter',sans-serif; font-weight:700; font-size:22px;}
-  .stat .l{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em;}
-  table{ width:calc(100% - 6rem - 2.5rem); margin:1.5rem 2.5rem 0 6rem; border-collapse:collapse; font-size:13.5px; }
-  thead th{
-    text-align:left; font-family:'Inter',sans-serif; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--ink-soft); border-bottom:2px solid var(--ink); padding:8px 10px;
+  .breakdown-card thead th{ font-size:9.5px; padding:8px 18px; border-bottom:1px solid var(--paper-line); }
+  .breakdown-card tbody td{ padding:8px 18px; }
+  .breakdown-card tbody tr:last-child td{ border-bottom:none; }
+
+  /* ── Register table ── */
+  .table-card{
+    background:var(--paper); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; box-shadow:0 1px 2px rgba(27,32,54,.04); display:none;
   }
-  tbody td{ padding:9px 10px; border-bottom:1px solid var(--paper-line); vertical-align:middle; line-height:1.6; }
-  tbody tr:nth-child(even){background:var(--row-alt);}
-  td.mono, th.mono-col{font-family:'Inter',sans-serif; font-size:12.5px; font-variant-numeric:tabular-nums;}
-  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
+  table{ width:100%; margin:0; border-collapse:collapse; font-size:13.5px; }
+  thead th{
+    text-align:left; font-size:10px; letter-spacing:.09em; text-transform:uppercase; font-weight:600;
+    color:var(--ink-soft); background:var(--row-alt); border-bottom:1px solid var(--border); padding:11px 18px;
+    white-space:nowrap;
+  }
+  tbody td{ padding:11px 18px; border-bottom:1px solid var(--paper-line); vertical-align:middle; line-height:1.55; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:var(--row-alt); }
+  td.mono, th.mono-col{ font-size:12.5px; font-variant-numeric:tabular-nums; }
+
+  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; white-space:nowrap; }
   .badge.present{background:var(--present-bg); color:var(--present);}
   .badge.absent{background:var(--absent-bg); color:var(--absent);}
   .badge.gatepass{background:var(--pending-bg); color:var(--pending);}
   .badge.half{background:var(--half-bg); color:var(--half);}
   .badge.bus{background:#E3EEF6; color:#2E6F8E;}
-  .pct{font-family:'Inter',sans-serif; font-weight:600; font-variant-numeric:tabular-nums;}
-  .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 5px; border-radius:10px; }
   .badge.off{background:#E7EAF2; color:#5A6382;}
-  .holiday-chip{
-    display:inline-flex; align-items:center; gap:7px; font-size:12.5px;
-    padding:5px 6px 5px 11px; border-radius:16px; border:1px solid var(--border);
-    background:var(--row-alt); color:var(--ink);
+  .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
+  .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
+
+  .empty{
+    background:var(--paper); border:1px dashed var(--border); border-radius:14px;
+    padding:44px 24px; text-align:center; color:var(--ink-soft); font-size:14px; line-height:1.6;
   }
-  .holiday-chip .scope{ color:var(--ink-soft); font-size:11px; }
-  .holiday-chip button{
-    all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; color:var(--absent);
-    font-size:14px; line-height:1;
-  }
-  .holiday-chip button:hover{ background:var(--absent-bg); }
-  .empty{ margin:2rem 2.5rem 0 6rem; padding:2rem; text-align:center; color:var(--ink-soft); border:1px dashed var(--border); border-radius:4px; font-size:14px; }
+
   @media print{
     body{background:#fff; padding:0;}
-    .controls, .settings-panel, .modal-overlay, button, .demo-note{display:none !important;}
-    .book{box-shadow:none; max-width:100%;}
-    .margin-rule, .holes{display:none;}
-    header{padding-left:2.5rem;}
-    .controls, .summary, table{margin-left:2.5rem;}
+    .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs{display:none !important;}
+    .page-head, .table-card, .stat, .breakdown-card{ box-shadow:none; border-color:#D5D9E4; }
+    .book{max-width:100%;}
+    thead th{ background:#fff; }
+    tbody tr:hover{ background:transparent; }
   }
   @media (max-width: 640px){
-    .margin-rule, .holes{display:none;}
-    header, .controls, .summary, table, .settings-panel, .demo-note{padding-left:1.5rem; margin-left:1rem;}
-    table{width:calc(100% - 2rem);}
+    body{ padding:14px 12px 48px; }
+    .page-head{ padding:18px 16px 0; }
+    .controls{ padding:14px 16px; }
+    h1{ font-size:21px; }
+    .head-actions{ width:100%; }
+    thead th, tbody td{ padding:10px 12px; }
+    .summary{ grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
   }
 </style>
 </head>
 <body>
 
 <div class="book">
-  <div class="holes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-  <div class="margin-rule"></div>
 
-  <header>
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:14px;">
+  <header class="page-head">
+    <div class="head-top">
       <div>
         <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
         <h1>Admission Register</h1>
         <p class="sub" id="date-label">Loading&hellip;</p>
       </div>
-      <div style="display:flex; gap:14px;">
+      <div class="head-actions">
         <div class="field" id="date-field">
           <label for="date-input">Date</label>
           <input type="date" id="date-input">
@@ -338,7 +385,7 @@
         </div>
         <div class="field">
           <label>&nbsp;</label>
-          <button class="gear-btn" id="settings-btn" type="button" title="Settings">
+          <button class="gear-btn" id="settings-btn" type="button" title="Settings" aria-label="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -382,10 +429,12 @@
 
   <div class="breakdown-wrap" id="breakdown-wrap"></div>
 
-  <table id="register-table" style="display:none;">
-    <thead id="register-head"></thead>
-    <tbody id="register-body"></tbody>
-  </table>
+  <div class="table-card" id="table-card">
+    <table id="register-table" style="display:none;">
+      <thead id="register-head"></thead>
+      <tbody id="register-body"></tbody>
+    </table>
+  </div>
 
   <div class="empty" id="empty-msg" style="display:none;"></div>
 </div>
@@ -413,6 +462,9 @@
       </button>
       <button class="set-nav" data-sec="device" aria-selected="false">
         <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 18h2"/></svg> This device
+      </button>
+      <button class="set-nav" data-sec="password" aria-selected="false">
+        <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Password
       </button>
       <button class="set-nav" data-sec="backup" aria-selected="false">
         <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v3h16v-3"/></svg> Backup
@@ -499,8 +551,10 @@
           <h3>Sandwich off</h3>
           <p class="hint">A holiday or weekly off is paid on its own. It stops being paid when it is joined to an absence &mdash; a day off taken either side of it, or an absence sitting between two holidays.</p>
           <div class="radioset" id="sandwich-set">
+            <label><input type="radio" name="sandwich" value="lead">
+              <span><b>Up to the last day of leave</b>Offs are unpaid until the leave ends, then pay resumes. A holiday on the 14th, leave on the 15th, a holiday on the 16th and back on the 17th costs two days &mdash; the 14th and the 15th &mdash; and the 16th stays paid. Absent on the 14th and 16th with a holiday between makes all three unpaid. Still away on the 17th and the run stretches to cover it.</span></label>
             <label><input type="radio" name="sandwich" value="touch">
-              <span><b>Joined to an absence</b>Any unbroken run of offs and absences becomes unpaid. Absent on the 14th and 16th makes the 15th unpaid too; a holiday on the 14th and 16th with leave on the 15th makes all three unpaid. Coming back on the 17th ends the run.</span></label>
+              <span><b>The whole run</b>Same, but an off at the end of the run is unpaid too, even when the person returns the next day.</span></label>
             <label><input type="radio" name="sandwich" value="strict">
               <span><b>Absent on both sides only</b>A holiday is unpaid only when the day before it and the day after it are both absences.</span></label>
             <label><input type="radio" name="sandwich" value="off">
@@ -598,6 +652,28 @@
         </div>
       </section>
 
+      <!-- ── Password ── -->
+      <section class="set-sec" data-sec="password">
+        <h2>Password</h2>
+        <p class="lede">Locks this settings popup. The register itself stays open to everyone &mdash; only changes are protected.</p>
+
+        <div class="group">
+          <h3>Settings password</h3>
+          <p class="hint" id="pass-state"></p>
+          <div class="grid">
+            <div class="field" id="pass-current-field" style="display:none;"><label for="pass-current">Current password</label><input type="password" id="pass-current" autocomplete="off"></div>
+            <div class="field"><label for="pass-new">New password</label><input type="password" id="pass-new" autocomplete="new-password"></div>
+            <div class="field"><label for="pass-confirm">Repeat it</label><input type="password" id="pass-confirm" autocomplete="new-password"></div>
+          </div>
+          <div class="row">
+            <button type="button" id="set-pass-btn" class="ghost small" style="height:36px;">Set password</button>
+            <button type="button" id="remove-pass-btn" class="ghost small" style="height:36px; display:none;">Remove password</button>
+          </div>
+          <p class="testline" id="pass-status"></p>
+          <p class="hint" style="margin-top:14px;">Stored as a scrambled fingerprint, not as the password itself, so nobody can read it out of the database. Forgetting it means clearing <code>settingsPassHash</code> from <code>app_settings</code> in the Firebase console.</p>
+        </div>
+      </section>
+
       <!-- ── Backup ── -->
       <section class="set-sec" data-sec="backup">
         <h2>Backup</h2>
@@ -625,6 +701,17 @@
 
     </div>
 
+    <div class="set-lock" id="set-lock">
+      <svg viewBox="0 0 24 24" class="lock-icon"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <h3>Settings are locked</h3>
+      <p>Enter the settings password to make changes.</p>
+      <div class="lock-row">
+        <input type="password" id="lock-input" placeholder="Password" autocomplete="off">
+        <button id="lock-btn">Unlock</button>
+      </div>
+      <p class="lock-msg" id="lock-msg"></p>
+    </div>
+
     <div class="set-foot">
       <div class="status" id="status-msg"></div>
       <button class="ghost" id="pull-btn">Pull from cloud</button>
@@ -645,6 +732,7 @@ const LS = {
   cutoffOverrides:'reg_cutoff_overrides',
   cutoffDateOverrides:'reg_cutoff_date_overrides',
   sandwichMode:'reg_sandwich_mode',
+  settingsPassHash:'reg_settings_pass_hash',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
   deviceName:'reg_device_name'
@@ -853,18 +941,22 @@ function isSchoolDay(dateStr, forView){ return isWorkingDayFor(dateStr, forView,
 
 /* =========================================================
    Sandwich off
-   A holiday or weekly off is paid — unless it is joined to an absence.
-   'touch'  : any unbroken chain of off/absent days that contains at least one
-              absence turns the whole chain unpaid.
-                14 absent, 15 holiday, 16 absent  -> all three unpaid
-                14 holiday, 15 absent, 16 holiday -> all three unpaid
-                back on the 17th ends the chain; still away and the 17th joins it
-   'strict' : an off day is only absorbed when the day either side is an absence
+   A holiday or weekly off is paid on its own. It stops being paid when leave
+   runs into it.
+   'lead'   : the default. Inside an unbroken run of offs and absences, every
+              off up to the last day of leave becomes unpaid; offs after it stay
+              paid because the person came back.
+                holiday 14, leave 15, holiday 16, back 17 -> 14 and 15 unpaid,
+                                                             16 still paid
+                absent 14, holiday 15, absent 16          -> all three unpaid
+                holiday 14, leave 15, holiday 16, away 17 -> 14 to 17 unpaid
+   'touch'  : the whole run becomes unpaid, trailing offs included
+   'strict' : an off is only absorbed when the day either side is an absence
    'off'    : holidays are always paid
    ========================================================= */
 function getSandwichMode(){
   const v = localStorage.getItem(LS.sandwichMode);
-  return (v === 'off' || v === 'touch' || v === 'strict') ? v : 'touch';
+  return (v === 'off' || v === 'touch' || v === 'strict' || v === 'lead') ? v : 'lead';
 }
 // statuses: array of 'present' | 'half' | 'absent' | 'off' | 'none'
 // Returns a copy with absorbed 'off' days rewritten to 'absorbed'.
@@ -877,10 +969,8 @@ function applySandwich(statuses, mode){
     while(i < out.length){
       if(out[i] !== 'off'){ i++; continue; }
       let j = i;
-      while(j < out.length && out[j] === 'off') j++;      // run of off days: i .. j-1
-      const before = i > 0 ? out[i-1] : null;
-      const after  = j < out.length ? out[j] : null;
-      if(before === 'absent' && after === 'absent'){
+      while(j < out.length && out[j] === 'off') j++;       // run of offs: i .. j-1
+      if((i > 0 ? out[i-1] : null) === 'absent' && (j < out.length ? out[j] : null) === 'absent'){
         for(let k = i; k < j; k++) out[k] = 'absorbed';
       }
       i = j;
@@ -888,17 +978,19 @@ function applySandwich(statuses, mode){
     return out;
   }
 
-  // 'touch' — chains of off/absent days
+  // 'lead' and 'touch' both work on unbroken runs of off/absent days
   let i = 0;
   while(i < out.length){
     if(out[i] !== 'off' && out[i] !== 'absent'){ i++; continue; }
-    let j = i, hasAbsence = false;
+    let j = i, lastAbsent = -1;
     while(j < out.length && (out[j] === 'off' || out[j] === 'absent')){
-      if(out[j] === 'absent') hasAbsence = true;
+      if(out[j] === 'absent') lastAbsent = j;
       j++;
     }
-    if(hasAbsence){
-      for(let k = i; k < j; k++) if(out[k] === 'off') out[k] = 'absorbed';
+    if(lastAbsent >= 0){
+      // 'lead' stops at the last day of leave, so an off after it stays paid
+      const end = (mode === 'touch') ? j : lastAbsent;
+      for(let k = i; k < end; k++) if(out[k] === 'off') out[k] = 'absorbed';
     }
     i = j;
   }
@@ -934,7 +1026,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','studentDefaultView','devices'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','settingsPassHash','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -997,7 +1089,10 @@ function applyDisplayMode(){
   const listOn = DISPLAY !== 'summary';
   document.getElementById('summary').style.display = (insightsOn && document.getElementById('summary').dataset.has) ? 'flex' : 'none';
   document.getElementById('breakdown-wrap').style.display = insightsOn ? 'flex' : 'none';
-  document.getElementById('register-table').style.display = (listOn && document.getElementById('register-table').dataset.has) ? 'table' : 'none';
+  const tbl = document.getElementById('register-table');
+  tbl.style.display = (listOn && tbl.dataset.has) ? 'table' : 'none';
+  const card = document.getElementById('table-card');
+  if(card) card.style.display = tbl.style.display === 'none' ? 'none' : 'block';
 }
 
 document.getElementById('view-daily').addEventListener('click', () => setMode('daily'));
@@ -1466,6 +1561,79 @@ function finishRender(count, unlisted){
 function renderTable(){ MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
 
 /* =========================================================
+   Settings password
+   Stored as a hash, never as the password itself, and synced through
+   app_settings so every device asks for the same one. Unlocking lasts until
+   the popup is closed.
+   ========================================================= */
+let SETTINGS_UNLOCKED = false;
+
+async function hashPass(pw){
+  const txt = 'register::' + String(pw);
+  try{
+    if(window.crypto && crypto.subtle && crypto.subtle.digest){
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+      return 'sha256:' + [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  let h = 0;
+  for(let i = 0; i < txt.length; i++){ h = (h * 31 + txt.charCodeAt(i)) >>> 0; }
+  return 'basic:' + h.toString(16);
+}
+function storedPassHash(){ return localStorage.getItem(LS.settingsPassHash) || ''; }
+function passIsSet(){ return !!storedPassHash(); }
+
+async function syncPassToCloud(){
+  // Use whatever is typed in the connection fields if it hasn't been saved yet
+  const typedUrl = (document.getElementById('r-url').value || '').trim().replace(/\/+$/, '');
+  const typedCode = (document.getElementById('r-code').value || '').trim().replace(/^\/+|\/+$/g, '');
+  const base = typedUrl ? (typedCode ? `${typedUrl}/${typedCode}` : typedUrl) : attBase();
+  if(!base) return false;
+  const body = {};
+  body.settingsPassHash = storedPassHash();
+  const r = await fetchJson(`${base}/app_settings.json`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  });
+  return r !== null;
+}
+
+function showLock(show){
+  document.getElementById('set-lock').classList.toggle('on', !!show);
+  if(show){
+    const inp = document.getElementById('lock-input');
+    inp.value = '';
+    document.getElementById('lock-msg').textContent = '';
+    setTimeout(() => inp.focus(), 60);
+  }
+}
+
+async function tryUnlock(){
+  const inp = document.getElementById('lock-input');
+  const msg = document.getElementById('lock-msg');
+  const entered = await hashPass(inp.value);
+  if(entered === storedPassHash()){
+    SETTINGS_UNLOCKED = true;
+    showLock(false);
+    loadSettingsFormFromLocal();
+  }else{
+    msg.textContent = 'That password doesn\u2019t match.';
+    inp.value = '';
+    inp.focus();
+  }
+}
+
+function renderPasswordSection(){
+  const set = passIsSet();
+  document.getElementById('pass-state').textContent = set
+    ? 'A password is set. Every device using this attendance database will ask for it.'
+    : 'No password yet. Anyone who opens this page can change the settings.';
+  document.getElementById('pass-current-field').style.display = set ? 'flex' : 'none';
+  document.getElementById('remove-pass-btn').style.display = set ? '' : 'none';
+  document.getElementById('set-pass-btn').textContent = set ? 'Change password' : 'Set password';
+  ['pass-current','pass-new','pass-confirm'].forEach(id => { document.getElementById(id).value = ''; });
+}
+
+/* =========================================================
    Settings popup (was settings.html — now a modal in this page)
    ========================================================= */
 const SCOPE_LABEL = { all:'Everyone', student:'Students only', staff:'Staff only' };
@@ -1489,6 +1657,7 @@ function loadSettingsFormFromLocal(){
   const sMode = getSandwichMode();
   document.querySelectorAll('input[name="sandwich"]').forEach(r => { r.checked = (r.value === sMode); });
   buildCategoryPickers();
+  renderPasswordSection();
   buildShiftRulesGrid();
   buildWorkingDaysRow();
   renderHolidayList();
@@ -1809,7 +1978,8 @@ function collectSettingsObject(){
     cutoffDefault: document.getElementById('cutoff-default-input').value || '11:00',
     cutoffOverrides: getCutoffOverrides(),
     cutoffDateOverrides: getCutoffDateOverrides(),
-    sandwichMode: (document.querySelector('input[name="sandwich"]:checked') || {}).value || 'touch',
+    sandwichMode: (document.querySelector('input[name="sandwich"]:checked') || {}).value || 'lead',
+    settingsPassHash: storedPassHash(),
     studentDefaultView: document.getElementById('default-view-input').value,
     devices: getDevices()
   };
@@ -1829,6 +1999,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
   localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
   localStorage.setItem(LS.sandwichMode, settings.sandwichMode);
+  if(settings.settingsPassHash !== undefined) localStorage.setItem(LS.settingsPassHash, settings.settingsPassHash);
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
 
   if(!rUrl){
@@ -1910,11 +2081,19 @@ document.getElementById('export-settings-btn').addEventListener('click', () => {
     _version: 1,
     _exportedAt: new Date().toISOString(),
     connection: {
-      url: document.getElementById('r-url').value.trim(),
-      code: document.getElementById('r-code').value.trim()
+      url: document.getElementById('r-url').value.trim() || localStorage.getItem(LS.rUrl) || '',
+      code: document.getElementById('r-code').value.trim() || localStorage.getItem(LS.rCode) || ''
     },
+    deviceName: localStorage.getItem(LS.deviceName) || '',
     settings: collectSettingsObject()
   };
+  // Belt and braces: anything held in localStorage that the form didn't cover
+  SYNCED_KEYS.forEach(key => {
+    if(payload.settings[key] !== undefined) return;
+    const raw = localStorage.getItem(LS[key]);
+    if(raw === null) return;
+    try{ payload.settings[key] = JSON.parse(raw); }catch(e){ payload.settings[key] = raw; }
+  });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'}));
   a.download = settingsFileName();
@@ -1922,7 +2101,7 @@ document.getElementById('export-settings-btn').addEventListener('click', () => {
   URL.revokeObjectURL(a.href);
   el.style.display = 'block';
   el.className = 'testline ok';
-  el.textContent = `Saved as ${a.download}. It contains the database address, so keep it somewhere private.`;
+  el.textContent = `Saved as ${a.download}. It holds every setting including the database address and the password fingerprint, so keep it somewhere private.`;
 });
 
 document.getElementById('import-settings-btn').addEventListener('click', () => {
@@ -1953,6 +2132,7 @@ document.getElementById('import-settings-file').addEventListener('change', async
     return;
   }
 
+  if(payload.deviceName){ localStorage.setItem(LS.deviceName, payload.deviceName); }
   if(payload.connection && payload.connection.url){
     localStorage.setItem(LS.rUrl, String(payload.connection.url).trim().replace(/\/+$/, ''));
     localStorage.setItem(LS.rCode, String(payload.connection.code || '').trim().replace(/^\/+|\/+$/g, ''));
@@ -1965,11 +2145,61 @@ document.getElementById('import-settings-file').addEventListener('change', async
     applied++;
   });
 
+  SETTINGS_UNLOCKED = true;   // you already had the file, no point locking you out
   loadSettingsFormFromLocal();
   loadRegister();
   e.target.value = '';
   el.classList.add('ok');
   el.textContent = `Imported ${applied} setting${applied === 1 ? '' : 's'} from ${file.name}. Press Save & sync to send them to the gate machine.`;
+});
+
+// ── Password handlers ──
+document.getElementById('lock-btn').addEventListener('click', tryUnlock);
+document.getElementById('lock-input').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') tryUnlock();
+});
+
+document.getElementById('set-pass-btn').addEventListener('click', async () => {
+  const el = document.getElementById('pass-status');
+  el.style.display = 'block';
+  el.className = 'testline';
+  const cur = document.getElementById('pass-current').value;
+  const nw  = document.getElementById('pass-new').value;
+  const cf  = document.getElementById('pass-confirm').value;
+
+  if(passIsSet() && await hashPass(cur) !== storedPassHash()){
+    el.classList.add('err'); el.textContent = 'The current password doesn\u2019t match.'; return;
+  }
+  if(nw.length < 4){
+    el.classList.add('err'); el.textContent = 'Use at least four characters.'; return;
+  }
+  if(nw !== cf){
+    el.classList.add('err'); el.textContent = 'The two new passwords are different.'; return;
+  }
+
+  localStorage.setItem(LS.settingsPassHash, await hashPass(nw));
+  SETTINGS_UNLOCKED = true;
+  renderPasswordSection();
+  const synced = await syncPassToCloud();
+  el.classList.add('ok');
+  el.textContent = synced
+    ? 'Password set, and every device on this database will now ask for it.'
+    : 'Password set on this device. Add the attendance database URL to share it with the others.';
+});
+
+document.getElementById('remove-pass-btn').addEventListener('click', async () => {
+  const el = document.getElementById('pass-status');
+  el.style.display = 'block';
+  el.className = 'testline';
+  const cur = document.getElementById('pass-current').value;
+  if(await hashPass(cur) !== storedPassHash()){
+    el.classList.add('err'); el.textContent = 'Enter the current password first.'; return;
+  }
+  localStorage.setItem(LS.settingsPassHash, '');
+  renderPasswordSection();
+  await syncPassToCloud();
+  el.classList.add('ok');
+  el.textContent = 'Password removed. Settings are open again on every device.';
 });
 
 // ── Sidebar navigation ──
@@ -1981,16 +2211,21 @@ document.querySelectorAll('.set-nav').forEach(btn => {
   });
 });
 function openSettingsModal(){
+  document.getElementById('settings-modal').classList.add('open');
+  if(passIsSet() && !SETTINGS_UNLOCKED){ showLock(true); return; }
+  showLock(false);
   loadSettingsFormFromLocal();
   document.getElementById('status-msg').className = 'status';
   document.getElementById('status-msg').textContent = '';
   document.getElementById('r-test-status').style.display = 'none';
   document.getElementById('import-status').style.display = 'none';
   document.getElementById('export-status').style.display = 'none';
-  document.getElementById('settings-modal').classList.add('open');
+  document.getElementById('pass-status').style.display = 'none';
 }
 function closeSettingsModal(){
   document.getElementById('settings-modal').classList.remove('open');
+  SETTINGS_UNLOCKED = false;   // ask again next time
+  showLock(false);
 }
 document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
 document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
