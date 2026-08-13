@@ -332,6 +332,40 @@
     </div>
     <p class="hint" id="r-test-status" style="display:none;"></p>
 
+    <h3>Attendance cutoff (morning ends / evening starts)</h3>
+    <p class="hint">A gate scan before this time counts as a morning entry; at or after it, an evening exit (a pending gatepass always counts as evening regardless of time). This is synced through the Raw attendance Firebase above so the gate device applies it too &mdash; make sure that URL is set and saved for it to actually take effect at the gate.</p>
+    <div class="grid">
+      <div class="field"><label for="cutoff-default-input">Default (all days)</label><input type="time" id="cutoff-default-input"></div>
+    </div>
+    <div class="field" style="margin:14px 0 8px;"><label>Per-day override (optional)</label></div>
+    <div class="row">
+      <div class="field" style="min-width:130px;">
+        <label for="cutoff-weekday-input" style="font-size:9px;">Weekday</label>
+        <select id="cutoff-weekday-input"></select>
+      </div>
+      <div class="field" style="min-width:130px;">
+        <label for="cutoff-time-input" style="font-size:9px;">Cutoff time</label>
+        <input type="time" id="cutoff-time-input">
+      </div>
+      <button type="button" id="add-cutoff-btn" class="ghost small" style="height:36px;">+ Add override</button>
+    </div>
+    <div id="cutoff-list" class="chip-wrap"></div>
+
+    <div class="field" style="margin:18px 0 8px;"><label>Specific date / range override (takes priority over the weekday override and default)</label></div>
+    <div class="row">
+      <div class="field" style="min-width:150px;"><label for="cutoff-date-input" style="font-size:9px;">From</label><input type="date" id="cutoff-date-input"></div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; padding:0 0 8px;">
+        <input type="checkbox" id="cutoff-date-range-toggle" style="min-width:auto; width:auto;"> Range
+      </label>
+      <div class="field" id="cutoff-date-end-field" style="min-width:150px; display:none;"><label for="cutoff-date-end-input" style="font-size:9px;">To</label><input type="date" id="cutoff-date-end-input"></div>
+      <div class="field" style="min-width:130px;">
+        <label for="cutoff-date-time-input" style="font-size:9px;">Cutoff time</label>
+        <input type="time" id="cutoff-date-time-input">
+      </div>
+      <button type="button" id="add-cutoff-date-btn" class="ghost small" style="height:36px;">+ Add date override</button>
+    </div>
+    <div id="cutoff-date-list" class="chip-wrap"></div>
+
     <h3>Register display</h3>
     <div class="grid">
       <div class="field">
@@ -433,6 +467,9 @@ const LS = {
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
   holidayRules:'reg_holiday_rules',
+  cutoffDefault:'reg_cutoff_default',
+  cutoffOverrides:'reg_cutoff_overrides',
+  cutoffDateOverrides:'reg_cutoff_date_overrides',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
   deviceName:'reg_device_name'
@@ -613,6 +650,18 @@ function getHolidayRules(){
     return Array.isArray(stored) ? stored : [];
   }catch(e){ return []; }
 }
+function getCutoffOverrides(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.cutoffOverrides) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  }catch(e){ return []; }
+}
+function getCutoffDateOverrides(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.cutoffDateOverrides) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  }catch(e){ return []; }
+}
 function nthWeekdayMatches(dateStr, weekday, nth){
   const d = new Date(dateStr + 'T00:00:00');
   if(d.getDay() !== weekday) return false;
@@ -663,7 +712,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['sUrl','sCode','stUrl','stKey','stPath','shiftHours','workingDays','holidays','holidayRules','studentDefaultView','devices'];
+const SYNCED_KEYS = ['sUrl','sCode','stUrl','stKey','stPath','shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
   const rUrl = localStorage.getItem(LS.rUrl);
   const rCode = localStorage.getItem(LS.rCode) || '';
@@ -936,6 +985,38 @@ function filteredRows(){
   return rows;
 }
 
+// Daily student list is built from that date's punch records, not the full roster — the
+// roster (ROSTER) is only used here to look up name/class/bus by admission number so a
+// punched student's row can be enriched. A student with no punch that date is never shown
+// or counted in the daily summary/breakdown.
+function punchedStudentRows(){
+  const categoryFilter = document.getElementById('category-filter').value;
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const rosterById = {};
+  ROSTER.forEach(s => { if(s && s.admissionNumber != null) rosterById[String(s.admissionNumber)] = s; });
+  let rows = Object.keys(RECORDS)
+    .filter(pin => Array.isArray(RECORDS[pin]) && RECORDS[pin].length)
+    .map(pin => {
+      const match = rosterById[pin];
+      return {
+        admissionNumber: match ? match.admissionNumber : pin,
+        studentName: match ? match.studentName : '',
+        class: match ? match.class : '',
+        busNumber: match ? match.busNumber : ''
+      };
+    });
+  rows = rows.filter(s => {
+    if(categoryFilter && s.class !== categoryFilter) return false;
+    if(q){
+      const hay = `${s.studentName || ''} ${s.admissionNumber || ''}`.toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  rows.sort((a,b) => String(a.admissionNumber).localeCompare(String(b.admissionNumber), undefined, {numeric:true}));
+  return rows;
+}
+
 function setSummary(cards){
   const el = document.getElementById('summary');
   el.innerHTML = cards.map(c => `<div class="stat"><div class="n" style="${c.color?`color:${c.color};`:''}">${c.value}</div><div class="l">${c.label}</div></div>`).join('');
@@ -943,13 +1024,12 @@ function setSummary(cards){
 }
 
 function renderDailyTable(){
-  const rows = filteredRows();
-  let present = 0, exit = 0, absent = 0, bus = 0, half = 0;
+  const rows = VIEW === 'student' ? punchedStudentRows() : filteredRows();
+  let present = 0, exit = 0, absent = 0, half = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
 
-  let shown = 0;
   rows.forEach((s, i) => {
     const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
     const nameField = VIEW === 'student' ? s.studentName : s.name;
@@ -957,22 +1037,15 @@ function renderDailyTable(){
     let status, tr = document.createElement('tr');
 
     if(VIEW === 'student'){
+      // rows here are already punch-only (see punchedStudentRows) — every student below has
+      // at least one record today, so there's no "absent"/"in bus" bucket to compute.
       const inRec = recs.find(r => r.action === 'morning_entry');
       const outRec = recs.find(r => r.action === 'gatepass_exit' || r.action === 'evening_exit');
-      status = 'absent';
-      if(outRec) status = 'gatepass';
-      else if(inRec) status = 'present';
-      else if(s.busNumber) status = 'bus';
-      if(status === 'present') present++;
-      else if(status === 'gatepass') exit++;
-      else if(status === 'bus') bus++;
-      else absent++;
-      // Student list only shows students who actually punched on this date; still counted in the stats above.
-      if(!recs.length){ enriched.push({ s, status }); return; }
-      shown++;
-      const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : (s.busNumber ? '<span class="badge bus">IN BUS</span>' : '\u2014');
-      const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : (s.busNumber ? '<span class="badge bus">IN BUS</span>' : '\u2014');
-      tr.innerHTML = `<td class="mono">${shown}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td>`;
+      status = outRec ? 'gatepass' : 'present';
+      if(status === 'present') present++; else exit++;
+      const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : '\u2014';
+      const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td>`;
     }else{
       // Staff list always shows everyone regardless of punches.
       const category = normalizedRole(s.role || '');
@@ -981,13 +1054,12 @@ function renderDailyTable(){
       if(status === 'present') present++;
       else if(status === 'half') half++;
       else absent++;
-      shown++;
       const [s1in, s1out, s2in, s2out] = sortedRecs;
       const stack = list => {
         const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)));
         return lines.length ? lines.join('<br>') : '\u2014';
       };
-      tr.innerHTML = `<td class="mono">${shown}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td>`;
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td>`;
     }
     enriched.push({ s, status });
     body.appendChild(tr);
@@ -996,11 +1068,9 @@ function renderDailyTable(){
   let dailyCards;
   if(VIEW === 'student'){
     dailyCards = [
-      {value: rows.length, label: 'Total students'},
-      {value: present, label: 'Present', color:'var(--present)'},
-      {value: exit, label: 'Gatepass exit', color:'var(--pending)'},
-      {value: bus, label: 'In bus', color:'#2E6F8E'},
-      {value: absent, label: 'Not marked', color:'var(--absent)'}
+      {value: rows.length, label: 'Students punched today'},
+      {value: present, label: 'Still in (morning only)', color:'var(--present)'},
+      {value: exit, label: 'Exited today', color:'var(--pending)'}
     ];
   }else{
     dailyCards = [
@@ -1085,12 +1155,12 @@ function renderBreakdown(enriched, mode){
     let headCols, bodyRows;
     if(mode === 'daily'){
       headCols = VIEW === 'student'
-        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th><th class="mono-col">In bus</th><th class="mono-col">Absent</th>'
+        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th>'
         : '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Absent</th>';
       bodyRows = groups.map(k => {
         const g = map[k];
         return VIEW === 'student'
-          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td><td class="mono" style="color:#2E6F8E">${g.bus}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`
+          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td></tr>`
           : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`;
       }).join('');
     }else{
@@ -1144,10 +1214,13 @@ function loadSettingsFormFromLocal(){
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode)|| '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('this-device-input').value = localStorage.getItem(LS.deviceName) || '';
+  document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
   buildShiftRulesGrid();
   buildWorkingDaysRow();
   renderHolidayList();
   renderRuleList();
+  renderCutoffList();
+  renderCutoffDateList();
   renderDeviceList();
 }
 
@@ -1264,6 +1337,81 @@ document.getElementById('add-rule-btn').addEventListener('click', () => {
   }
 });
 
+document.getElementById('cutoff-weekday-input').innerHTML = WEEKDAY_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+
+function renderCutoffList(){
+  const overrides = getCutoffOverrides().slice().sort((a,b) => a.weekday - b.weekday);
+  const wrap = document.getElementById('cutoff-list');
+  if(!overrides.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No per-day overrides &mdash; every day uses the default above.</span>'; return; }
+  wrap.innerHTML = overrides.map((o) => `
+    <span class="chip">${WEEKDAY_NAMES[o.weekday]}: ${escapeHtml(o.time)}
+      <button type="button" data-weekday="${o.weekday}" title="Remove">&times;</button></span>`).join('');
+  wrap.querySelectorAll('button[data-weekday]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wd = parseInt(btn.dataset.weekday, 10);
+      const os = getCutoffOverrides().filter(o => o.weekday !== wd);
+      localStorage.setItem(LS.cutoffOverrides, JSON.stringify(os));
+      renderCutoffList();
+    });
+  });
+}
+document.getElementById('add-cutoff-btn').addEventListener('click', () => {
+  const weekday = parseInt(document.getElementById('cutoff-weekday-input').value, 10);
+  const time = document.getElementById('cutoff-time-input').value;
+  if(!time) return;
+  const overrides = getCutoffOverrides().filter(o => o.weekday !== weekday); // one override per weekday
+  overrides.push({ weekday, time });
+  localStorage.setItem(LS.cutoffOverrides, JSON.stringify(overrides));
+  document.getElementById('cutoff-time-input').value = '';
+  renderCutoffList();
+});
+
+document.getElementById('cutoff-date-range-toggle').addEventListener('change', (e) => {
+  document.getElementById('cutoff-date-end-field').style.display = e.target.checked ? 'flex' : 'none';
+});
+
+function renderCutoffDateList(){
+  const overrides = getCutoffDateOverrides().slice().sort((a,b) => a.date.localeCompare(b.date));
+  const wrap = document.getElementById('cutoff-date-list');
+  if(!overrides.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No date-specific overrides added yet.</span>'; return; }
+  wrap.innerHTML = overrides.map((o, idx) => `
+    <span class="chip">${escapeHtml(o.date)}: ${escapeHtml(o.time)}
+      <button type="button" data-idx="${idx}" title="Remove">&times;</button></span>`).join('');
+  wrap.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const os = getCutoffDateOverrides().slice().sort((a,b) => a.date.localeCompare(b.date));
+      os.splice(parseInt(btn.dataset.idx, 10), 1);
+      localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(os));
+      renderCutoffDateList();
+    });
+  });
+}
+document.getElementById('add-cutoff-date-btn').addEventListener('click', () => {
+  const date = document.getElementById('cutoff-date-input').value;
+  const isRange = document.getElementById('cutoff-date-range-toggle').checked;
+  const endDate = document.getElementById('cutoff-date-end-input').value;
+  const time = document.getElementById('cutoff-date-time-input').value;
+  if(!date || !time) return;
+  const dates = [];
+  if(isRange && endDate && endDate >= date){
+    const cur = new Date(date + 'T00:00:00');
+    const end = new Date(endDate + 'T00:00:00');
+    while(cur <= end){ dates.push(cur.toLocaleDateString('en-CA')); cur.setDate(cur.getDate() + 1); }
+  }else{ dates.push(date); }
+  let overrides = getCutoffDateOverrides();
+  dates.forEach(d => {
+    overrides = overrides.filter(o => o.date !== d); // one override per date — newest wins
+    overrides.push({ date: d, time });
+  });
+  localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(overrides));
+  document.getElementById('cutoff-date-input').value = '';
+  document.getElementById('cutoff-date-end-input').value = '';
+  document.getElementById('cutoff-date-time-input').value = '';
+  document.getElementById('cutoff-date-range-toggle').checked = false;
+  document.getElementById('cutoff-date-end-field').style.display = 'none';
+  renderCutoffDateList();
+});
+
 function renderDeviceList(){
   const devices = getDevices();
   const names = Object.keys(devices).sort();
@@ -1339,6 +1487,9 @@ function collectSettingsObject(){
     workingDays,
     holidays: getHolidays(),
     holidayRules: getHolidayRules(),
+    cutoffDefault: document.getElementById('cutoff-default-input').value || '11:00',
+    cutoffOverrides: getCutoffOverrides(),
+    cutoffDateOverrides: getCutoffDateOverrides(),
     studentDefaultView: document.getElementById('default-view-input').value,
     devices: getDevices()
   };
@@ -1360,6 +1511,9 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.stPath, settings.stPath);
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
   localStorage.setItem(LS.workingDays, JSON.stringify(settings.workingDays));
+  localStorage.setItem(LS.cutoffDefault, settings.cutoffDefault);
+  localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
+  localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
 
   if(!rUrl){
