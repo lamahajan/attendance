@@ -299,20 +299,26 @@
       <div class="field"><label for="s-url">Students Firebase URL</label><input id="s-url" placeholder="https://project.firebaseio.com"></div>
       <div class="field"><label for="s-code">Students code</label><input id="s-code" placeholder="secret path segment"></div>
     </div>
+    <p class="hint">Read-only &mdash; the register only ever fetches student records from this database, never writes to it.</p>
+    <div class="row" style="margin-bottom:4px;">
+      <button type="button" id="s-test-btn" class="ghost small" style="height:36px;">Test connection</button>
+    </div>
+    <p class="hint" id="s-test-status" style="display:none;"></p>
 
     <h3>Staff data source (StaffFlow)</h3>
     <div class="grid">
       <div class="field"><label for="st-url">Staff Firebase URL</label><input id="st-url" placeholder="https://project.firebaseio.com"></div>
       <div class="field"><label for="st-key">Staff Firebase API key / auth secret</label><input id="st-key" placeholder="optional &mdash; sent as ?auth="></div>
     </div>
-    <p class="hint">No need to know the internal path &mdash; give the URL (and API key if the database needs one) and the register finds the staff list on its own the first time it loads. If the DB rules require authentication, paste the database secret or an auth token above &mdash; it's appended to staff requests as <code>?auth=</code>.</p>
+    <p class="hint">Read-only &mdash; the register only ever fetches from this database, never writes to it. If the DB rules require authentication, paste the database secret or an auth token above &mdash; it's appended to staff requests as <code>?auth=</code>.</p>
     <div class="row" style="margin-bottom:12px;">
       <div class="field" style="min-width:260px;">
-        <label>Detected staff path</label>
-        <input id="st-path-display" readonly placeholder="Not detected yet — will run on next load">
+        <label for="st-path">Staff list path (manual)</label>
+        <input id="st-path" placeholder="e.g. sf8/sf8_s">
       </div>
-      <button type="button" id="st-redetect-btn" class="ghost small" style="height:36px;">&#8635; Re-detect</button>
+      <button type="button" id="st-test-btn" class="ghost small" style="height:36px;">Test connection</button>
     </div>
+    <p class="hint">Enter the exact path inside the staff database where the staff list lives, then use "Test connection" to check it &mdash; this is no longer auto-detected/crawled.</p>
     <p class="hint" id="st-detect-status" style="display:none;"></p>
 
     <h3>Raw attendance (shared)</h3>
@@ -320,7 +326,11 @@
       <div class="field"><label for="r-url">Raw attendance Firebase URL</label><input id="r-url" placeholder="https://project.firebaseio.com"></div>
       <div class="field"><label for="r-code">Raw attendance code</label><input id="r-code" placeholder="secret path segment (optional)"></div>
     </div>
-    <p class="hint">This is also the sync backbone: everything below (except this section, and this device's own name) is saved to <code>&lt;raw-url&gt;/&lt;code&gt;/app_settings.json</code> so any device pointed at the same URL picks it up.</p>
+    <p class="hint">The only connection that writes as well as reads &mdash; every other Firebase URL on this page is fetch-only. This is also the sync backbone: everything below (except this section, and this device's own name) is saved to <code>&lt;raw-url&gt;/&lt;code&gt;/app_settings.json</code> so any device pointed at the same URL picks it up.</p>
+    <div class="row" style="margin-bottom:4px;">
+      <button type="button" id="r-test-btn" class="ghost small" style="height:36px;">Test connection (read + write)</button>
+    </div>
+    <p class="hint" id="r-test-status" style="display:none;"></p>
 
     <h3>Register display</h3>
     <div class="grid">
@@ -440,14 +450,14 @@ let USING_SAMPLE = false;
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function timeOnly(t){ if(!t) return ''; const m=String(t).match(/(\d{1,2}:\d{2}:\d{2})/); return m?m[1]:t; }
-async function fetchJson(url){ try{ const r=await fetch(url); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function fetchJson(url, options){ try{ const r=await fetch(url, options); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 function parseTimeMs(t){ if(!t) return null; const iso = String(t).trim().replace(' ','T'); const d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime(); }
 
 /* =========================================================
-   Staff Firebase path auto-detection
-   The person only gives a Firebase URL (+ optional API key) — we don't make them
-   figure out the internal path (e.g. "sf8/sf8_s"). We crawl the tree ourselves
-   looking for a node that "looks like" a staff list, and remember the path once found.
+   Staff Firebase — manual path, read-only
+   The person types the exact internal path themselves (e.g. "sf8/sf8_s");
+   nothing here crawls the database looking for it anymore. This connection
+   only ever fetches — it never writes to the staff Firebase.
    ========================================================= */
 function buildQuery(params){
   const parts = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`);
@@ -480,49 +490,12 @@ function normalizeStaffList(data){
     return { id: rec[idKey], name: rec[nameKey], role: roleKey ? rec[roleKey] : '' };
   }).filter(Boolean);
 }
-// Breadth-first crawl of the staff Firebase, a couple of levels deep, using ?shallow=true
-// listings to avoid downloading big unrelated subtrees (e.g. attendance logs) in full.
-async function autoDetectStaffPath(stUrl, stKey){
-  const authQ = stKey ? { auth: stKey } : {};
-  const queue = [''];
-  const visited = new Set();
-  let steps = 0;
-  while(queue.length && steps < 40){
-    const path = queue.shift();
-    steps++;
-    const shallow = await fetchJson(`${stUrl}/${path ? path + '.json' : '.json'}${buildQuery({ shallow:'true', ...authQ })}`);
-    if(!shallow || typeof shallow !== 'object') continue;
-    const childKeys = Object.keys(shallow);
-    if(childKeys.length > 300) continue; // unlikely to contain a small staff list, skip
-    for(const key of childKeys){
-      const childPath = path ? `${path}/${key}` : key;
-      if(visited.has(childPath)) continue;
-      visited.add(childPath);
-      const childShallow = await fetchJson(`${stUrl}/${childPath}.json${buildQuery({ shallow:'true', ...authQ })}`);
-      if(!childShallow || typeof childShallow !== 'object') continue; // plain leaf value, not a list
-      const grandKeys = Object.keys(childShallow);
-      if(!grandKeys.length || grandKeys.length > 500) continue; // empty or too big (e.g. raw attendance logs)
-      const full = await fetchJson(`${stUrl}/${childPath}.json${buildQuery(authQ)}`);
-      if(looksLikeStaffList(full)) return { path: childPath, data: full };
-      if(childPath.split('/').length < 3) queue.push(childPath);
-    }
-  }
-  return null;
-}
-// Tries the cached path first (fast path); falls back to a fresh crawl if it's missing,
-// stale, or empty — and caches whatever it finds for next time.
-async function loadStaffArray(stUrl, stKey){
-  if(!stUrl) return null;
-  const cachedPath = localStorage.getItem(LS.stPath);
-  if(cachedPath){
-    const cached = await fetchJson(`${stUrl}/${cachedPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
-    if(looksLikeStaffList(cached)) return normalizeStaffList(cached);
-  }
-  const found = await autoDetectStaffPath(stUrl, stKey);
-  if(found){
-    localStorage.setItem(LS.stPath, found.path);
-    return normalizeStaffList(found.data);
-  }
+// Fetches the staff list from the manually-entered path. Read-only — this never writes
+// to the staff Firebase, and never crawls looking for the path anymore.
+async function loadStaffArray(stUrl, stKey, stPath){
+  if(!stUrl || !stPath) return null;
+  const data = await fetchJson(`${stUrl}/${stPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
+  if(looksLikeStaffList(data)) return normalizeStaffList(data);
   return null;
 }
 
@@ -789,7 +762,8 @@ async function loadRoster(){
   }else{
     const stUrl = localStorage.getItem(LS.stUrl);
     const stKey = localStorage.getItem(LS.stKey) || '';
-    let staffArr = stUrl ? await loadStaffArray(stUrl, stKey) : null;
+    const stPath = localStorage.getItem(LS.stPath) || '';
+    let staffArr = (stUrl && stPath) ? await loadStaffArray(stUrl, stKey, stPath) : null;
     if(!Array.isArray(staffArr) || !staffArr.length){ staffArr = SAMPLE_STAFF; USING_SAMPLE = true; }
     const allStaff = staffArr.filter(s => s && s.id && s.name);
     const hiddenCats = getHiddenStaffCategoriesForThisDevice();
@@ -1165,7 +1139,7 @@ function loadSettingsFormFromLocal(){
   document.getElementById('s-code').value = localStorage.getItem(LS.sCode) || '';
   document.getElementById('st-url').value = localStorage.getItem(LS.stUrl) || '';
   document.getElementById('st-key').value = localStorage.getItem(LS.stKey) || '';
-  document.getElementById('st-path-display').value = localStorage.getItem(LS.stPath) || '';
+  document.getElementById('st-path').value = localStorage.getItem(LS.stPath) || '';
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode)|| '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
@@ -1360,6 +1334,7 @@ function collectSettingsObject(){
     sCode: document.getElementById('s-code').value.trim(),
     stUrl: document.getElementById('st-url').value.trim(),
     stKey: document.getElementById('st-key').value.trim(),
+    stPath: document.getElementById('st-path').value.trim(),
     shiftHours: shiftRulesObj,
     workingDays,
     holidays: getHolidays(),
@@ -1377,27 +1352,15 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const deviceName = document.getElementById('this-device-input').value.trim();
   if(deviceName){ localStorage.setItem(LS.deviceName, deviceName); }
 
-  const prevStUrl = localStorage.getItem(LS.stUrl) || '';
-  const prevStKey = localStorage.getItem(LS.stKey) || '';
-
   const settings = collectSettingsObject();
   localStorage.setItem(LS.sUrl, settings.sUrl);
   localStorage.setItem(LS.sCode, settings.sCode);
   localStorage.setItem(LS.stUrl, settings.stUrl);
   localStorage.setItem(LS.stKey, settings.stKey);
+  localStorage.setItem(LS.stPath, settings.stPath);
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
   localStorage.setItem(LS.workingDays, JSON.stringify(settings.workingDays));
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
-
-  // If the staff URL/key changed, the previously detected path is no longer trustworthy.
-  if(settings.stUrl !== prevStUrl || settings.stKey !== prevStKey){
-    localStorage.removeItem(LS.stPath);
-    document.getElementById('st-path-display').value = '';
-  }
-  if(settings.stUrl && !localStorage.getItem(LS.stPath)){
-    await detectStaffPathAndReport();
-  }
-  settings.stPath = localStorage.getItem(LS.stPath) || '';
 
   if(!rUrl){
     showStatus('Saved on this device only. Add a Raw attendance Firebase URL above to sync across devices.', 'info');
@@ -1416,26 +1379,66 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   loadRegister(); // reflect any shift-rule/calendar/staff-path changes immediately behind the modal
 });
 
-async function detectStaffPathAndReport(){
-  const statusEl = document.getElementById('st-detect-status');
+// ── Test connection buttons ──────────────────────────────────────────────
+// Students and Staff are read-only checks (they never write). Raw attendance
+// is the one connection that also writes, so its test checks both.
+document.getElementById('s-test-btn').addEventListener('click', async () => {
+  const el = document.getElementById('s-test-status');
+  const sUrl = document.getElementById('s-url').value.trim();
+  const sCode = document.getElementById('s-code').value.trim();
+  el.style.display = 'block';
+  if(!sUrl){ el.textContent = 'Add a Students Firebase URL first.'; return; }
+  el.textContent = 'Testing\u2026';
+  const data = await fetchJson(`${sUrl}/${sCode}/students.json`);
+  if(data && typeof data === 'object'){
+    const count = (Array.isArray(data) ? data : Object.values(data)).filter(Boolean).length;
+    el.textContent = `Connected \u2014 found ${count} student record${count === 1 ? '' : 's'} (read-only check).`;
+  }else{
+    el.textContent = 'Couldn\u2019t read from that URL/code \u2014 double check them and the database rules.';
+  }
+});
+
+document.getElementById('st-test-btn').addEventListener('click', async () => {
+  const el = document.getElementById('st-detect-status');
   const stUrl = document.getElementById('st-url').value.trim();
   const stKey = document.getElementById('st-key').value.trim();
-  if(!stUrl){ statusEl.style.display = 'none'; return; }
-  statusEl.style.display = 'block';
-  statusEl.textContent = 'Looking for the staff list in this database\u2026';
-  const found = await autoDetectStaffPath(stUrl, stKey);
-  if(found){
-    localStorage.setItem(LS.stPath, found.path);
-    document.getElementById('st-path-display').value = found.path;
-    const count = (Array.isArray(found.data) ? found.data : Object.values(found.data)).filter(Boolean).length;
-    statusEl.textContent = `Found it: "${found.path}" (looks like ${count} staff record${count === 1 ? '' : 's'}).`;
+  const stPath = document.getElementById('st-path').value.trim();
+  el.style.display = 'block';
+  if(!stUrl || !stPath){ el.textContent = 'Enter both the Staff Firebase URL and the staff list path first.'; return; }
+  el.textContent = 'Testing\u2026';
+  const data = await fetchJson(`${stUrl}/${stPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
+  if(looksLikeStaffList(data)){
+    const count = normalizeStaffList(data).length;
+    el.textContent = `Connected \u2014 "${stPath}" looks like a staff list (${count} record${count === 1 ? '' : 's'}, read-only check).`;
+  }else if(data){
+    el.textContent = `Connected, but "${stPath}" doesn\u2019t look like a staff list \u2014 expected records with an id and a name field.`;
   }else{
-    localStorage.removeItem(LS.stPath);
-    document.getElementById('st-path-display').value = '';
-    statusEl.textContent = 'Couldn\u2019t find a staff-shaped list automatically \u2014 double check the URL/API key, or that the database actually has staff records in it.';
+    el.textContent = 'Couldn\u2019t read that path \u2014 double check the URL, path, and API key.';
   }
-}
-document.getElementById('st-redetect-btn').addEventListener('click', detectStaffPathAndReport);
+});
+
+document.getElementById('r-test-btn').addEventListener('click', async () => {
+  const el = document.getElementById('r-test-status');
+  const rUrl = document.getElementById('r-url').value.trim();
+  const rCode = document.getElementById('r-code').value.trim();
+  el.style.display = 'block';
+  if(!rUrl){ el.textContent = 'Add a Raw attendance Firebase URL first.'; return; }
+  el.textContent = 'Testing read\u2026';
+  const base = `${rUrl}/${rCode}`;
+  const readOk = await fetchJson(`${base}/app_settings.json`);
+  el.textContent = 'Testing write\u2026';
+  const testPath = `${base}/_connection_test.json`;
+  const stamp = Date.now();
+  const wrote = await fetchJson(testPath, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(stamp) });
+  if(wrote === stamp){
+    await fetchJson(testPath, { method: 'DELETE' });
+    el.textContent = readOk !== null
+      ? 'Connected \u2014 read and write both work.'
+      : 'Write works. (Read of app_settings.json came back empty \u2014 fine if you haven\u2019t saved settings there yet.)';
+  }else{
+    el.textContent = `Read ${readOk !== null ? 'OK' : 'failed'}, but the write test failed \u2014 check the URL/code and that the database rules allow writes.`;
+  }
+});
 
 document.getElementById('pull-btn').addEventListener('click', async () => {
   const rUrl = document.getElementById('r-url').value.trim();
