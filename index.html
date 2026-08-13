@@ -93,66 +93,148 @@
     border:1px solid #DEC985; border-radius:4px; font-size:12.5px; display:none;
   }
   .demo-note.show{display:block;}
-  /* ---- Settings gear + modal (popup, no separate page) ---- */
+  /* ---- Settings gear + redesigned popup ---- */
   .gear-btn{
     display:flex; align-items:center; justify-content:center; width:36px; height:36px;
     padding:0; background:var(--card); border:1px solid var(--border); border-radius:3px; color:var(--ink);
   }
   .gear-btn:hover{opacity:.88; border-color:var(--rule-red);}
   .gear-btn svg{width:18px; height:18px; stroke:currentColor;}
+
   .modal-overlay{
-    display:none; position:fixed; inset:0; background:rgba(27,32,54,0.45); z-index:100;
-    align-items:flex-start; justify-content:center; padding:3rem 1rem 3rem; overflow-y:auto;
+    display:none; position:fixed; inset:0; z-index:100;
+    background:rgba(20,24,42,.42); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    align-items:center; justify-content:center; padding:24px 16px;
   }
   .modal-overlay.open{display:flex;}
-  .modal-panel{
-    background:var(--paper); border-radius:6px; max-width:920px; width:100%;
-    box-shadow:0 20px 60px rgba(27,32,54,0.35); padding:2rem 2.5rem 2.5rem; position:relative;
+
+  .settings-panel{
+    background:var(--paper); width:100%; max-width:940px; height:min(680px, calc(100vh - 48px));
+    border-radius:14px; box-shadow:0 24px 70px rgba(20,24,42,.34);
+    display:grid; grid-template-columns:212px 1fr; grid-template-rows:1fr auto;
+    overflow:hidden; position:relative;
   }
-  .modal-close{
-    position:absolute; top:1.2rem; right:1.2rem; width:30px; height:30px; padding:0;
-    background:transparent; border:1px solid var(--border); border-radius:50%; color:var(--ink-soft);
-    display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1;
+
+  /* Sidebar */
+  .set-side{
+    grid-row:1 / span 2; background:var(--row-alt); border-right:1px solid var(--paper-line);
+    padding:20px 12px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;
   }
-  .modal-close:hover{color:var(--absent); border-color:var(--absent);}
-  .settings-panel .eyebrow{margin-bottom:.4rem;}
-  .settings-panel h1{font-weight:800; font-size:26px; margin:0 0 .3rem;}
-  .settings-panel .sub{font-size:13px; color:var(--ink-soft); margin:0 0 1.4rem;}
-  .settings-panel h3{ font-family:'Inter',sans-serif; font-size:15px; margin:1.5rem 0 .6rem; padding-top:1.3rem; border-top:1px solid var(--paper-line); }
-  .settings-panel h3:first-of-type{ border-top:none; padding-top:0; margin-top:0; }
-  .settings-panel .hint{ font-size:11.5px; color:var(--ink-soft); margin:-6px 0 12px; line-height:1.5; }
-  .settings-panel .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:12px; }
-  .settings-panel .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
-  .settings-panel .chip{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; padding:5px 6px 5px 11px;
-    border-radius:16px; border:1px solid var(--border); background:var(--row-alt); color:var(--ink); }
-  .settings-panel .chip .scope{ color:var(--ink-soft); font-size:11px; }
-  .settings-panel .chip button{ all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%; display:flex;
-    align-items:center; justify-content:center; color:var(--absent); font-size:14px; line-height:1; }
-  .settings-panel .chip button:hover{ background:var(--absent-bg); }
-  .settings-panel .chip-wrap{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-  .settings-panel .device-card{ border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:12px; background:var(--row-alt); }
-  .settings-panel .device-card .device-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .settings-panel .device-card .device-head strong{ font-size:14px; }
-  .settings-panel .cat-checks{ display:flex; flex-wrap:wrap; gap:10px; }
-  .settings-panel .cat-checks label{ display:flex; align-items:center; gap:5px; font-size:12.5px; padding:5px 9px;
-    border:1px solid var(--border); border-radius:4px; background:var(--card); cursor:pointer; }
-  .settings-panel .working-days-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
-  .settings-panel .working-days-row label{ display:flex; align-items:center; gap:5px; font-size:13px; padding:6px 10px;
-    border:1px solid var(--border); border-radius:3px; background:var(--card); cursor:pointer; }
-  .settings-panel .status{ margin:1.6rem 0 0; padding:10px 14px; border-radius:4px; font-size:13px; display:none; }
-  .settings-panel .status.show{ display:block; }
-  .settings-panel .status.ok{ background:#E1F5EC; color:var(--present); }
-  .settings-panel .status.err{ background:#FBE7EA; color:var(--absent); }
-  .settings-panel .status.info{ background:var(--pending-bg); color:var(--pending); }
-  .settings-panel .actions{ display:flex; gap:10px; margin-top:1.8rem; flex-wrap:wrap; }
-  .shift-rule-card{ border:1px solid var(--border); border-radius:6px; padding:12px 14px; margin-bottom:10px; background:var(--row-alt); }
-  .shift-rule-card .src-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:2px; }
+  .set-side .brand{ padding:0 10px 16px; }
+  .set-side .brand strong{ display:block; font-size:16px; font-weight:700; letter-spacing:-.01em; }
+  .set-side .brand span{ display:block; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .set-nav{
+    all:unset; box-sizing:border-box; display:flex; align-items:center; gap:9px; width:100%;
+    padding:9px 11px; border-radius:7px; font-size:13.5px; color:var(--ink); cursor:pointer;
+  }
+  .set-nav svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.7; flex:none; opacity:.6; }
+  .set-nav:hover{ background:rgba(27,32,54,.05); }
+  .set-nav[aria-selected="true"]{ background:var(--ink); color:#fff; font-weight:600; }
+  .set-nav[aria-selected="true"] svg{ opacity:1; }
+
+  /* Content */
+  .set-body{ overflow-y:auto; padding:26px 30px 30px; }
+  .set-sec{ display:none; }
+  .set-sec.on{ display:block; animation:secIn .18s ease; }
+  @keyframes secIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+  .set-sec > h2{ font-size:20px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px; }
+  .set-sec > .lede{ font-size:13px; color:var(--ink-soft); margin:0 0 22px; line-height:1.55; max-width:64ch; }
+
+  .group{ border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px; background:var(--card); }
+  .group > h3{ font-size:13.5px; font-weight:600; margin:0 0 3px; }
+  .group > .hint{ font-size:12px; color:var(--ink-soft); margin:0 0 14px; line-height:1.55; }
+  .group > .hint:last-child{ margin-bottom:0; }
+  .group .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .group .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-top:12px; }
+  .group .field label{ font-size:9.5px; }
+
+  .note{
+    display:flex; gap:10px; padding:12px 14px; border-radius:9px; font-size:12.5px; line-height:1.55;
+    background:var(--pending-bg); color:var(--pending); margin-bottom:16px;
+  }
+  .note b{ font-weight:600; }
+  .note code{ font-size:11.5px; background:rgba(255,255,255,.6); padding:1px 5px; border-radius:4px; }
+
+  .testline{ font-size:12px; color:var(--ink-soft); margin:10px 0 0; display:none; line-height:1.5; }
+  .testline.ok{ color:var(--present); }
+  .testline.err{ color:var(--absent); }
+
+  /* Chips */
+  .chip-wrap{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .chip{
+    display:inline-flex; align-items:center; gap:7px; font-size:12.5px; padding:5px 6px 5px 12px;
+    border-radius:999px; border:1px solid var(--border); background:var(--row-alt); color:var(--ink);
+  }
+  .chip .scope{ color:var(--ink-soft); font-size:11px; }
+  .chip button{
+    all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; color:var(--ink-soft); font-size:15px; line-height:1;
+  }
+  .chip button:hover{ background:var(--absent-bg); color:var(--absent); }
+  .chip-empty{ font-size:12.5px; color:var(--ink-soft); }
+
+  /* Day toggles */
+  .daypick{ display:flex; gap:6px; flex-wrap:wrap; }
+  .daypick label{
+    display:flex; align-items:center; justify-content:center; min-width:52px; padding:8px 10px;
+    border:1px solid var(--border); border-radius:8px; background:var(--card);
+    font-size:12.5px; cursor:pointer; user-select:none; transition:.12s;
+  }
+  .daypick input{ position:absolute; opacity:0; width:0; height:0; }
+  .daypick label:has(input:checked){ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+
+  /* Staff shift cards */
+  .shift-rule-card{ border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:var(--card); }
+  .shift-rule-card .src-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
   .shift-rule-card .src-head strong{ font-size:13.5px; }
-  .shift-rule-card select{ font-size:12.5px; padding:6px 8px; border:1px solid var(--border); background:var(--card); border-radius:3px; color:var(--ink); }
-  .shift-rule-card .src-shifts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
-  .shift-rule-card .src-shifts .field{ min-width:130px; }
-  .shift-rule-card .src-shifts .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:3px; }
+  .shift-rule-card select{ font-size:12.5px; padding:6px 9px; border:1px solid var(--border); background:var(--card); border-radius:6px; color:var(--ink); }
+  .shift-rule-card .src-shifts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
+  .shift-rule-card .src-shifts .field{ min-width:128px; }
+  .shift-rule-card .src-shifts .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
   .shift-rule-card .src-shifts .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
+
+  /* Devices */
+  .device-card{ border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:var(--card); }
+  .device-card .device-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .device-card .device-head strong{ font-size:13.5px; }
+  .device-card.is-this .device-head strong::after{
+    content:'This device'; margin-left:8px; font-size:10px; font-weight:600; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--pending); background:var(--pending-bg);
+    padding:2px 7px; border-radius:20px; vertical-align:1px;
+  }
+  .cat-checks{ display:flex; flex-wrap:wrap; gap:7px; }
+  .cat-checks label{
+    display:flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 10px;
+    border:1px solid var(--border); border-radius:7px; background:var(--row-alt); cursor:pointer;
+  }
+  .cat-checks label:has(input:checked){ background:var(--absent-bg); border-color:var(--absent); color:var(--absent); }
+  .cat-checks input{ accent-color:var(--absent); }
+
+  /* Footer */
+  .set-foot{
+    grid-column:2; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:14px 30px; border-top:1px solid var(--paper-line); background:var(--paper);
+  }
+  .set-foot .status{ flex:1; min-width:180px; font-size:12.5px; color:var(--ink-soft); line-height:1.45; }
+  .set-foot .status.ok{ color:var(--present); }
+  .set-foot .status.err{ color:var(--absent); }
+  .set-foot .status.info{ color:var(--pending); }
+  .modal-close{
+    position:absolute; top:14px; right:16px; width:28px; height:28px; padding:0; z-index:2;
+    background:transparent; border:1px solid transparent; border-radius:50%; color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; font-size:17px; line-height:1;
+  }
+  .modal-close:hover{ background:var(--row-alt); color:var(--ink); }
+
+  @media (max-width: 760px){
+    .settings-panel{ grid-template-columns:1fr; grid-template-rows:auto 1fr auto; height:calc(100vh - 32px); }
+    .set-side{ grid-row:auto; flex-direction:row; overflow-x:auto; padding:12px; gap:6px; border-right:none; border-bottom:1px solid var(--paper-line); }
+    .set-side .brand{ display:none; }
+    .set-nav{ width:auto; white-space:nowrap; padding:8px 12px; }
+    .set-nav svg{ display:none; }
+    .set-body{ padding:20px 18px 24px; }
+    .set-foot{ grid-column:1; padding:12px 18px; }
+  }
   .breakdown-wrap{ margin:1.3rem 2.5rem 0 6rem; display:flex; flex-wrap:wrap; gap:16px; }
   .breakdown-card{ flex:1; min-width:260px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
   .breakdown-card h4{
@@ -273,7 +355,8 @@
     <button class="ghost" id="print-btn">Print</button>
   </div>
 
-  <div class="demo-note" id="demo-note">Showing sample data &mdash; add your Firebase URLs in Settings to load real records.</div>
+  <div class="demo-note" id="demo-note">Showing sample data &mdash; add your attendance database URL in Settings to load real records.</div>
+  <div class="demo-note" id="roster-note" style="display:none;"></div>
 
   <div class="summary" id="summary" style="display:none;"></div>
 
@@ -288,180 +371,202 @@
 </div>
 
 <div class="modal-overlay" id="settings-modal">
-  <div class="modal-panel settings-panel">
+  <div class="settings-panel" role="dialog" aria-modal="true" aria-label="Register settings">
     <button type="button" class="modal-close" id="settings-close" title="Close">&times;</button>
-    <p class="eyebrow">Lotus International School</p>
-    <h1>Register Settings</h1>
-    <p class="sub" id="sync-note">Settings saved here are stored on this device. If a Raw attendance Firebase URL is configured below, they're also synced there so every device using the same register can share one configuration.</p>
 
-    <h3>Students data source</h3>
-    <div class="grid">
-      <div class="field"><label for="s-url">Students Firebase URL</label><input id="s-url" placeholder="https://project.firebaseio.com"></div>
-      <div class="field"><label for="s-code">Students code</label><input id="s-code" placeholder="secret path segment"></div>
-    </div>
-    <p class="hint">Read-only &mdash; the register only ever fetches student records from this database, never writes to it.</p>
-    <div class="row" style="margin-bottom:4px;">
-      <button type="button" id="s-test-btn" class="ghost small" style="height:36px;">Test connection</button>
-    </div>
-    <p class="hint" id="s-test-status" style="display:none;"></p>
-
-    <h3>Staff data source (StaffFlow)</h3>
-    <div class="grid">
-      <div class="field"><label for="st-url">Staff Firebase URL</label><input id="st-url" placeholder="https://project.firebaseio.com"></div>
-      <div class="field"><label for="st-key">Staff Firebase API key / auth secret</label><input id="st-key" placeholder="optional &mdash; sent as ?auth="></div>
-    </div>
-    <p class="hint">Read-only &mdash; the register only ever fetches from this database, never writes to it. If the DB rules require authentication, paste the database secret or an auth token above &mdash; it's appended to staff requests as <code>?auth=</code>.</p>
-    <div class="row" style="margin-bottom:12px;">
-      <div class="field" style="min-width:260px;">
-        <label for="st-path">Staff list path (manual)</label>
-        <input id="st-path" placeholder="e.g. sf8/sf8_s">
+    <aside class="set-side">
+      <div class="brand">
+        <strong>Settings</strong>
+        <span>Admission Register</span>
       </div>
-      <button type="button" id="st-test-btn" class="ghost small" style="height:36px;">Test connection</button>
-    </div>
-    <p class="hint">Enter the exact path inside the staff database where the staff list lives, then use "Test connection" to check it &mdash; this is no longer auto-detected/crawled.</p>
-    <p class="hint" id="st-detect-status" style="display:none;"></p>
+      <button class="set-nav" data-sec="connection" aria-selected="true">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Connection
+      </button>
+      <button class="set-nav" data-sec="timings" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Day timings
+      </button>
+      <button class="set-nav" data-sec="calendar" aria-selected="false">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Calendar
+      </button>
+      <button class="set-nav" data-sec="shifts" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="9" r="3.5"/></svg> Staff shifts
+      </button>
+      <button class="set-nav" data-sec="device" aria-selected="false">
+        <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 18h2"/></svg> This device
+      </button>
+    </aside>
 
-    <h3>Raw attendance (shared)</h3>
-    <div class="grid">
-      <div class="field"><label for="r-url">Raw attendance Firebase URL</label><input id="r-url" placeholder="https://project.firebaseio.com"></div>
-      <div class="field"><label for="r-code">Raw attendance code</label><input id="r-code" placeholder="secret path segment (optional)"></div>
-    </div>
-    <p class="hint">The only connection that writes as well as reads &mdash; every other Firebase URL on this page is fetch-only. This is also the sync backbone: everything below (except this section, and this device's own name) is saved to <code>&lt;raw-url&gt;/&lt;code&gt;/app_settings.json</code> so any device pointed at the same URL picks it up.</p>
-    <div class="row" style="margin-bottom:4px;">
-      <button type="button" id="r-test-btn" class="ghost small" style="height:36px;">Test connection (read + write)</button>
-    </div>
-    <p class="hint" id="r-test-status" style="display:none;"></p>
+    <div class="set-body">
 
-    <h3>Attendance cutoff (morning ends / evening starts)</h3>
-    <p class="hint">A gate scan before this time counts as a morning entry; at or after it, an evening exit (a pending gatepass always counts as evening regardless of time). This is synced through the Raw attendance Firebase above so the gate device applies it too &mdash; make sure that URL is set and saved for it to actually take effect at the gate.</p>
-    <div class="grid">
-      <div class="field"><label for="cutoff-default-input">Default (all days)</label><input type="time" id="cutoff-default-input"></div>
-    </div>
-    <div class="field" style="margin:14px 0 8px;"><label>Per-day override (optional)</label></div>
-    <div class="row">
-      <div class="field" style="min-width:130px;">
-        <label for="cutoff-weekday-input" style="font-size:9px;">Weekday</label>
-        <select id="cutoff-weekday-input"></select>
-      </div>
-      <div class="field" style="min-width:130px;">
-        <label for="cutoff-time-input" style="font-size:9px;">Cutoff time</label>
-        <input type="time" id="cutoff-time-input">
-      </div>
-      <button type="button" id="add-cutoff-btn" class="ghost small" style="height:36px;">+ Add override</button>
-    </div>
-    <div id="cutoff-list" class="chip-wrap"></div>
+      <!-- ── Connection ── -->
+      <section class="set-sec on" data-sec="connection">
+        <h2>Connection</h2>
+        <p class="lede">One database now. The gate machine sends every scan to the Cloudflare Worker, and the Worker writes the finished record here with the name, class, bus and staff category already attached.</p>
 
-    <div class="field" style="margin:18px 0 8px;"><label>Specific date / range override (takes priority over the weekday override and default)</label></div>
-    <div class="row">
-      <div class="field" style="min-width:150px;"><label for="cutoff-date-input" style="font-size:9px;">From</label><input type="date" id="cutoff-date-input"></div>
-      <label style="display:flex; align-items:center; gap:6px; font-size:13px; padding:0 0 8px;">
-        <input type="checkbox" id="cutoff-date-range-toggle" style="min-width:auto; width:auto;"> Range
-      </label>
-      <div class="field" id="cutoff-date-end-field" style="min-width:150px; display:none;"><label for="cutoff-date-end-input" style="font-size:9px;">To</label><input type="date" id="cutoff-date-end-input"></div>
-      <div class="field" style="min-width:130px;">
-        <label for="cutoff-date-time-input" style="font-size:9px;">Cutoff time</label>
-        <input type="time" id="cutoff-date-time-input">
-      </div>
-      <button type="button" id="add-cutoff-date-btn" class="ghost small" style="height:36px;">+ Add date override</button>
+        <div class="note">
+          <div><b>No student or staff credentials needed.</b> This page never touches those databases. Everything it shows comes from the attendance database below, so nothing sensitive lives in this file.</div>
+        </div>
+
+        <div class="group">
+          <h3>Attendance database</h3>
+          <p class="hint">The same values as the Worker's <code>RAW_FIREBASE_URL</code> and <code>RAW_FIREBASE_CODE</code>. This is the only connection that reads and writes &mdash; settings you save here sync to <code>app_settings.json</code>, which the Worker reads on every scan.</p>
+          <div class="grid">
+            <div class="field"><label for="r-url">Database URL</label><input id="r-url" placeholder="https://attendance-xxxx-default-rtdb.firebasedatabase.app"></div>
+            <div class="field"><label for="r-code">Code</label><input id="r-code" placeholder="path segment, e.g. HAAZRI"></div>
+          </div>
+          <div class="row">
+            <button type="button" id="r-test-btn" class="ghost small" style="height:36px;">Test connection</button>
+          </div>
+          <p class="testline" id="r-test-status"></p>
+        </div>
+      </section>
+
+      <!-- ── Day timings ── -->
+      <section class="set-sec" data-sec="timings">
+        <h2>Day timings</h2>
+        <p class="lede">The cutoff splits a scan into a morning entry or an evening exit. The Worker reads these on every scan, so a change here changes how tomorrow's scans are filed.</p>
+
+        <div class="group">
+          <h3>Default cutoff</h3>
+          <p class="hint">Scans before this time count as morning entry. At or after it, they count as an exit.</p>
+          <div class="grid">
+            <div class="field"><label for="cutoff-default-input">All days</label><input type="time" id="cutoff-default-input"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Different on certain weekdays</h3>
+          <p class="hint">Half-day Saturdays, for example. One override per weekday &mdash; adding another replaces it.</p>
+          <div class="row">
+            <div class="field" style="min-width:120px;"><label for="cutoff-weekday-input">Day</label><select id="cutoff-weekday-input"></select></div>
+            <div class="field" style="min-width:120px;"><label for="cutoff-time-input">Cutoff</label><input type="time" id="cutoff-time-input"></div>
+            <button type="button" id="add-cutoff-btn" class="ghost small" style="height:36px;">Add override</button>
+          </div>
+          <div id="cutoff-list" class="chip-wrap"></div>
+        </div>
+
+        <div class="group">
+          <h3>Different on specific dates</h3>
+          <p class="hint">Exam days, function days. Beats the weekday override for that date.</p>
+          <div class="row">
+            <div class="field" style="min-width:140px;"><label for="cutoff-date-input">From</label><input type="date" id="cutoff-date-input"></div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; height:36px;">
+              <input type="checkbox" id="cutoff-date-range-toggle" style="min-width:auto; width:auto;"> Range
+            </label>
+            <div class="field" id="cutoff-date-end-field" style="min-width:140px; display:none;"><label for="cutoff-date-end-input">To</label><input type="date" id="cutoff-date-end-input"></div>
+            <div class="field" style="min-width:120px;"><label for="cutoff-date-time-input">Cutoff</label><input type="time" id="cutoff-date-time-input"></div>
+            <button type="button" id="add-cutoff-date-btn" class="ghost small" style="height:36px;">Add</button>
+          </div>
+          <div id="cutoff-date-list" class="chip-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ── Calendar ── -->
+      <section class="set-sec" data-sec="calendar">
+        <h2>Calendar</h2>
+        <p class="lede">Which days count. Non-working days and holidays are left out of monthly percentages, and the Worker skips marking anyone absent on them.</p>
+
+        <div class="group">
+          <h3>Working days</h3>
+          <p class="hint">Tap a day to include it.</p>
+          <div id="working-days-row" class="daypick"></div>
+        </div>
+
+        <div class="group">
+          <h3>Holidays</h3>
+          <p class="hint">Fixed dates &mdash; festivals, breaks, a one-off closure.</p>
+          <div class="row">
+            <div class="field" style="min-width:140px;"><label for="holiday-date-input">From</label><input type="date" id="holiday-date-input"></div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; height:36px;">
+              <input type="checkbox" id="holiday-range-toggle" style="min-width:auto; width:auto;"> Range
+            </label>
+            <div class="field" id="holiday-end-field" style="min-width:140px; display:none;"><label for="holiday-end-input">To</label><input type="date" id="holiday-end-input"></div>
+            <div class="field" style="min-width:140px;"><label for="holiday-scope-input">Applies to</label>
+              <select id="holiday-scope-input">
+                <option value="all">Everyone</option>
+                <option value="student">Students only</option>
+                <option value="staff">Staff only</option>
+              </select>
+            </div>
+            <button type="button" id="add-holiday-btn" class="ghost small" style="height:36px;">Add</button>
+          </div>
+          <div id="holiday-list" class="chip-wrap"></div>
+        </div>
+
+        <div class="group">
+          <h3>Repeating holidays</h3>
+          <p class="hint">Every second Saturday, for instance &mdash; applied to every month automatically.</p>
+          <div class="row">
+            <div class="field" style="min-width:110px;"><label for="rule-nth-input">Which</label>
+              <select id="rule-nth-input">
+                <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option>
+                <option value="4">4th</option><option value="-1">Last</option>
+              </select>
+            </div>
+            <div class="field" style="min-width:110px;"><label for="rule-weekday-input">Day</label><select id="rule-weekday-input"></select></div>
+            <div class="field" style="min-width:140px;"><label for="rule-scope-input">Applies to</label>
+              <select id="rule-scope-input">
+                <option value="all">Everyone</option>
+                <option value="student">Students only</option>
+                <option value="staff">Staff only</option>
+              </select>
+            </div>
+            <button type="button" id="add-rule-btn" class="ghost small" style="height:36px;">Add rule</button>
+          </div>
+          <div id="rule-list" class="chip-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ── Staff shifts ── -->
+      <section class="set-sec" data-sec="shifts">
+        <h2>Staff shifts</h2>
+        <p class="lede">How a staff day is judged. Any scan can count as a full day, or you can require a scan inside each shift window &mdash; miss one and the day is marked half.</p>
+        <div id="shift-rules-grid"></div>
+      </section>
+
+      <!-- ── This device ── -->
+      <section class="set-sec" data-sec="device">
+        <h2>This device</h2>
+        <p class="lede">A name helps you tell devices apart when you hide categories. The name stays on this device; the hide list is shared.</p>
+
+        <div class="group">
+          <h3>Name and default view</h3>
+          <div class="grid">
+            <div class="field"><label for="this-device-input">Device name</label><input id="this-device-input" placeholder="e.g. Reception Desk"></div>
+            <div class="field"><label for="default-view-input">Students open on</label>
+              <select id="default-view-input">
+                <option value="list">List</option>
+                <option value="summary">Summary</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Hide staff categories</h3>
+          <p class="hint">Tick a category to hide it on that device &mdash; useful when a gate iPad should only show drivers.</p>
+          <div id="device-list"></div>
+          <div class="row">
+            <div class="field" style="min-width:200px;"><label for="new-device-input">Add a device by name</label><input id="new-device-input" placeholder="e.g. Gate iPad"></div>
+            <button type="button" id="add-device-btn" class="ghost small" style="height:36px;">Add device</button>
+          </div>
+        </div>
+      </section>
+
     </div>
-    <div id="cutoff-date-list" class="chip-wrap"></div>
 
-    <h3>Register display</h3>
-    <div class="grid">
-      <div class="field">
-        <label for="default-view-input">Default view &mdash; Students / Daily</label>
-        <select id="default-view-input">
-          <option value="list">List</option>
-          <option value="summary">Summary</option>
-          <option value="both">Both</option>
-        </select>
-      </div>
-    </div>
-
-    <h3>Staff shift rules</h3>
-    <p class="hint">By default a category just needs one scan to count as a full day. Switch a category to "Time-based shifts" to instead require scans inside specific from&ndash;to windows (e.g. Drivers/Cleaners with a morning and afternoon shift). Fill in Shift 2 only if that category works two shifts &mdash; both shifts scanned counts as a full day, one out of two counts as half day, and a scan outside both windows also counts as half day.</p>
-    <div id="shift-rules-grid"></div>
-
-    <h3>School calendar (for monthly totals)</h3>
-    <p class="hint">A date only counts as a school day in the Monthly view if it falls on a working day below AND isn't a holiday (fixed-date or recurring) &mdash; even if a stray scan happened that day.</p>
-    <div class="field" style="margin-bottom:16px;">
-      <label>Working days</label>
-      <div id="working-days-row" class="working-days-row"></div>
-    </div>
-
-    <div class="field" style="margin-bottom:8px;"><label>Fixed-date holidays</label></div>
-    <div class="row">
-      <div class="field" style="min-width:150px;"><label for="holiday-date-input" style="font-size:9px;">From</label><input type="date" id="holiday-date-input"></div>
-      <div class="field" id="holiday-end-field" style="min-width:150px; display:none;"><label for="holiday-end-input" style="font-size:9px;">To</label><input type="date" id="holiday-end-input"></div>
-      <label style="display:flex; align-items:center; gap:6px; font-size:13px; padding:0 0 8px;">
-        <input type="checkbox" id="holiday-range-toggle" style="min-width:auto; width:auto;"> Range
-      </label>
-      <div class="field" style="min-width:150px;">
-        <label for="holiday-scope-input" style="font-size:9px;">Applies to</label>
-        <select id="holiday-scope-input">
-          <option value="all">Everyone</option>
-          <option value="student">Students only</option>
-          <option value="staff">Staff only</option>
-        </select>
-      </div>
-      <button type="button" id="add-holiday-btn" class="ghost small" style="height:36px;">+ Add</button>
-    </div>
-    <div id="holiday-list" class="chip-wrap"></div>
-
-    <div class="field" style="margin:18px 0 8px;"><label>Recurring holidays (e.g. last Saturday of every month)</label></div>
-    <div class="row">
-      <div class="field" style="min-width:130px;">
-        <label for="rule-nth-input" style="font-size:9px;">Which one</label>
-        <select id="rule-nth-input">
-          <option value="1">1st</option>
-          <option value="2">2nd</option>
-          <option value="3">3rd</option>
-          <option value="4">4th</option>
-          <option value="-1">Last</option>
-        </select>
-      </div>
-      <div class="field" style="min-width:130px;">
-        <label for="rule-weekday-input" style="font-size:9px;">Weekday</label>
-        <select id="rule-weekday-input"></select>
-      </div>
-      <div class="field" style="min-width:150px;">
-        <label for="rule-scope-input" style="font-size:9px;">Applies to</label>
-        <select id="rule-scope-input">
-          <option value="all">Everyone</option>
-          <option value="student">Students only</option>
-          <option value="staff">Staff only</option>
-        </select>
-      </div>
-      <button type="button" id="add-rule-btn" class="ghost small" style="height:36px;">+ Add rule</button>
-    </div>
-    <div id="rule-list" class="chip-wrap"></div>
-
-    <h3>This device</h3>
-    <p class="hint">This name is local to this browser only (not synced) &mdash; it's how the "Per-device staff visibility" section below knows which device it's looking at.</p>
-    <div class="grid">
-      <div class="field"><label for="this-device-input">This device's name</label><input id="this-device-input" placeholder="e.g. Reception Desk"></div>
-    </div>
-
-    <h3>Per-device staff visibility</h3>
-    <p class="hint">Hide staff categories (e.g. Maids) from specific devices &mdash; useful if a device is only meant to show certain staff. This list syncs, so you can manage every device's visibility from any one of them.</p>
-    <div id="device-list"></div>
-    <div class="row">
-      <div class="field" style="min-width:200px;"><label for="new-device-input" style="font-size:9px;">Add a device by name</label><input id="new-device-input" placeholder="e.g. Gate iPad"></div>
-      <button type="button" id="add-device-btn" class="ghost small" style="height:36px;">+ Add device</button>
-    </div>
-
-    <div class="status" id="status-msg"></div>
-    <div class="actions">
-      <button id="save-btn">Save &amp; Sync</button>
-      <button class="ghost" id="pull-btn">Pull latest from cloud</button>
+    <div class="set-foot">
+      <div class="status" id="status-msg"></div>
+      <button class="ghost" id="pull-btn">Pull from cloud</button>
+      <button id="save-btn">Save &amp; sync</button>
     </div>
   </div>
 </div>
 
+
 <script>
 const LS = {
-  sUrl:'reg_students_url', sCode:'reg_students_code',
-  stUrl:'reg_staff_url',   stCode:'reg_staff_code', stKey:'reg_staff_key', stPath:'reg_staff_path',
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
@@ -483,6 +588,9 @@ let ROSTER = [];
 let RECORDS = {};
 let MONTHLY = {};
 let USING_SAMPLE = false;
+let ABSENT_IDS = new Set();      // ids on that day's absentee list
+let ABSENT_READY = false;        // has the evening absent job run for this day?
+let STAFF_ALL_CATEGORIES = [];   // every category seen, so pills survive filtering
 
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -491,49 +599,53 @@ async function fetchJson(url, options){ try{ const r=await fetch(url, options); 
 function parseTimeMs(t){ if(!t) return null; const iso = String(t).trim().replace(' ','T'); const d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime(); }
 
 /* =========================================================
-   Staff Firebase — manual path, read-only
-   The person types the exact internal path themselves (e.g. "sf8/sf8_s");
-   nothing here crawls the database looking for it anymore. This connection
-   only ever fetches — it never writes to the staff Firebase.
+   Attendance database — the only connection this page makes.
+   The Worker writes each scan with the person's details already attached
+   (name, class, bus for students; name and category for staff) and writes
+   the day's absentee list too. So the roster for any date is simply
+   "everyone who scanned" + "everyone on that day's absentee list" — no
+   student or staff database credentials live in this file.
    ========================================================= */
-function buildQuery(params){
-  const parts = Object.entries(params).filter(([,v]) => v).map(([k,v]) => `${k}=${encodeURIComponent(v)}`);
-  return parts.length ? '?' + parts.join('&') : '';
+function attBase(){
+  const rUrl = (localStorage.getItem(LS.rUrl) || '').trim().replace(/\/+$/, '');
+  if(!rUrl) return null;
+  const rCode = (localStorage.getItem(LS.rCode) || '').trim().replace(/^\/+|\/+$/g, '');
+  return rCode ? `${rUrl}/${rCode}` : rUrl;
 }
-function looksLikeStaffRecord(rec){
-  if(!rec || typeof rec !== 'object') return false;
-  const keys = Object.keys(rec).map(k => k.toLowerCase());
-  const hasId = keys.some(k => k === 'id' || k.endsWith('id'));
-  const hasName = keys.some(k => k === 'name' || k.endsWith('name'));
-  return hasId && hasName;
+function groupKey(){ return VIEW === 'student' ? 'students' : 'staff'; }
+
+// Scan record -> roster shape
+function personFromRecord(rec){
+  if(!rec) return null;
+  const id = rec.personId || rec.admissionNumber || rec.employeeId || rec.pin;
+  if(id == null || id === '') return null;
+  return VIEW === 'student'
+    ? { admissionNumber:String(id), studentName: rec.studentName || rec.name || '', class: rec.className || '', busNumber: rec.busNumber || '' }
+    : { id:String(id), name: rec.staffName || rec.name || '', role: rec.category || '' };
 }
-function looksLikeStaffList(data){
-  if(!data || typeof data !== 'object') return false;
-  const values = (Array.isArray(data) ? data : Object.values(data)).filter(Boolean);
-  if(!values.length) return false;
-  const sample = values.slice(0, 5);
-  const hits = sample.filter(looksLikeStaffRecord).length;
-  return hits >= Math.ceil(sample.length / 2);
+// Absentee list entry -> roster shape
+function personFromAbsentee(a){
+  if(!a) return null;
+  const id = a.admissionNumber || a.employeeId;
+  if(id == null || id === '') return null;
+  return VIEW === 'student'
+    ? { admissionNumber:String(id), studentName: a.studentName || '', class: a.className || '', busNumber: a.busNumber || '' }
+    : { id:String(id), name: a.staffName || '', role: a.category || '' };
 }
-function normalizeStaffList(data){
-  const values = (Array.isArray(data) ? data : Object.values(data || {})).filter(Boolean);
-  return values.map(rec => {
-    if(!rec || typeof rec !== 'object') return null;
-    const keys = Object.keys(rec);
-    const idKey = keys.find(k => k.toLowerCase() === 'id') || keys.find(k => k.toLowerCase().endsWith('id'));
-    const nameKey = keys.find(k => k.toLowerCase() === 'name') || keys.find(k => k.toLowerCase().endsWith('name'));
-    const roleKey = keys.find(k => /^(role|designation|category|post|department)$/i.test(k)) || keys.find(k => /(role|designation|category|post|department)$/i.test(k));
-    if(!idKey || !nameKey) return null;
-    return { id: rec[idKey], name: rec[nameKey], role: roleKey ? rec[roleKey] : '' };
-  }).filter(Boolean);
+function personId(p){ return VIEW === 'student' ? String(p.admissionNumber) : String(p.id); }
+function mergePerson(map, p){
+  if(!p) return;
+  const key = personId(p);
+  const cur = map[key];
+  if(!cur){ map[key] = p; return; }
+  Object.keys(p).forEach(k => { if(!cur[k] && p[k]) cur[k] = p[k]; });
 }
-// Fetches the staff list from the manually-entered path. Read-only — this never writes
-// to the staff Firebase, and never crawls looking for the path anymore.
-async function loadStaffArray(stUrl, stKey, stPath){
-  if(!stUrl || !stPath) return null;
-  const data = await fetchJson(`${stUrl}/${stPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
-  if(looksLikeStaffList(data)) return normalizeStaffList(data);
-  return null;
+function absenteeList(node){
+  if(!node) return [];
+  if(Array.isArray(node)) return node.filter(Boolean);
+  if(Array.isArray(node.list)) return node.list.filter(Boolean);
+  if(node.list && typeof node.list === 'object') return Object.values(node.list).filter(Boolean);
+  return [];
 }
 
 const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Maid','Cleaner','Driver','Security','Gardner'];
@@ -712,12 +824,11 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['sUrl','sCode','stUrl','stKey','stPath','shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','studentDefaultView','devices'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
-  const rUrl = localStorage.getItem(LS.rUrl);
-  const rCode = localStorage.getItem(LS.rCode) || '';
-  if(!rUrl) return;
-  const remote = await fetchJson(`${rUrl}/${rCode}/app_settings.json`);
+  const base = attBase();
+  if(!base) return;
+  const remote = await fetchJson(`${base}/app_settings.json`);
   if(!remote || typeof remote !== 'object') return;
   SYNCED_KEYS.forEach(key => {
     if(remote[key] === undefined) return;
@@ -800,34 +911,219 @@ document.getElementById('month-input').addEventListener('change', loadRegister);
 document.getElementById('category-filter').addEventListener('change', renderTable);
 document.getElementById('search-input').addEventListener('input', renderTable);
 
-async function loadRoster(){
-  USING_SAMPLE = false;
-  if(VIEW === 'student'){
-    const sUrl = localStorage.getItem(LS.sUrl);
-    const sCode = localStorage.getItem(LS.sCode) || '';
-    let students = sUrl ? await fetchJson(`${sUrl}/${sCode}/students.json`) : null;
-    if(!Array.isArray(students) || !students.length){ students = SAMPLE_STUDENTS; USING_SAMPLE = true; }
-    ROSTER = students.filter(Boolean);
-  }else{
-    const stUrl = localStorage.getItem(LS.stUrl);
-    const stKey = localStorage.getItem(LS.stKey) || '';
-    const stPath = localStorage.getItem(LS.stPath) || '';
-    let staffArr = (stUrl && stPath) ? await loadStaffArray(stUrl, stKey, stPath) : null;
-    if(!Array.isArray(staffArr) || !staffArr.length){ staffArr = SAMPLE_STAFF; USING_SAMPLE = true; }
-    const allStaff = staffArr.filter(s => s && s.id && s.name);
-    const hiddenCats = getHiddenStaffCategoriesForThisDevice();
-    const visibleStaff = hiddenCats.length ? allStaff.filter(s => !hiddenCats.includes(normalizedRole(s.role || ''))) : allStaff;
-    buildCategoryPills(visibleStaff);
-    ROSTER = STAFF_CATEGORY === 'All' ? visibleStaff : visibleStaff.filter(s => normalizedRole(s.role || '') === STAFF_CATEGORY);
-  }
+async function loadRegister(){
+  if(MODE === 'daily') await loadDaily();
+  else await loadMonthly();
 }
 
-function buildCategoryPills(allStaff){
-  const found = [...new Set(allStaff.map(s => normalizedRole(s.role)).filter(Boolean))];
+// ── Daily ─────────────────────────────────────────────────────────────
+// Two fetches: that day's scans, and that day's absentee list. Together they
+// are the full register for the day.
+async function loadDaily(){
+  const date = document.getElementById('date-input').value || TODAY;
+  document.getElementById('date-label').textContent =
+    new Date(date + 'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  const base = attBase();
+  const group = groupKey();
+  USING_SAMPLE = false;
+  ABSENT_IDS = new Set();
+  ABSENT_READY = false;
+  RECORDS = {};
+
+  let scans = null, absNode = null;
+  if(base){
+    [scans, absNode] = await Promise.all([
+      fetchJson(`${base}/raw_attendance/${group}/${date}.json`),
+      fetchJson(`${base}/absentees/${group}/${date}.json`)
+    ]);
+  }
+
+  const rosterMap = {};
+
+  if(!base || (!scans && !absNode)){
+    // Nothing configured (or nothing recorded that day) — fall back to the demo set
+    if(!base){
+      USING_SAMPLE = true;
+      (VIEW === 'student' ? SAMPLE_STUDENTS : SAMPLE_STAFF).forEach(p => mergePerson(rosterMap, p));
+      Object.keys(SAMPLE_RECORDS).forEach(pin => {
+        if(rosterMap[pin]) RECORDS[pin] = SAMPLE_RECORDS[pin];
+      });
+      Object.keys(rosterMap).forEach(id => { if(!RECORDS[id]) ABSENT_IDS.add(id); });
+      ABSENT_READY = true;
+    }
+  }
+
+  if(scans && typeof scans === 'object'){
+    Object.values(scans).forEach(rec => {
+      const p = personFromRecord(rec);
+      if(!p) return;
+      const id = personId(p);
+      mergePerson(rosterMap, p);
+      if(!RECORDS[id]) RECORDS[id] = [];
+      RECORDS[id].push(rec);
+    });
+  }
+
+  const absList = absenteeList(absNode);
+  if(absNode){
+    ABSENT_READY = true;
+    absList.forEach(a => {
+      const p = personFromAbsentee(a);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+      ABSENT_IDS.add(personId(p));
+    });
+  }
+
+  ROSTER = applyStaffVisibility(Object.values(rosterMap));
+  if(VIEW === 'staff') buildCategoryPills(ROSTER);
+
+  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
+  buildDailyHead();
+  if(VIEW === 'student') populateClassFilter();
+  renderDailyTable();
+}
+
+// ── Monthly ───────────────────────────────────────────────────────────
+// Two range queries over the date-keyed nodes, so a whole month costs two
+// requests instead of sixty.
+async function loadMonthly(){
+  const monthVal = document.getElementById('month-input').value || TODAY.slice(0,7);
+  const [y, m] = monthVal.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const startDate = `${monthVal}-01`;
+  const endDate = `${monthVal}-${String(daysInMonth).padStart(2,'0')}`;
+  document.getElementById('date-label').textContent =
+    new Date(y, m - 1, 1).toLocaleDateString('en-IN',{month:'long', year:'numeric'}) + ' \u2014 monthly summary';
+
+  const base = attBase();
+  const group = groupKey();
+  USING_SAMPLE = false;
+
+  let scanRange = null, absRange = null;
+  if(base){
+    const range = `orderBy="$key"&startAt="${startDate}"&endAt="${endDate}"`;
+    [scanRange, absRange] = await Promise.all([
+      fetchJson(`${base}/raw_attendance/${group}.json?${range}`),
+      fetchJson(`${base}/absentees/${group}.json?${range}`)
+    ]);
+  }
+
+  const rosterMap = {};
+  MONTHLY = {};
+
+  const scanDays = scanRange && typeof scanRange === 'object' ? scanRange : {};
+  const absDays  = absRange  && typeof absRange  === 'object' ? absRange  : {};
+  const allDays = [...new Set([...Object.keys(scanDays), ...Object.keys(absDays)])]
+    .sort()
+    .filter(d => isSchoolDay(d, VIEW));
+
+  if(base && !allDays.length){
+    // Configured, but nothing recorded this month — show an empty register, not demo rows
+    ROSTER = [];
+    document.getElementById('demo-note').classList.toggle('show', false);
+    buildMonthlyHead();
+    renderMonthlyTable();
+    return;
+  }
+
+  if(!base){
+    // Nothing configured yet — demo rows so the layout is visible
+    USING_SAMPLE = true;
+    (VIEW === 'student' ? SAMPLE_STUDENTS : SAMPLE_STAFF).forEach(p => mergePerson(rosterMap, p));
+    ROSTER = applyStaffVisibility(Object.values(rosterMap));
+    if(VIEW === 'staff') buildCategoryPills(ROSTER);
+    const totalDays = 22;
+    ROSTER.forEach(person => {
+      const id = personId(person);
+      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
+      const isTwoShift = VIEW === 'staff' && (getShiftRulesMap()[category] || {}).mode === 'shifts';
+      let present = 0, half = 0, absent = 0;
+      for(let d = 1; d <= totalDays; d++){
+        const r = seeded(id + '-' + d);
+        if(VIEW === 'student'){ r > 0.12 ? present++ : absent++; }
+        else if(isTwoShift){ if(r > 0.85) absent++; else if(r > 0.7) half++; else present++; }
+        else { r > 0.1 ? present++ : absent++; }
+      }
+      MONTHLY[id] = { present, half, absent, totalDays };
+    });
+    document.getElementById('demo-note').classList.toggle('show', true);
+    buildMonthlyHead();
+    if(VIEW === 'student') populateClassFilter();
+    renderMonthlyTable();
+    return;
+  }
+
+  // Build the roster from everything seen this month
+  const dayScans = {};   // date -> { id: [records] }
+  const dayAbsent = {};  // date -> Set(id)
+
+  allDays.forEach(day => {
+    const byId = {};
+    Object.values(scanDays[day] || {}).forEach(rec => {
+      const p = personFromRecord(rec);
+      if(!p) return;
+      const id = personId(p);
+      mergePerson(rosterMap, p);
+      (byId[id] = byId[id] || []).push(rec);
+    });
+    dayScans[day] = byId;
+
+    const set = new Set();
+    absenteeList(absDays[day]).forEach(a => {
+      const p = personFromAbsentee(a);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+      set.add(personId(p));
+    });
+    dayAbsent[day] = set;
+  });
+
+  ROSTER = applyStaffVisibility(Object.values(rosterMap));
+  if(VIEW === 'staff') buildCategoryPills(ROSTER);
+
+  ROSTER.forEach(person => {
+    const id = personId(person);
+    const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
+    let present = 0, half = 0, absent = 0, tracked = 0;
+    allDays.forEach(day => {
+      const recs = (dayScans[day] || {})[id] || [];
+      const markedAbsent = (dayAbsent[day] || new Set()).has(id);
+      if(!recs.length && !markedAbsent) return; // person wasn't on the register that day
+      tracked++;
+      if(!recs.length){ absent++; return; }
+      if(VIEW === 'student'){ present++; return; }
+      const st = computeStaffDayStatus(recs, category);
+      if(st === 'present') present++;
+      else if(st === 'half') half++;
+      else absent++;
+    });
+    MONTHLY[id] = { present, half, absent, totalDays: tracked };
+  });
+
+  document.getElementById('demo-note').classList.toggle('show', false);
+  buildMonthlyHead();
+  if(VIEW === 'student') populateClassFilter();
+  renderMonthlyTable();
+}
+
+// Per-device hidden staff categories + the category pill filter
+function applyStaffVisibility(list){
+  if(VIEW !== 'staff') return list;
+  const hidden = getHiddenStaffCategoriesForThisDevice();
+  let out = hidden.length ? list.filter(s => !hidden.includes(normalizedRole(s.role || ''))) : list;
+  if(STAFF_CATEGORY !== 'All') out = out.filter(s => normalizedRole(s.role || '') === STAFF_CATEGORY);
+  return out;
+}
+
+function buildCategoryPills(visibleStaff){
+  const wrap = document.getElementById('category-pills');
+  const found = [...new Set(STAFF_ALL_CATEGORIES.concat(visibleStaff.map(s => normalizedRole(s.role))).filter(Boolean))];
+  STAFF_ALL_CATEGORIES = found;
   const ordered = PREFERRED_STAFF_CATEGORY_ORDER.filter(c => found.includes(c));
   const extras = found.filter(c => !PREFERRED_STAFF_CATEGORY_ORDER.includes(c)).sort();
   const categories = ['All', ...ordered, ...extras];
-  const wrap = document.getElementById('category-pills');
   wrap.innerHTML = categories.map(c =>
     `<span class="pill ${c === STAFF_CATEGORY ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`
   ).join('');
@@ -839,110 +1135,12 @@ function buildCategoryPills(allStaff){
   });
 }
 
-async function loadRegister(){
-  await loadRoster();
-  if(MODE === 'daily') await loadDaily();
-  else await loadMonthly();
-}
-
-async function loadDaily(){
-  const date = document.getElementById('date-input').value || TODAY;
-  document.getElementById('date-label').textContent =
-    new Date(date + 'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
-  const rUrl = localStorage.getItem(LS.rUrl);
-  const rCode = localStorage.getItem(LS.rCode) || '';
-  let rawRecords = rUrl ? await fetchJson(`${rUrl}/${rCode}/raw_attendance/${date}.json`) : null;
-  RECORDS = {};
-  if(rawRecords && typeof rawRecords === 'object' && !USING_SAMPLE){
-    Object.values(rawRecords).forEach(rec => {
-      if(!rec || !rec.pin) return;
-      const pin = String(rec.pin);
-      if(!RECORDS[pin]) RECORDS[pin] = [];
-      RECORDS[pin].push(rec);
-    });
-  }else{
-    RECORDS = SAMPLE_RECORDS;
-  }
-  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
-  buildDailyHead();
-  if(VIEW === 'student') populateClassFilter();
-  renderDailyTable();
-}
-
-async function loadMonthly(){
-  const monthVal = document.getElementById('month-input').value || TODAY.slice(0,7);
-  const [y, m] = monthVal.split('-').map(Number);
-  const daysInMonth = new Date(y, m, 0).getDate();
-  const startDate = `${monthVal}-01`;
-  const endDate = `${monthVal}-${String(daysInMonth).padStart(2,'0')}`;
-  document.getElementById('date-label').textContent =
-    new Date(y, m - 1, 1).toLocaleDateString('en-IN',{month:'long', year:'numeric'}) + ' \u2014 monthly summary';
-  const rUrl = localStorage.getItem(LS.rUrl);
-  const rCode = localStorage.getItem(LS.rCode) || '';
-  let monthData = null;
-  if(rUrl && !USING_SAMPLE){
-    monthData = await fetchJson(`${rUrl}/${rCode}/raw_attendance.json?orderBy="$key"&startAt="${startDate}"&endAt="${endDate}"`);
-  }
-  MONTHLY = {};
-  if(monthData && typeof monthData === 'object' && Object.keys(monthData).length){
-    const schoolDays = Object.keys(monthData).sort().filter(d => isSchoolDay(d, VIEW));
-    ROSTER.forEach(person => {
-      const id = VIEW === 'student' ? String(person.admissionNumber) : String(person.id);
-      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
-      let present = 0, half = 0, absent = 0, trackedDays = 0;
-      schoolDays.forEach(day => {
-        const dayRecs = Object.values(monthData[day] || {}).filter(r => r && String(r.pin) === id);
-        if(VIEW === 'student'){
-          const hasEntry = dayRecs.some(r => r.action === 'morning_entry' || r.action === 'gatepass_exit' || r.action === 'evening_exit');
-          if(hasEntry){ present++; trackedDays++; }
-          else if(person.busNumber){ }
-          else { absent++; trackedDays++; }
-        }else{
-          trackedDays++;
-          const dayStatus = computeStaffDayStatus(dayRecs, category);
-          if(dayStatus === 'present') present++;
-          else if(dayStatus === 'half') half++;
-          else absent++;
-        }
-      });
-      MONTHLY[id] = { present, half, absent, totalDays: trackedDays };
-    });
-    USING_SAMPLE = false;
-  }else{
-    const totalDays = 22;
-    ROSTER.forEach(person => {
-      const id = VIEW === 'student' ? String(person.admissionNumber) : String(person.id);
-      const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
-      const isTwoShift = VIEW === 'staff' && (getShiftRulesMap()[category] || {}).mode === 'shifts';
-      let present = 0, half = 0, absent = 0;
-      for(let d = 1; d <= totalDays; d++){
-        const r = seeded(id + '-' + d);
-        if(VIEW === 'student'){
-          r > 0.12 ? present++ : absent++;
-        }else if(isTwoShift){
-          if(r > 0.85) absent++;
-          else if(r > 0.7) half++;
-          else present++;
-        }else{
-          r > 0.1 ? present++ : absent++;
-        }
-      }
-      MONTHLY[id] = { present, half, absent, totalDays };
-    });
-    USING_SAMPLE = true;
-  }
-  document.getElementById('demo-note').classList.toggle('show', USING_SAMPLE);
-  buildMonthlyHead();
-  if(VIEW === 'student') populateClassFilter();
-  renderMonthlyTable();
-}
-
 function buildDailyHead(){
   const head = document.getElementById('register-head');
   if(VIEW === 'student'){
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th><th>Status</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">In</th><th class="mono-col">Out</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">In</th><th class="mono-col">Out</th><th>Status</th></tr>`;
   }
 }
 function buildMonthlyHead(){
@@ -959,7 +1157,7 @@ function populateClassFilter(){
   const label = document.getElementById('category-label');
   const current = sel.value;
   label.textContent = 'Class';
-  const values = [...new Set(ROSTER.map(s => s.class).filter(Boolean))].sort();
+  const values = [...new Set(ROSTER.map(s => s.class).filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric:true}));
   sel.innerHTML = '<option value="">All classes</option>' + values.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   sel.value = values.includes(current) ? current : '';
 }
@@ -985,38 +1183,6 @@ function filteredRows(){
   return rows;
 }
 
-// Daily student list is built from that date's punch records, not the full roster — the
-// roster (ROSTER) is only used here to look up name/class/bus by admission number so a
-// punched student's row can be enriched. A student with no punch that date is never shown
-// or counted in the daily summary/breakdown.
-function punchedStudentRows(){
-  const categoryFilter = document.getElementById('category-filter').value;
-  const q = document.getElementById('search-input').value.trim().toLowerCase();
-  const rosterById = {};
-  ROSTER.forEach(s => { if(s && s.admissionNumber != null) rosterById[String(s.admissionNumber)] = s; });
-  let rows = Object.keys(RECORDS)
-    .filter(pin => Array.isArray(RECORDS[pin]) && RECORDS[pin].length)
-    .map(pin => {
-      const match = rosterById[pin];
-      return {
-        admissionNumber: match ? match.admissionNumber : pin,
-        studentName: match ? match.studentName : '',
-        class: match ? match.class : '',
-        busNumber: match ? match.busNumber : ''
-      };
-    });
-  rows = rows.filter(s => {
-    if(categoryFilter && s.class !== categoryFilter) return false;
-    if(q){
-      const hay = `${s.studentName || ''} ${s.admissionNumber || ''}`.toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
-    return true;
-  });
-  rows.sort((a,b) => String(a.admissionNumber).localeCompare(String(b.admissionNumber), undefined, {numeric:true}));
-  return rows;
-}
-
 function setSummary(cards){
   const el = document.getElementById('summary');
   el.innerHTML = cards.map(c => `<div class="stat"><div class="n" style="${c.color?`color:${c.color};`:''}">${c.value}</div><div class="l">${c.label}</div></div>`).join('');
@@ -1024,33 +1190,35 @@ function setSummary(cards){
 }
 
 function renderDailyTable(){
-  const rows = VIEW === 'student' ? punchedStudentRows() : filteredRows();
+  const rows = filteredRows();
   let present = 0, exit = 0, absent = 0, half = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
 
   rows.forEach((s, i) => {
-    const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
+    const idField = personId(s);
     const nameField = VIEW === 'student' ? s.studentName : s.name;
     const recs = RECORDS[idField] || [];
+    const markedAbsent = ABSENT_IDS.has(idField);
     let status, tr = document.createElement('tr');
 
     if(VIEW === 'student'){
-      // rows here are already punch-only (see punchedStudentRows) — every student below has
-      // at least one record today, so there's no "absent"/"in bus" bucket to compute.
       const inRec = recs.find(r => r.action === 'morning_entry');
       const outRec = recs.find(r => r.action === 'gatepass_exit' || r.action === 'evening_exit');
-      status = outRec ? 'gatepass' : 'present';
-      if(status === 'present') present++; else exit++;
+      if(!recs.length){ status = 'absent'; absent++; }
+      else if(outRec){ status = 'gatepass'; exit++; }
+      else { status = 'present'; present++; }
       const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : '\u2014';
       const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td>`;
+      const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
+        : status === 'gatepass' ? '<span class="badge gatepass">Exited</span>'
+        : '<span class="badge present">In</span>';
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField || '\u2014')}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td><td>${badge}</td>`;
     }else{
-      // Staff list always shows everyone regardless of punches.
       const category = normalizedRole(s.role || '');
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
-      status = computeStaffDayStatus(recs, category);
+      status = recs.length ? computeStaffDayStatus(recs, category) : 'absent';
       if(status === 'present') present++;
       else if(status === 'half') half++;
       else absent++;
@@ -1059,31 +1227,35 @@ function renderDailyTable(){
         const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)));
         return lines.length ? lines.join('<br>') : '\u2014';
       };
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td>`;
+      const badge = status === 'present' ? '<span class="badge present">Present</span>'
+        : status === 'half' ? '<span class="badge half">Half day</span>'
+        : '<span class="badge absent">Absent</span>';
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField || '\u2014')}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td><td>${badge}</td>`;
     }
     enriched.push({ s, status });
     body.appendChild(tr);
   });
 
+  const unlisted = !ABSENT_READY && !USING_SAMPLE;
   let dailyCards;
   if(VIEW === 'student'){
     dailyCards = [
-      {value: rows.length, label: 'Students punched today'},
-      {value: present, label: 'Still in (morning only)', color:'var(--present)'},
-      {value: exit, label: 'Exited today', color:'var(--pending)'}
+      {value: rows.length, label: unlisted ? 'Students scanned' : 'On the register'},
+      {value: present, label: 'Still in', color:'var(--present)'},
+      {value: exit, label: 'Exited', color:'var(--pending)'}
     ];
+    if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent)'});
   }else{
     dailyCards = [
-      {value: rows.length, label: 'Total staff'},
+      {value: rows.length, label: unlisted ? 'Staff scanned' : 'Total staff'},
       {value: present, label: 'Present', color:'var(--present)'},
-      {value: absent, label: 'Absent', color:'var(--absent)'},
-      {value: half, label: 'Half day', color:'var(--half)'}
+      {value: half, label: 'Half day', color:'var(--half)'},
+      {value: absent, label: 'Absent', color:'var(--absent)'}
     ];
   }
   setSummary(dailyCards);
-  if(!(VIEW === 'staff' && MODE === 'daily')) renderBreakdown(enriched, 'daily');
-  else document.getElementById('breakdown-wrap').innerHTML = '';
-  finishRender(rows.length);
+  renderBreakdown(enriched, 'daily');
+  finishRender(rows.length, unlisted);
 }
 
 function renderMonthlyTable(){
@@ -1143,7 +1315,7 @@ function renderBreakdown(enriched, mode){
       if(mode === 'daily'){
         if(r.status === 'present') g.present++;
         else if(r.status === 'gatepass') g.exit++;
-        else if(r.status === 'bus') g.bus++;
+        else if(r.status === 'half') g.half++;
         else if(r.status === 'absent') g.absent++;
       }else{
         g.present += r.present; g.half += r.half; g.absent += r.absent; g.pctSum += r.pct;
@@ -1155,13 +1327,13 @@ function renderBreakdown(enriched, mode){
     let headCols, bodyRows;
     if(mode === 'daily'){
       headCols = VIEW === 'student'
-        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th>'
-        : '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Absent</th>';
+        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th><th class="mono-col">Absent</th>'
+        : '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Half</th><th class="mono-col">Absent</th>';
       bodyRows = groups.map(k => {
         const g = map[k];
         return VIEW === 'student'
-          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td></tr>`
-          : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`;
+          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`
+          : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--half)">${g.half}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`;
       }).join('');
     }else{
       headCols = VIEW === 'student'
@@ -1181,15 +1353,27 @@ function renderBreakdown(enriched, mode){
   });
 }
 
-function finishRender(count){
+function finishRender(count, unlisted){
   const hasData = count > 0;
   document.getElementById('register-table').dataset.has = hasData ? '1' : '';
   document.getElementById('summary').dataset.has = hasData ? '1' : '';
   applyDisplayMode();
-  document.getElementById('empty-msg').style.display = hasData ? 'none' : 'block';
-  if(!hasData) document.getElementById('empty-msg').textContent = 'No records match this view.';
+  const empty = document.getElementById('empty-msg');
+  empty.style.display = hasData ? 'none' : 'block';
+  if(!hasData){
+    empty.textContent = attBase()
+      ? 'Nothing recorded for this day yet.'
+      : 'Add your attendance database URL in Settings to load real records.';
+  }
+  const note = document.getElementById('roster-note');
+  if(note){
+    const show = hasData && MODE === 'daily' && unlisted;
+    note.style.display = show ? 'block' : 'none';
+    note.textContent = show
+      ? 'Showing only people who scanned \u2014 the absentee list for this day has not been prepared yet. It fills in after the evening run.'
+      : '';
+  }
 }
-
 function renderTable(){ MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
 
 /* =========================================================
@@ -1201,17 +1385,11 @@ const NTH_LABEL = { '1':'1st', '2':'2nd', '3':'3rd', '4':'4th', '-1':'Last' };
 function showStatus(msg, kind){
   const el = document.getElementById('status-msg');
   el.textContent = msg;
-  el.className = 'status show ' + kind;
+  el.className = 'status ' + kind;
 }
-
 function loadSettingsFormFromLocal(){
-  document.getElementById('s-url').value  = localStorage.getItem(LS.sUrl)  || '';
-  document.getElementById('s-code').value = localStorage.getItem(LS.sCode) || '';
-  document.getElementById('st-url').value = localStorage.getItem(LS.stUrl) || '';
-  document.getElementById('st-key').value = localStorage.getItem(LS.stKey) || '';
-  document.getElementById('st-path').value = localStorage.getItem(LS.stPath) || '';
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
-  document.getElementById('r-code').value = localStorage.getItem(LS.rCode)|| '';
+  document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('this-device-input').value = localStorage.getItem(LS.deviceName) || '';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
@@ -1223,7 +1401,6 @@ function loadSettingsFormFromLocal(){
   renderCutoffDateList();
   renderDeviceList();
 }
-
 function buildShiftRulesGrid(){
   const map = getShiftRulesMap();
   const grid = document.getElementById('shift-rules-grid');
@@ -1260,7 +1437,7 @@ function buildShiftRulesGrid(){
 function buildWorkingDaysRow(){
   const active = getWorkingDays();
   document.getElementById('working-days-row').innerHTML = WEEKDAY_NAMES.map((name, idx) => `
-    <label><input type="checkbox" class="working-day-cb" data-day="${idx}" ${active.includes(idx) ? 'checked' : ''} style="min-width:auto; width:auto;"> ${name}</label>
+    <label><input type="checkbox" class="working-day-cb" data-day="${idx}" ${active.includes(idx) ? 'checked' : ''}>${name}</label>
   `).join('');
 }
 
@@ -1416,14 +1593,15 @@ function renderDeviceList(){
   const devices = getDevices();
   const names = Object.keys(devices).sort();
   const wrap = document.getElementById('device-list');
-  if(!names.length){ wrap.innerHTML = '<p class="hint" style="margin:0 0 12px;">No devices added yet &mdash; add this device or another one below.</p>'; return; }
+  if(!names.length){ wrap.innerHTML = '<p class="hint" style="margin:0 0 12px;">No devices yet. Add one below to hide categories on it.</p>'; return; }
   wrap.innerHTML = names.map(name => {
     const hidden = devices[name].hiddenStaffCategories || [];
     const checks = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => `
       <label><input type="checkbox" class="device-cat-cb" data-device="${escapeHtml(name)}" data-cat="${escapeHtml(cat)}" ${hidden.includes(cat) ? 'checked' : ''}> Hide ${escapeHtml(cat)}</label>
     `).join('');
-    return `<div class="device-card">
-      <div class="device-head"><strong>${escapeHtml(name)}</strong><button type="button" class="ghost small" data-remove-device="${escapeHtml(name)}">Remove device</button></div>
+    const isThis = name === getDeviceName();
+    return `<div class="device-card${isThis ? ' is-this' : ''}">
+      <div class="device-head"><strong>${escapeHtml(name)}</strong><button type="button" class="ghost small" data-remove-device="${escapeHtml(name)}">Remove</button></div>
       <div class="cat-checks">${checks}</div>
     </div>`;
   }).join('');
@@ -1478,11 +1656,6 @@ function collectSettingsObject(){
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
-    sUrl: document.getElementById('s-url').value.trim(),
-    sCode: document.getElementById('s-code').value.trim(),
-    stUrl: document.getElementById('st-url').value.trim(),
-    stKey: document.getElementById('st-key').value.trim(),
-    stPath: document.getElementById('st-path').value.trim(),
     shiftHours: shiftRulesObj,
     workingDays,
     holidays: getHolidays(),
@@ -1494,21 +1667,15 @@ function collectSettingsObject(){
     devices: getDevices()
   };
 }
-
 document.getElementById('save-btn').addEventListener('click', async () => {
-  const rUrl = document.getElementById('r-url').value.trim();
-  const rCode = document.getElementById('r-code').value.trim();
+  const rUrl = document.getElementById('r-url').value.trim().replace(/\/+$/, '');
+  const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
   const deviceName = document.getElementById('this-device-input').value.trim();
   if(deviceName){ localStorage.setItem(LS.deviceName, deviceName); }
 
   const settings = collectSettingsObject();
-  localStorage.setItem(LS.sUrl, settings.sUrl);
-  localStorage.setItem(LS.sCode, settings.sCode);
-  localStorage.setItem(LS.stUrl, settings.stUrl);
-  localStorage.setItem(LS.stKey, settings.stKey);
-  localStorage.setItem(LS.stPath, settings.stPath);
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
   localStorage.setItem(LS.workingDays, JSON.stringify(settings.workingDays));
   localStorage.setItem(LS.cutoffDefault, settings.cutoffDefault);
@@ -1517,102 +1684,85 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
 
   if(!rUrl){
-    showStatus('Saved on this device only. Add a Raw attendance Firebase URL above to sync across devices.', 'info');
+    showStatus('Saved on this device. Add the attendance database URL to share these settings with the gate machine.', 'info');
   }else{
-    const result = await fetchJson(`${rUrl}/${rCode}/app_settings.json`, {
-      method: 'PUT',
+    const base = rCode ? `${rUrl}/${rCode}` : rUrl;
+    const result = await fetchJson(`${base}/app_settings.json`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings)
     });
     if(result !== null){
-      showStatus('Saved and synced \u2014 every device pointed at this Raw attendance Firebase will pick this up.', 'ok');
+      showStatus('Saved. The gate machine picks up the new cutoff and calendar on its next scan.', 'ok');
     }else{
-      showStatus('Saved on this device, but syncing to Firebase failed \u2014 check the URL and that its rules allow writes.', 'err');
+      showStatus('Saved here, but the sync failed. Check the URL, the code, and that the database rules allow writes.', 'err');
     }
   }
-  loadRegister(); // reflect any shift-rule/calendar/staff-path changes immediately behind the modal
+  loadRegister();
 });
 
-// ── Test connection buttons ──────────────────────────────────────────────
-// Students and Staff are read-only checks (they never write). Raw attendance
-// is the one connection that also writes, so its test checks both.
-document.getElementById('s-test-btn').addEventListener('click', async () => {
-  const el = document.getElementById('s-test-status');
-  const sUrl = document.getElementById('s-url').value.trim();
-  const sCode = document.getElementById('s-code').value.trim();
-  el.style.display = 'block';
-  if(!sUrl){ el.textContent = 'Add a Students Firebase URL first.'; return; }
-  el.textContent = 'Testing\u2026';
-  const data = await fetchJson(`${sUrl}/${sCode}/students.json`);
-  if(data && typeof data === 'object'){
-    const count = (Array.isArray(data) ? data : Object.values(data)).filter(Boolean).length;
-    el.textContent = `Connected \u2014 found ${count} student record${count === 1 ? '' : 's'} (read-only check).`;
-  }else{
-    el.textContent = 'Couldn\u2019t read from that URL/code \u2014 double check them and the database rules.';
-  }
-});
-
-document.getElementById('st-test-btn').addEventListener('click', async () => {
-  const el = document.getElementById('st-detect-status');
-  const stUrl = document.getElementById('st-url').value.trim();
-  const stKey = document.getElementById('st-key').value.trim();
-  const stPath = document.getElementById('st-path').value.trim();
-  el.style.display = 'block';
-  if(!stUrl || !stPath){ el.textContent = 'Enter both the Staff Firebase URL and the staff list path first.'; return; }
-  el.textContent = 'Testing\u2026';
-  const data = await fetchJson(`${stUrl}/${stPath}.json${buildQuery(stKey ? {auth:stKey} : {})}`);
-  if(looksLikeStaffList(data)){
-    const count = normalizeStaffList(data).length;
-    el.textContent = `Connected \u2014 "${stPath}" looks like a staff list (${count} record${count === 1 ? '' : 's'}, read-only check).`;
-  }else if(data){
-    el.textContent = `Connected, but "${stPath}" doesn\u2019t look like a staff list \u2014 expected records with an id and a name field.`;
-  }else{
-    el.textContent = 'Couldn\u2019t read that path \u2014 double check the URL, path, and API key.';
-  }
-});
-
+// ── Test connection — reads and writes, since this is the one database we write to ──
 document.getElementById('r-test-btn').addEventListener('click', async () => {
   const el = document.getElementById('r-test-status');
-  const rUrl = document.getElementById('r-url').value.trim();
-  const rCode = document.getElementById('r-code').value.trim();
+  const rUrl = document.getElementById('r-url').value.trim().replace(/\/+$/, '');
+  const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
   el.style.display = 'block';
-  if(!rUrl){ el.textContent = 'Add a Raw attendance Firebase URL first.'; return; }
-  el.textContent = 'Testing read\u2026';
-  const base = `${rUrl}/${rCode}`;
-  const readOk = await fetchJson(`${base}/app_settings.json`);
-  el.textContent = 'Testing write\u2026';
+  el.className = 'testline';
+  if(!rUrl){ el.textContent = 'Enter the database URL first.'; el.classList.add('err'); return; }
+  el.textContent = 'Testing\u2026';
+  const base = rCode ? `${rUrl}/${rCode}` : rUrl;
+
+  const today = todayKolkata();
+  const [settingsRead, todayScans] = await Promise.all([
+    fetchJson(`${base}/app_settings.json`),
+    fetchJson(`${base}/raw_attendance/students/${today}.json`)
+  ]);
+  const scanCount = todayScans && typeof todayScans === 'object' ? Object.keys(todayScans).length : 0;
+
   const testPath = `${base}/_connection_test.json`;
   const stamp = Date.now();
-  const wrote = await fetchJson(testPath, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(stamp) });
+  const wrote = await fetchJson(testPath, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(stamp) });
+  if(wrote === stamp) await fetchJson(testPath, { method:'DELETE' });
+
   if(wrote === stamp){
-    await fetchJson(testPath, { method: 'DELETE' });
-    el.textContent = readOk !== null
-      ? 'Connected \u2014 read and write both work.'
-      : 'Write works. (Read of app_settings.json came back empty \u2014 fine if you haven\u2019t saved settings there yet.)';
+    el.classList.add('ok');
+    el.textContent = `Connected. ${scanCount} student scan${scanCount === 1 ? '' : 's'} recorded today`
+      + (settingsRead ? ', settings found' : ', no settings saved here yet') + '.';
   }else{
-    el.textContent = `Read ${readOk !== null ? 'OK' : 'failed'}, but the write test failed \u2014 check the URL/code and that the database rules allow writes.`;
+    el.classList.add('err');
+    el.textContent = 'Could read' + (settingsRead || todayScans ? '' : ' nothing') + ', but the write test failed. Check the code segment and the database rules.';
   }
 });
 
 document.getElementById('pull-btn').addEventListener('click', async () => {
-  const rUrl = document.getElementById('r-url').value.trim();
-  const rCode = document.getElementById('r-code').value.trim();
-  if(!rUrl){ showStatus('Add a Raw attendance Firebase URL first.', 'err'); return; }
-  const remote = await fetchJson(`${rUrl}/${rCode}/app_settings.json`);
-  if(!remote || typeof remote !== 'object'){ showStatus('Nothing synced there yet, or the fetch failed.', 'err'); return; }
+  const rUrl = document.getElementById('r-url').value.trim().replace(/\/+$/, '');
+  const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
+  if(!rUrl){ showStatus('Enter the attendance database URL first.', 'err'); return; }
+  const base = rCode ? `${rUrl}/${rCode}` : rUrl;
+  const remote = await fetchJson(`${base}/app_settings.json`);
+  if(!remote || typeof remote !== 'object'){ showStatus('Nothing saved there yet.', 'err'); return; }
   SYNCED_KEYS.forEach(key => {
     if(remote[key] === undefined) return;
     const val = typeof remote[key] === 'string' ? remote[key] : JSON.stringify(remote[key]);
     localStorage.setItem(LS[key], val);
   });
   loadSettingsFormFromLocal();
-  showStatus('Pulled the latest synced settings into this form.', 'ok');
+  showStatus('Pulled the saved settings into this form.', 'ok');
 });
 
+// ── Sidebar navigation ──
+document.querySelectorAll('.set-nav').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.set-nav').forEach(b => b.setAttribute('aria-selected', b === btn));
+    document.querySelectorAll('.set-sec').forEach(s => s.classList.toggle('on', s.dataset.sec === btn.dataset.sec));
+    document.querySelector('.set-body').scrollTop = 0;
+  });
+});
 function openSettingsModal(){
   loadSettingsFormFromLocal();
   document.getElementById('status-msg').className = 'status';
-  document.getElementById('st-detect-status').style.display = 'none';
+  document.getElementById('status-msg').textContent = '';
+  document.getElementById('r-test-status').style.display = 'none';
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettingsModal(){
@@ -1630,6 +1780,9 @@ document.addEventListener('keydown', (e) => {
 updateModeSwitchVisibility();
 updateDisplaySwitchVisibility();
 syncSettingsFromCloud().finally(() => {
+  const dn = getDeviceName();
+  const devs = getDevices();
+  if(!devs[dn]){ devs[dn] = { hiddenStaffCategories: [] }; localStorage.setItem(LS.devices, JSON.stringify(devs)); }
   setDisplay(getStudentDefaultView());
   loadRegister();
 });
