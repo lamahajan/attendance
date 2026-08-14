@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Markd</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
-<meta name="theme-color" content="#F2F2F7"/>
+<meta name="theme-color" content="#F0E79A"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -25,24 +25,24 @@
     --paper-line:#F0F0F3;
     --ink:#1D1D1F;
     --ink-soft:#6E6E73;
-    --rule-red:#6E6600;
+    --rule-red:#DB2777;
     /* StaffFlow's own green, blue and red. Each keeps a darker twin for
        badge text — the source colours are tuned for solid fills and large
        figures, and at 11px on a pale tint they fall under the contrast a
        register has to hold up to. */
     --present:#34C759;
-    --present-ink:#1B8A3C;
+    --present-ink:#078836;
     --present-bg:#E7F8ED;
     --present-line:#A6E5BB;
     --absent:#FF3B30;
-    --absent-ink:#C4271E;
+    --absent-ink:#DC2626;
     --absent-bg:#FDEAE8;
     --absent-line:#F7B7B1;
     --pending:#0071E3;
-    --pending-ink:#0060C0;
+    --pending-ink:#0071E3;
     --pending-bg:#E6F1FD;
     --pending-line:#A9CDF5;
-    --half:#5B3FD6;
+    --half:#7C3AED;
     --half-bg:#EDE9FE;
     --half-line:#C7BAFA;
     --row-alt:#FAFAFA;
@@ -710,7 +710,7 @@
   .topbar-actions{ display:flex; gap:10px; align-items:flex-end; }
 
   /* ── Mobile: the sidebar becomes a bottom bar ── */
-  @media (max-width: 860px){
+  @media screen and (max-width: 860px){
     .side{
       position:fixed; bottom:0; left:0; right:0; top:auto; width:auto; height:auto; z-index:60;
       flex-direction:row; align-items:center; gap:4px;
@@ -737,7 +737,7 @@
      Mobile polish — compact stat cards, dropdown category filter,
      and a card-style register list (no horizontal scrolling)
      ══════════════════════════════════════════════════════════ */
-  @media (max-width: 860px){
+  @media screen and (max-width: 860px){
 
     /* ── Stat cards: one tidy line each, two per row ── */
     .summary{ grid-template-columns:1fr 1fr; gap:8px; }
@@ -1079,7 +1079,7 @@
     width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; color:var(--ink-soft);
   }
 
-  @media (max-width: 860px){
+  @media screen and (max-width: 860px){
     /* Compact hero: title and date share one row, eyebrow/long-date text
        drop out — the table is what people came for, not the banner. */
     .hero{
@@ -1220,7 +1220,7 @@
   .appbar{ display:none; }
   .btn-ico{ display:none; }
 
-  @media (max-width: 860px){
+  @media screen and (max-width: 860px){
 
     /* The banner's job is done here now */
     .hero{ display:none !important; }
@@ -1781,7 +1781,7 @@ function applyTheme(mode){
     icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
   });
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', mode === 'dark' ? '#0D0F14' : '#F2F2F7');
+  if(meta) meta.setAttribute('content', '#0071E3');
 }
 applyTheme(currentTheme());
 ['theme-btn', 'theme-btn-m'].forEach(id => {
@@ -2904,14 +2904,12 @@ function renderDailyTable(){
   let dailyCards;
   if(VIEW === 'student'){
     dailyCards = [
-      {value: rows.length, label: unlisted ? 'Students scanned' : 'On the register'},
       {value: present, label: 'In school', color:'var(--present-ink)'},
       {value: exit, label: 'Went home', color:'var(--pending-ink)'}
     ];
     if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent-ink)'});
   }else{
     dailyCards = [
-      {value: rows.length, label: unlisted ? 'Staff scanned' : 'Total staff'},
       {value: present, label: 'Full day', color:'var(--present-ink)'},
       {value: half, label: 'Half day', color:'var(--half)'},
       {value: absent, label: 'Absent', color:'var(--absent-ink)'}
@@ -3066,8 +3064,6 @@ function updateReportMeta(count){
     : { present:'Full day', late:'Late', half:'Half day', absent:'Absent', off:'Week off' };
   Object.keys(label).forEach(k => { if(tally[k]) bits.push(label[k] + ': ' + tally[k]); });
 
-  bits.push('Printed ' + new Date().toLocaleString('en-IN',
-    { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }));
   el.innerHTML = bits.map(b => `<span>${escapeHtml(b)}</span>`).join('');
 }
 function renderTable(){
