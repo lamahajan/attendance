@@ -4,31 +4,92 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admission Register</title>
+<meta name="description" content="Daily and monthly attendance register for students and staff."/>
+<meta name="theme-color" content="#7A3FD3"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Register"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
+    color-scheme:light;
     --paper:#FFFFFF;
-    --paper-line:#E7E9F0;
-    --ink:#1B2036;
-    --ink-soft:#6B7280;
-    --rule-red:#33437A;
-    --present:#0F8F63;
-    --present-bg:#E1F5EC;
-    --absent:#C5384F;
-    --absent-bg:#FBE7EA;
-    --pending-bg:#E8ECFB;
-    --pending:#4451B8;
-    --half-bg:#FCF0D9;
+    --paper-line:#ECE7F3;
+    --ink:#241C33;
+    --ink-soft:#6E6683;
+    --rule-red:#5B2E9D;
+    --present:#0E8F63;
+    --present-bg:#DFF4EB;
+    --absent:#C9375C;
+    --absent-bg:#FCE7ED;
+    --pending-bg:#FBE6F3;
+    --pending:#B0348C;
+    --half-bg:#FDF0DA;
     --half:#A4720C;
-    --row-alt:#F4F6FB;
+    --row-alt:#F7F4FC;
     --card:#FFFFFF;
-    --border:#DDE1EC;
+    --border:#E6DFF0;
+    /* Soft tints so the page isn't a sheet of white */
+    --wash:#F1ECFA;
+    --wash-2:#E9E1F7;
+    --card-tint:#FDFBFF;
+    --head-tint:#F7F2FD;
+    --accent:#7A3FD3;
+    --accent-soft:#F3ECFC;
+    --teal:#E0654B;
+    --teal-bg:#FCEBE6;
+    --magenta:#C0399B;
+    --shadow-1:0 1px 2px rgba(46,28,74,.06);
+    --shadow-2:0 1px 2px rgba(46,28,74,.05), 0 10px 26px rgba(46,28,74,.07);
+    --shadow-pop:0 2px 8px rgba(122,63,211,.26);
   }
+  /* ── Dark theme. Same hues, dialled for a dark surface. ── */
+  [data-theme="dark"]{
+    color-scheme:dark;
+    --paper:#171320;
+    --paper-line:#2A2338;
+    --ink:#F2EFF8;
+    --ink-soft:#A79FBC;
+    --rule-red:#B98CFF;
+    --present:#3DD69A;
+    --present-bg:rgba(61,214,154,.14);
+    --absent:#FF6B8B;
+    --absent-bg:rgba(255,107,139,.14);
+    --pending-bg:rgba(233,120,199,.15);
+    --pending:#E978C7;
+    --half-bg:rgba(245,180,74,.15);
+    --half:#F5B44A;
+    --row-alt:#1E1829;
+    --card:#1D1729;
+    --border:#302748;
+    --wash:#120F1A;
+    --wash-2:#181322;
+    --card-tint:#211A2F;
+    --head-tint:#221A33;
+    --accent:#A97BFF;
+    --accent-soft:rgba(169,123,255,.14);
+    --teal:#FF8A6B;
+    --teal-bg:rgba(255,138,107,.14);
+    --magenta:#E978C7;
+    --shadow-1:0 1px 2px rgba(0,0,0,.4);
+    --shadow-2:0 1px 2px rgba(0,0,0,.4), 0 12px 30px rgba(0,0,0,.45);
+    --shadow-pop:0 2px 10px rgba(169,123,255,.3);
+  }
+
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:#EFF1F6;
+    background:var(--wash);
+    background-image:
+      radial-gradient(1100px 480px at 12% -8%, #E4E9FA 0%, rgba(228,233,250,0) 62%),
+      radial-gradient(900px 420px at 92% 0%, #E7F1F5 0%, rgba(231,241,245,0) 58%);
+    background-attachment:fixed;
     font-family:'Inter',sans-serif;
     color:var(--ink);
     padding:26px 18px 72px;
@@ -38,14 +99,19 @@
 
   /* ── Header card ── */
   .page-head{
-    background:var(--paper); border:1px solid var(--border); border-radius:14px;
-    padding:22px 26px 0; margin-bottom:14px;
-    box-shadow:0 1px 2px rgba(27,32,54,.04);
+    background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
+    border:1px solid var(--border); border-radius:14px;
+    padding:22px 26px 0; margin-bottom:14px; position:relative; overflow:hidden;
+    box-shadow:0 1px 2px rgba(46,28,74,.05), 0 10px 26px rgba(46,28,74,.05);
+  }
+  .page-head::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--rule-red) 0%, var(--accent) 42%, var(--teal) 100%);
   }
   .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
   .eyebrow{
     font-size:11px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-soft); margin:0 0 5px; font-weight:600;
+    color:var(--accent); margin:0 0 5px; font-weight:600;
   }
   h1{ font-weight:700; font-size:25px; margin:0 0 3px; letter-spacing:-.02em; color:var(--ink); }
   .sub{ font-size:13.5px; color:var(--ink-soft); margin:0; }
@@ -58,7 +124,7 @@
     color:var(--ink-soft); cursor:pointer; transition:.15s; user-select:none;
   }
   .tab:hover{ color:var(--ink); }
-  .tab.active{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(27,32,54,.12); }
+  .tab.active{ background:var(--card); color:var(--accent); font-weight:600; box-shadow:0 1px 3px rgba(46,28,74,.12); }
   .category-pills{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
   .pill{
     font-size:12.5px; font-weight:500; padding:6px 13px; border-radius:999px;
@@ -66,22 +132,23 @@
     cursor:pointer; transition:.15s;
   }
   .pill:hover{ border-color:var(--ink-soft); color:var(--ink); }
-  .pill.active{ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:600; }
+  .pill.active{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:var(--shadow-pop); }
   .page-head .tabs, .page-head .category-pills{ position:relative; }
   .page-head::after{ content:''; display:block; height:18px; }
 
   /* ── Controls bar ── */
   .controls{
-    background:var(--paper); border:1px solid var(--border); border-radius:14px;
+    background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
+    border:1px solid var(--border); border-radius:14px;
     padding:16px 20px; margin-bottom:14px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;
-    box-shadow:0 1px 2px rgba(27,32,54,.04);
+    box-shadow:0 1px 2px rgba(46,28,74,.05);
   }
   .view-switch{ display:flex; gap:2px; padding:3px; background:var(--row-alt); border-radius:9px; height:38px; }
   .view-switch button{
     border:none; border-radius:7px; background:transparent; color:var(--ink-soft);
     font-size:12.5px; font-weight:500; padding:0 14px; height:100%;
   }
-  .view-switch button.on{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(27,32,54,.12); }
+  .view-switch button.on{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(46,28,74,.12); }
   .view-switch button:hover{ opacity:1; color:var(--ink); }
 
   .field{display:flex; flex-direction:column; gap:5px;}
@@ -91,7 +158,7 @@
     border:1px solid var(--border); background:var(--card); border-radius:8px; color:var(--ink); min-width:140px;
     transition:border-color .15s, box-shadow .15s;
   }
-  .field input:focus, .field select:focus{ outline:none; border-color:var(--ink); box-shadow:0 0 0 3px rgba(27,32,54,.08); }
+  .field input:focus, .field select:focus{ outline:none; border-color:var(--ink); box-shadow:0 0 0 3px rgba(46,28,74,.08); }
   .field input[readonly]{background:var(--row-alt); color:var(--ink-soft);}
 
   button{
@@ -135,7 +202,9 @@
 
   /* Sidebar */
   .set-side{
-    grid-row:1 / span 2; background:var(--row-alt); border-right:1px solid var(--paper-line);
+    grid-row:1 / span 2;
+    background:linear-gradient(180deg, var(--head-tint) 0%, var(--accent-soft) 100%);
+    border-right:1px solid var(--paper-line);
     padding:20px 12px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;
   }
   .set-side .brand{ padding:0 10px 16px; }
@@ -146,8 +215,8 @@
     padding:9px 11px; border-radius:7px; font-size:13.5px; color:var(--ink); cursor:pointer;
   }
   .set-nav svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.7; flex:none; opacity:.6; }
-  .set-nav:hover{ background:rgba(27,32,54,.05); }
-  .set-nav[aria-selected="true"]{ background:var(--ink); color:#fff; font-weight:600; }
+  .set-nav:hover{ background:rgba(46,28,74,.05); }
+  .set-nav[aria-selected="true"]{ background:var(--accent); color:#fff; font-weight:600; box-shadow:0 2px 10px rgba(68,81,184,.28); }
   .set-nav[aria-selected="true"] svg{ opacity:1; }
 
   /* Content */
@@ -155,10 +224,13 @@
   .set-sec{ display:none; }
   .set-sec.on{ display:block; animation:secIn .18s ease; }
   @keyframes secIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
-  .set-sec > h2{ font-size:20px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px; }
+  .set-sec > h2{ font-size:20px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px; color:var(--rule-red); }
   .set-sec > .lede{ font-size:13px; color:var(--ink-soft); margin:0 0 22px; line-height:1.55; max-width:64ch; }
 
-  .group{ border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px; background:var(--card); }
+  .group{
+    border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px;
+    background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
+  }
   .group > h3{ font-size:13.5px; font-weight:600; margin:0 0 3px; }
   .group > .hint{ font-size:12px; color:var(--ink-soft); margin:0 0 14px; line-height:1.55; }
   .group > .hint:last-child{ margin-bottom:0; }
@@ -174,6 +246,11 @@
   .note code{ font-size:11.5px; background:rgba(255,255,255,.6); padding:1px 5px; border-radius:4px; }
 
   .testline{ font-size:12px; color:var(--ink-soft); margin:10px 0 0; display:none; line-height:1.5; }
+  .inline-check{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--ink-soft); margin-top:10px; cursor:pointer; }
+  .inline-check input{ min-width:auto; width:auto; }
+  button.danger{ color:var(--absent); border-color:#EBC6CC; }
+  button.danger:hover{ border-color:var(--absent); background:var(--absent-bg); }
+  button.danger.armed{ background:var(--absent); border-color:var(--absent); color:#fff; }
   .testline.ok{ color:var(--present); }
   .testline.err{ color:var(--absent); }
 
@@ -222,7 +299,22 @@
   .shift-rule-card .src-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
   .shift-rule-card .src-head strong{ font-size:13.5px; }
   .shift-rule-card select{ font-size:12.5px; padding:6px 9px; border:1px solid var(--border); background:var(--card); border-radius:6px; color:var(--ink); }
+  .shift-rule-card .src-windows{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px;
+    border-top:1px solid var(--paper-line);
+  }
+  .shift-rule-card .src-windows .field{ min-width:112px; }
+  .shift-rule-card .src-windows .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; }
+  .shift-rule-card .src-windows .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
   .shift-rule-card .src-shifts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
+  .shift-rule-card .src-arrive{
+    display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line);
+  }
+  .shift-rule-card .src-arrive .field{ min-width:128px; }
+  .shift-rule-card .src-arrive .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
+  .shift-rule-card .src-arrive .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
+  .shift-rule-card .src-arrive > span{ flex:1; min-width:200px; font-size:11.5px; color:var(--ink-soft); line-height:1.5; }
   .shift-rule-card .src-days{ margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
   .shift-rule-card .src-days > span{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }
   .shift-rule-card .src-days .daypick label{ min-width:44px; padding:6px 8px; font-size:12px; }
@@ -292,8 +384,17 @@
   /* ── Stat cards ── */
   .summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
   .stat{
-    background:var(--paper); border:1px solid var(--border); border-radius:14px; padding:15px 18px;
-    box-shadow:0 1px 2px rgba(27,32,54,.04);
+    background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
+    border:1px solid var(--border); border-radius:14px; padding:15px 18px 15px 21px;
+    box-shadow:0 1px 2px rgba(46,28,74,.05); position:relative; overflow:hidden;
+  }
+  .stat::before{
+    content:''; position:absolute; top:0; bottom:0; left:0; width:4px;
+    background:var(--tone, var(--accent)); opacity:.85;
+  }
+  .stat::after{
+    content:''; position:absolute; top:-40px; right:-40px; width:110px; height:110px;
+    border-radius:50%; background:var(--tone, var(--accent)); opacity:.05;
   }
   .stat .n{ font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; }
   .stat .l{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; font-weight:600; }
@@ -302,11 +403,12 @@
   .breakdown-wrap{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
   .breakdown-card{
     flex:1; min-width:280px; background:var(--paper); border:1px solid var(--border);
-    border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(27,32,54,.04);
+    border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(46,28,74,.04);
   }
   .breakdown-card h4{
     margin:0; padding:12px 18px; font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--paper-line);
+    color:var(--accent); font-weight:600; border-bottom:1px solid var(--paper-line);
+    background:var(--accent-soft);
   }
   .breakdown-card table{ width:100%; margin:0; font-size:12.5px; }
   .breakdown-card thead th{ font-size:9.5px; padding:8px 18px; border-bottom:1px solid var(--paper-line); }
@@ -316,17 +418,17 @@
   /* ── Register table ── */
   .table-card{
     background:var(--paper); border:1px solid var(--border); border-radius:14px;
-    overflow:hidden; box-shadow:0 1px 2px rgba(27,32,54,.04); display:none;
+    overflow:hidden; box-shadow:0 1px 2px rgba(46,28,74,.05), 0 10px 26px rgba(46,28,74,.05); display:none;
   }
   table{ width:100%; margin:0; border-collapse:collapse; font-size:13.5px; }
   thead th{
     text-align:left; font-size:10px; letter-spacing:.09em; text-transform:uppercase; font-weight:600;
-    color:var(--ink-soft); background:var(--row-alt); border-bottom:1px solid var(--border); padding:11px 18px;
+    color:var(--accent); background:var(--head-tint); border-bottom:1px solid var(--border); padding:11px 18px;
     white-space:nowrap;
   }
   tbody td{ padding:11px 18px; border-bottom:1px solid var(--paper-line); vertical-align:middle; line-height:1.55; }
   tbody tr:last-child td{ border-bottom:none; }
-  tbody tr:hover{ background:var(--row-alt); }
+  tbody tr:hover{ background:var(--accent-soft); }
   td.mono, th.mono-col{ font-size:12.5px; font-variant-numeric:tabular-nums; }
 
   .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; white-space:nowrap; }
@@ -334,11 +436,25 @@
   .badge.absent{background:var(--absent-bg); color:var(--absent);}
   .badge.gatepass{background:var(--pending-bg); color:var(--pending);}
   .badge.half{background:var(--half-bg); color:var(--half);}
-  .badge.bus{background:#E3EEF6; color:#2E6F8E;}
-  .badge.off{background:#E7EAF2; color:#5A6382;}
+  .badge.bus{background:var(--teal-bg); color:var(--teal);}
+  .badge.off{background:var(--row-alt); color:var(--ink-soft);}
+  .badge.late{background:var(--half-bg); color:var(--half);}
   .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
   .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
 
+  /* PWA update pill */
+  .sw-pill{
+    position:fixed; left:50%; bottom:18px; transform:translateX(-50%) translateY(140%);
+    display:flex; align-items:center; gap:12px; z-index:200;
+    background:var(--ink); color:var(--paper); border-radius:999px;
+    padding:9px 10px 9px 18px; font-size:13px; box-shadow:0 10px 30px rgba(46,28,74,.32);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  .sw-pill.show{ transform:translateX(-50%) translateY(0); }
+  .sw-pill button{
+    background:var(--accent); border:none; color:#fff; border-radius:999px;
+    padding:6px 14px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
   .empty{
     background:var(--paper); border:1px dashed var(--border); border-radius:14px;
     padding:44px 24px; text-align:center; color:var(--ink-soft); font-size:14px; line-height:1.6;
@@ -346,6 +462,7 @@
 
   @media print{
     body{background:#fff; padding:0;}
+    :root, [data-theme="dark"]{ --paper:#fff; --card:#fff; --card-tint:#fff; --ink:#000; --ink-soft:#444; --border:#bbb; --paper-line:#ddd; --row-alt:#fff; }
     .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs{display:none !important;}
     .page-head, .table-card, .stat, .breakdown-card{ box-shadow:none; border-color:#D5D9E4; }
     .book{max-width:100%;}
@@ -382,6 +499,14 @@
         <div class="field" id="month-field" style="display:none;">
           <label for="month-input">Month</label>
           <input type="month" id="month-input">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="gear-btn" id="theme-btn" type="button" title="Switch theme" aria-label="Switch theme">
+            <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
         </div>
         <div class="field">
           <label>&nbsp;</label>
@@ -491,7 +616,9 @@
           </div>
           <div class="row">
             <button type="button" id="r-test-btn" class="ghost small" style="height:36px;">Test connection</button>
+            <button type="button" id="r-disconnect-btn" class="ghost small danger" style="height:36px;">Disconnect</button>
           </div>
+          <label class="inline-check"><input type="checkbox" id="r-wipe-local"> Also clear every setting saved on this device</label>
           <p class="testline" id="r-test-status"></p>
         </div>
       </section>
@@ -581,7 +708,7 @@
             <button type="button" id="add-holiday-btn" class="ghost small" style="height:36px;">Add</button>
           </div>
           <div class="catpick" id="holiday-cats" style="display:none;">
-            <span class="catpick-label">Only these categories &mdash; leave all unticked for every category</span>
+            <span class="catpick-label">Which staff categories &mdash; leave all unticked and it covers every category</span>
             <div class="cat-checks" id="holiday-cats-row"></div>
           </div>
           <div id="holiday-list" class="chip-wrap"></div>
@@ -608,7 +735,7 @@
             <button type="button" id="add-rule-btn" class="ghost small" style="height:36px;">Add rule</button>
           </div>
           <div class="catpick" id="rule-cats" style="display:none;">
-            <span class="catpick-label">Only these categories &mdash; leave all unticked for every category</span>
+            <span class="catpick-label">Which staff categories &mdash; leave all unticked and it covers every category</span>
             <div class="cat-checks" id="rule-cats-row"></div>
           </div>
           <div id="rule-list" class="chip-wrap"></div>
@@ -618,7 +745,8 @@
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
         <h2>Staff shifts</h2>
-        <p class="lede">How a staff day is judged, category by category. Any scan can count as a full day, or you can require a scan inside each shift window &mdash; miss one and the day is marked half. Each category can also keep its own working days.</p>
+        <p class="lede">Each category keeps its own arrival and departure windows, because a driver starting at 4am and a teacher arriving at 8:30 can't share one dividing line. A scan inside the morning window is an arrival; inside the evening window it's a departure; outside both it falls back to the cutoff in Day timings.</p>
+        <div class="note"><div>Underneath, the same card decides how the day is <b>judged</b>: any scan counts as a full day, or the person must be seen in every shift window &mdash; miss one and it shows as half. Each category can also keep its own working days.</div></div>
         <div id="shift-rules-grid"></div>
       </section>
 
@@ -735,8 +863,34 @@ const LS = {
   settingsPassHash:'reg_settings_pass_hash',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
-  deviceName:'reg_device_name'
+  deviceName:'reg_device_name',
+  theme:'reg_theme'
 };
+
+/* =========================================================
+   Theme — light by default, dark on request, remembered.
+   ========================================================= */
+const SUN_ICON = '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>';
+const MOON_ICON = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+function currentTheme(){
+  const saved = localStorage.getItem(LS.theme);
+  if(saved === 'dark' || saved === 'light') return saved;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(mode){
+  document.documentElement.setAttribute('data-theme', mode);
+  const icon = document.getElementById('theme-icon');
+  if(icon) icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', mode === 'dark' ? '#120F1A' : '#F1ECFA');
+}
+applyTheme(currentTheme());
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(LS.theme, next);
+  applyTheme(next);
+});
+
 
 let VIEW = 'student';
 let MODE = 'daily';
@@ -817,6 +971,46 @@ const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Maid','Cleaner','Driver','Sec
 const ROLE_MERGE_MAP = { 'Driver Online': 'Driver', 'Cleaner Online': 'Cleaner' };
 // Shift rules: 'any' = one scan counts as a full day. 'shifts' = staff must scan inside
 // specific from-to time windows (up to 2 shifts) to be marked present.
+/* ─────────────────────────────────────────────────────────────
+   Arrival and departure windows, per category.
+
+   One cutoff time works for students, who all arrive in one burst.
+   It breaks down for staff: a driver starting at 4am and a teacher
+   arriving at 8:30 cannot share a dividing line, and a teacher who
+   turns up late would be filed as leaving.
+
+   So each category carries two windows:
+       morning  A -> B   a scan in here is an arrival
+       evening  C -> D   a scan in here is a departure
+
+   A scan outside both falls back to the cutoff time. A window may
+   cross midnight (22:00 -> 02:00) for night security.
+   ───────────────────────────────────────────────────────────── */
+const DEFAULT_WINDOWS = {
+  Driver:   { mFrom:'03:30', mTo:'09:30', eFrom:'12:00', eTo:'20:00' },
+  Cleaner:  { mFrom:'04:00', mTo:'10:00', eFrom:'12:00', eTo:'20:00' },
+  Teacher:  { mFrom:'06:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' },
+  Maid:     { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' },
+  Security: { mFrom:'04:00', mTo:'11:00', eFrom:'11:00', eTo:'23:00' },
+  Gardner:  { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' }
+};
+
+// 'morning' | 'evening' | null, from the category's configured windows
+function windowForScan(category, timeStr){
+  const rule = getShiftRulesMap()[category];
+  if(!rule) return null;
+  const t = timeStrToMinutes(timeOnly(timeStr));
+  if(t == null) return null;
+  const inRange = (from, to) => {
+    const a = timeStrToMinutes(from), b = timeStrToMinutes(to);
+    if(a == null || b == null) return false;
+    return a <= b ? (t >= a && t < b) : (t >= a || t < b); // crosses midnight
+  };
+  if(inRange(rule.mFrom, rule.mTo)) return 'morning';
+  if(inRange(rule.eFrom, rule.eTo)) return 'evening';
+  return null;
+}
+
 const DEFAULT_SHIFT_RULES = {
   Teacher:  { mode:'any' },
   Maid:     { mode:'any' },
@@ -829,7 +1023,11 @@ function normalizedRole(role){ return ROLE_MERGE_MAP[role] || role; }
 function getShiftRulesMap(){
   try{
     const stored = JSON.parse(localStorage.getItem(LS.shiftHours) || '{}');
-    const merged = { ...DEFAULT_SHIFT_RULES };
+    // each default already carries its arrival / departure window pair
+    const merged = {};
+    Object.keys(DEFAULT_SHIFT_RULES).forEach(cat => {
+      merged[cat] = { ...(DEFAULT_WINDOWS[cat] || {}), ...DEFAULT_SHIFT_RULES[cat] };
+    });
     Object.keys(stored).forEach(cat => {
       const v = stored[cat];
       // backward-compat: older versions stored a plain number of hours per category
@@ -860,21 +1058,34 @@ function getHolidays(){
     return Array.isArray(stored) ? stored : [];
   }catch(e){ return []; }
 }
+/* Staff day status: absent | half | late | present
+   - shift windows decide whether the day is full or half
+   - "must arrive by" is separate: it only downgrades a full day to late, so a
+     teacher who turns up at 8:40 is still here for the whole day, just late */
 function computeStaffDayStatus(recs, category){
   if(!recs.length) return 'absent';
   const rule = getShiftRulesMap()[category] || { mode:'any' };
+  const scanMinutes = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
+
   const shifts = (rule.mode === 'shifts' && Array.isArray(rule.shifts))
     ? rule.shifts.filter(sh => sh && sh.from && sh.to)
     : [];
-  if(!shifts.length) return 'present'; // 'any' mode, or no shift windows configured yet
-  const scanMinutes = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
-  const shiftsHit = shifts.filter(sh => {
-    const from = timeStrToMinutes(sh.from), to = timeStrToMinutes(sh.to);
-    if(from == null || to == null) return false;
-    return scanMinutes.some(m => m >= from && m <= to);
-  }).length;
-  if(shiftsHit >= shifts.length) return 'present'; // hit every configured shift window
-  return 'half'; // scanned, but missed one or more shift windows
+
+  let base = 'present';
+  if(shifts.length){
+    const shiftsHit = shifts.filter(sh => {
+      const from = timeStrToMinutes(sh.from), to = timeStrToMinutes(sh.to);
+      if(from == null || to == null) return false;
+      return scanMinutes.some(m => m >= from && m <= to);
+    }).length;
+    base = shiftsHit >= shifts.length ? 'present' : 'half';
+  }
+
+  const by = timeStrToMinutes(rule.arriveBy);
+  if(base === 'present' && by != null && scanMinutes.length && Math.min(...scanMinutes) > by){
+    return 'late';
+  }
+  return base;
 }
 
 const TODAY = todayKolkata();
@@ -1257,8 +1468,7 @@ async function loadMonthly(){
       const recs = (dayScans[day] || {})[id] || [];
       if(recs.length){
         if(VIEW === 'student') return 'present';
-        const st = computeStaffDayStatus(recs, category);
-        return st === 'absent' ? 'absent' : st;      // present | half
+        return computeStaffDayStatus(recs, category);   // present | late | half | absent
       }
       if(!isWorkingDayFor(day, VIEW, category)) return 'off';   // holiday or weekly off
       if(!hasData[day]) return 'none';                          // machine had nothing that day
@@ -1268,16 +1478,17 @@ async function loadMonthly(){
     // 2. Absorb offs that are joined to an absence
     const settled = applySandwich(statuses, mode);
 
-    let present = 0, half = 0, absent = 0, paidOff = 0, absorbed = 0;
+    let present = 0, half = 0, absent = 0, paidOff = 0, absorbed = 0, late = 0;
     settled.forEach(st => {
       if(st === 'present') present++;
+      else if(st === 'late'){ present++; late++; }
       else if(st === 'half') half++;
       else if(st === 'absent') absent++;
       else if(st === 'absorbed'){ absorbed++; absent++; }
       else if(st === 'off') paidOff++;
     });
 
-    MONTHLY[id] = { present, half, absent, absorbed, paidOff, totalDays: present + half + absent };
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent };
   });
 
   buildMonthlyHead();
@@ -1325,7 +1536,7 @@ function buildMonthlyHead(){
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Paid off</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Late</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Paid off</th><th>Attendance</th></tr>`;
   }
 }
 
@@ -1362,13 +1573,16 @@ function filteredRows(){
 
 function setSummary(cards){
   const el = document.getElementById('summary');
-  el.innerHTML = cards.map(c => `<div class="stat"><div class="n" style="${c.color?`color:${c.color};`:''}">${c.value}</div><div class="l">${c.label}</div></div>`).join('');
+  el.innerHTML = cards.map(c => {
+    const tone = c.color || 'var(--accent)';
+    return `<div class="stat" style="--tone:${tone}"><div class="n" style="color:${tone}">${c.value}</div><div class="l">${c.label}</div></div>`;
+  }).join('');
   el.style.display = 'flex';
 }
 
 function renderDailyTable(){
   const rows = filteredRows();
-  let present = 0, exit = 0, absent = 0, half = 0, offDay = 0;
+  let present = 0, exit = 0, absent = 0, half = 0, offDay = 0, lateDay = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
@@ -1399,6 +1613,7 @@ function renderDailyTable(){
       const working = isWorkingDayFor(dayDate, 'staff', category);
       status = recs.length ? computeStaffDayStatus(recs, category) : (working ? 'absent' : 'off');
       if(status === 'present') present++;
+      else if(status === 'late'){ present++; lateDay++; }
       else if(status === 'half') half++;
       else if(status === 'off') offDay++;
       else absent++;
@@ -1408,6 +1623,7 @@ function renderDailyTable(){
         return lines.length ? lines.join('<br>') : '\u2014';
       };
       const badge = status === 'present' ? '<span class="badge present">Present</span>'
+        : status === 'late' ? '<span class="badge late">Late</span>'
         : status === 'half' ? '<span class="badge half">Half day</span>'
         : status === 'off' ? '<span class="badge off">Off</span>'
         : '<span class="badge absent">Absent</span>';
@@ -1433,6 +1649,7 @@ function renderDailyTable(){
       {value: half, label: 'Half day', color:'var(--half)'},
       {value: absent, label: 'Absent', color:'var(--absent)'}
     ];
+    if(lateDay) dailyCards.push({value: lateDay, label:'Late in', color:'#B5560E'});
     if(offDay) dailyCards.push({value: offDay, label:'Off today'});
   }
   setSummary(dailyCards);
@@ -1462,7 +1679,7 @@ function renderMonthlyTable(){
       tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
     }else{
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}${absorbNote}</td><td class="mono">${m.paidOff||0}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono" style="color:${m.late?'#B5560E':'inherit'}">${m.late||0}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}${absorbNote}</td><td class="mono">${m.paidOff||0}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
     }
     body.appendChild(tr);
   });
@@ -1497,7 +1714,7 @@ function renderBreakdown(enriched, mode){
       const g = map[key];
       g.total++;
       if(mode === 'daily'){
-        if(r.status === 'present') g.present++;
+        if(r.status === 'present' || r.status === 'late') g.present++;
         else if(r.status === 'gatepass') g.exit++;
         else if(r.status === 'half') g.half++;
         else if(r.status === 'absent') g.absent++;
@@ -1639,7 +1856,9 @@ function renderPasswordSection(){
 const SCOPE_LABEL = { all:'Everyone', student:'Students only', staff:'Staff only' };
 function scopeLabel(item){
   const base = SCOPE_LABEL[item.scope] || 'Everyone';
-  return (Array.isArray(item.cats) && item.cats.length) ? item.cats.join(', ') : base;
+  if(!Array.isArray(item.cats) || !item.cats.length) return base;
+  const cats = item.cats.join(', ');
+  return item.scope === 'all' ? ('Students + ' + cats) : cats;
 }
 const NTH_LABEL = { '1':'1st', '2':'2nd', '3':'3rd', '4':'4th', '-1':'Last' };
 
@@ -1687,9 +1906,22 @@ function buildShiftRulesGrid(){
           <option value="shifts" ${isShifts ? 'selected' : ''}>Time-based shifts</option>
         </select>
       </div>
+      <div class="src-arrive">
+        <div class="field">
+          <label>Must arrive by</label>
+          <input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}">
+        </div>
+        <span>Scanning in after this marks the day late. It still counts as a full day. Leave it blank for no arrival time.</span>
+      </div>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 nothing ticked, so this category follows the school working days'}</span>
         <div class="daypick">${dayPills}</div>
+      </div>
+      <div class="src-windows">
+        <div class="field"><label>Morning from</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
+        <div class="field"><label>Morning to</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
+        <div class="field"><label>Evening from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
+        <div class="field"><label>Evening to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
       </div>
       <div class="src-shifts" data-cat="${escapeHtml(cat)}" style="display:${isShifts ? 'flex' : 'none'};">
         <div class="field"><label>Shift 1 from</label><input type="time" class="src-s1-from" value="${escapeHtml(s1.from)}"></div>
@@ -1725,10 +1957,13 @@ function buildCategoryPickers(){
   syncCategoryPickerVisibility();
 }
 function syncCategoryPickerVisibility(){
+  // Category mapping makes sense for "Staff only" and for "Everyone" — in the
+  // second case students still get the holiday and only the ticked staff
+  // categories do. It means nothing for "Students only".
   const hs = document.getElementById('holiday-scope-input').value;
-  document.getElementById('holiday-cats').style.display = hs === 'staff' ? 'block' : 'none';
+  document.getElementById('holiday-cats').style.display = (hs === 'staff' || hs === 'all') ? 'block' : 'none';
   const rs = document.getElementById('rule-scope-input').value;
-  document.getElementById('rule-cats').style.display = rs === 'staff' ? 'block' : 'none';
+  document.getElementById('rule-cats').style.display = (rs === 'staff' || rs === 'all') ? 'block' : 'none';
 }
 function pickedCategories(prefix){
   return [...document.querySelectorAll('.' + prefix + '-cat:checked')].map(cb => cb.value);
@@ -1778,7 +2013,7 @@ document.getElementById('add-holiday-btn').addEventListener('click', () => {
     const end = new Date(endDate + 'T00:00:00');
     while(cur <= end){ dates.push(cur.toLocaleDateString('en-CA')); cur.setDate(cur.getDate() + 1); }
   }else{ dates.push(date); }
-  const cats = scope === 'staff' ? pickedCategories('holiday') : [];
+  const cats = (scope === 'staff' || scope === 'all') ? pickedCategories('holiday') : [];
   const holidays = getHolidays();
   dates.forEach(d => {
     if(!holidays.some(h => h.date === d && h.scope === scope && String(h.cats||'') === String(cats||''))){
@@ -1817,7 +2052,7 @@ document.getElementById('add-rule-btn').addEventListener('click', () => {
   const nth = parseInt(document.getElementById('rule-nth-input').value, 10);
   const weekday = parseInt(document.getElementById('rule-weekday-input').value, 10);
   const scope = document.getElementById('rule-scope-input').value;
-  const cats = scope === 'staff' ? pickedCategories('rule') : [];
+  const cats = (scope === 'staff' || scope === 'all') ? pickedCategories('rule') : [];
   const rules = getHolidayRules();
   if(!rules.some(r => r.nth === nth && r.weekday === weekday && r.scope === scope && String(r.cats||'') === String(cats||''))){
     rules.push(cats.length ? { nth, weekday, scope, cats } : { nth, weekday, scope });
@@ -1968,6 +2203,16 @@ function collectSettingsObject(){
     }
     const days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
     if(days.length) shiftRulesObj[cat].days = days;
+    const arriveBy = card.querySelector('.src-arrive-by').value;
+    if(arriveBy) shiftRulesObj[cat].arriveBy = arriveBy;
+    // arrival / departure windows
+    const g = sel => { const el = card.querySelector(sel); return el ? el.value : ''; };
+    const mFrom = g('.scw-m-from'), mTo = g('.scw-m-to');
+    const eFrom = g('.scw-e-from'), eTo = g('.scw-e-to');
+    if(mFrom) shiftRulesObj[cat].mFrom = mFrom;
+    if(mTo)   shiftRulesObj[cat].mTo   = mTo;
+    if(eFrom) shiftRulesObj[cat].eFrom = eFrom;
+    if(eTo)   shiftRulesObj[cat].eTo   = eTo;
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
@@ -2153,6 +2398,54 @@ document.getElementById('import-settings-file').addEventListener('change', async
   el.textContent = `Imported ${applied} setting${applied === 1 ? '' : 's'} from ${file.name}. Press Save & sync to send them to the gate machine.`;
 });
 
+// ── Disconnect ──
+// Two taps: the first arms the button, the second does it. No pop-up to dismiss
+// by accident, and no way to wipe the connection with a stray click.
+let DISCONNECT_ARMED = false;
+document.getElementById('r-disconnect-btn').addEventListener('click', () => {
+  const btn = document.getElementById('r-disconnect-btn');
+  const el = document.getElementById('r-test-status');
+  const wipe = document.getElementById('r-wipe-local').checked;
+  el.style.display = 'block';
+  el.className = 'testline';
+
+  if(!DISCONNECT_ARMED){
+    DISCONNECT_ARMED = true;
+    btn.classList.add('armed');
+    btn.textContent = wipe ? 'Tap again to clear everything' : 'Tap again to disconnect';
+    el.textContent = wipe
+      ? 'This clears the database address and every setting held on this device, the password included. Anything already saved to Firebase stays there.'
+      : 'This clears the database address on this device only. Your records and settings stay in Firebase.';
+    setTimeout(() => {
+      if(!DISCONNECT_ARMED) return;
+      DISCONNECT_ARMED = false;
+      btn.classList.remove('armed');
+      btn.textContent = 'Disconnect';
+    }, 6000);
+    return;
+  }
+
+  DISCONNECT_ARMED = false;
+  btn.classList.remove('armed');
+  btn.textContent = 'Disconnect';
+
+  localStorage.setItem(LS.rUrl, '');
+  localStorage.setItem(LS.rCode, '');
+  if(wipe){
+    Object.keys(LS).forEach(k => localStorage.removeItem(LS[k]));
+    SETTINGS_UNLOCKED = true;
+  }
+  document.getElementById('r-url').value = '';
+  document.getElementById('r-code').value = '';
+  document.getElementById('r-wipe-local').checked = false;
+  loadSettingsFormFromLocal();
+  loadRegister();
+  el.classList.add('ok');
+  el.textContent = wipe
+    ? 'Disconnected, and this device is back to a blank slate.'
+    : 'Disconnected. Paste an address above to connect again.';
+});
+
 // ── Password handlers ──
 document.getElementById('lock-btn').addEventListener('click', tryUnlock);
 document.getElementById('lock-input').addEventListener('keydown', (e) => {
@@ -2245,6 +2538,52 @@ syncSettingsFromCloud().finally(() => {
   setDisplay(getStudentDefaultView());
   loadRegister();
 });
+</script>
+
+<div class="sw-pill" id="sw-pill">
+  <span>A new version is ready.</span>
+  <button type="button" id="sw-reload">Reload</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   PWA — installable, opens offline.
+
+   Only the app shell is cached. Attendance always comes from the
+   network, so opening offline shows the layout but never stale numbers.
+   Needs index.html, manifest.json, sw.js and the three icons in the
+   same folder, served over https:// (or localhost).
+   ═══════════════════════════════════════════════════════════ */
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      const offerUpdate = worker => {
+        if(!worker) return;
+        const pill = document.getElementById('sw-pill');
+        pill.classList.add('show');
+        document.getElementById('sw-reload').onclick = () => {
+          worker.postMessage('skipWaiting');
+          pill.classList.remove('show');
+        };
+      };
+      if(reg.waiting) offerUpdate(reg.waiting);
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener('statechange', () => {
+          if(nw.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(nw);
+        });
+      });
+    }).catch(() => {});
+
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(reloading) return;
+      reloading = true;
+      location.reload();
+    });
+  });
+}
 </script>
 
 </body>
