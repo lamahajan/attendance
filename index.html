@@ -389,6 +389,14 @@
     gap:10px; padding:32px; text-align:center;
   }
   .set-lock.on{ display:flex; }
+  .lock-back{
+    position:absolute; top:14px; left:16px; z-index:2;
+    display:flex; align-items:center; gap:4px;
+    background:transparent; border:1px solid transparent; border-radius:8px;
+    padding:6px 10px 6px 8px; font-size:13px; color:var(--ink-soft);
+  }
+  .lock-back svg{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .lock-back:hover{ background:var(--row-alt); color:var(--ink); border-color:transparent; }
   .set-lock .lock-icon{ width:34px; height:34px; stroke:var(--ink-soft); fill:none; stroke-width:1.6; margin-bottom:4px; }
   .set-lock h3{ margin:0; font-size:18px; font-weight:600; letter-spacing:-.01em; }
   .set-lock p{ margin:0; font-size:13px; color:var(--ink-soft); max-width:38ch; line-height:1.55; }
@@ -631,6 +639,9 @@
       gap:6px; align-items:center;
     }
     .set-nav{ min-height:40px; }
+    .lock-back{
+      top:calc(8px + env(safe-area-inset-top)); left:10px;
+    }
     .modal-close{
       position:absolute; top:calc(8px + env(safe-area-inset-top)); right:10px;
       width:40px; height:40px; background:var(--paper); border:1px solid var(--border);
@@ -1728,6 +1739,9 @@
     </div>
 
     <div class="set-lock" id="set-lock">
+      <button type="button" id="lock-back-btn" class="lock-back" title="Back">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Back
+      </button>
       <svg viewBox="0 0 24 24" class="lock-icon"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
       <h3>Settings are locked</h3>
       <p>Enter the settings password to make changes.</p>
@@ -1781,7 +1795,7 @@ function applyTheme(mode){
     icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
   });
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', '#F0E79A');
+  if(meta) meta.setAttribute('content', mode === 'dark' ? '#13161D' : '#F0E79A');
 }
 applyTheme(currentTheme());
 ['theme-btn', 'theme-btn-m'].forEach(id => {
@@ -3911,6 +3925,7 @@ function closeSettingsModal(){
 }
 document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
 document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
+document.getElementById('lock-back-btn').addEventListener('click', closeSettingsModal);
 document.getElementById('settings-modal').addEventListener('click', (e) => {
   if(e.target.id === 'settings-modal') closeSettingsModal();
 });
