@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Register"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -210,6 +211,11 @@
   .set-side .brand{ padding:0 10px 16px; }
   .set-side .brand strong{ display:block; font-size:16px; font-weight:700; letter-spacing:-.01em; }
   .set-side .brand span{ display:block; font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .set-group-label{
+    margin:14px 10px 5px; font-size:9.5px; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-soft); opacity:.75;
+  }
+  .set-group-label:first-of-type{ margin-top:2px; }
   .set-nav{
     all:unset; box-sizing:border-box; display:flex; align-items:center; gap:9px; width:100%;
     padding:9px 11px; border-radius:7px; font-size:13.5px; color:var(--ink); cursor:pointer;
@@ -331,6 +337,13 @@
     text-transform:uppercase; color:var(--pending); background:var(--pending-bg);
     padding:2px 7px; border-radius:20px; vertical-align:1px;
   }
+  .device-card .dev-grid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:12px; margin-bottom:12px;
+  }
+  .device-card .dev-grid input, .device-card .dev-grid select{ width:100%; }
+  .dev-seen{ font-size:11px; color:var(--ink-soft); margin-right:auto; margin-left:10px; }
+  .device-head{ flex-wrap:wrap; }
   .cat-checks{ display:flex; flex-wrap:wrap; gap:7px; }
   .cat-checks label{
     display:flex; align-items:center; gap:6px; font-size:12.5px; padding:6px 10px;
@@ -376,13 +389,17 @@
     .settings-panel{ grid-template-columns:1fr; grid-template-rows:auto 1fr auto; height:calc(100vh - 32px); }
     .set-side{ grid-row:auto; flex-direction:row; overflow-x:auto; padding:12px; gap:6px; border-right:none; border-bottom:1px solid var(--paper-line); }
     .set-side .brand{ display:none; }
+    .set-group-label{ display:none; }
     .set-nav{ width:auto; white-space:nowrap; padding:8px 12px; }
     .set-nav svg{ display:none; }
     .set-body{ padding:20px 18px 24px; }
     .set-foot{ grid-column:1; padding:12px 18px; }
   }
   /* ── Stat cards ── */
-  .summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+  .summary{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px; margin-bottom:14px; align-items:stretch;
+  }
   .stat{
     background:linear-gradient(180deg, var(--card) 0%, var(--card-tint) 100%);
     border:1px solid var(--border); border-radius:14px; padding:15px 18px 15px 21px;
@@ -591,20 +608,26 @@
         <strong>Settings</strong>
         <span>Attendance Register</span>
       </div>
-      <button class="set-nav" data-sec="connection" aria-selected="true">
-        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Connection
+
+      <p class="set-group-label">Who</p>
+      <button class="set-nav" data-sec="timings" aria-selected="true">
+        <svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4z"/><path d="M6 11v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/></svg> Students
       </button>
-      <button class="set-nav" data-sec="timings" aria-selected="false">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Day timings
+      <button class="set-nav" data-sec="shifts" aria-selected="false">
+        <svg viewBox="0 0 24 24"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="9" r="3.5"/></svg> Staff
       </button>
+
+      <p class="set-group-label">School</p>
       <button class="set-nav" data-sec="calendar" aria-selected="false">
         <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Calendar
       </button>
-      <button class="set-nav" data-sec="shifts" aria-selected="false">
-        <svg viewBox="0 0 24 24"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="9" r="3.5"/></svg> Staff shifts
+
+      <p class="set-group-label">Setup</p>
+      <button class="set-nav" data-sec="connection" aria-selected="false">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg> Connection
       </button>
       <button class="set-nav" data-sec="device" aria-selected="false">
-        <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 18h2"/></svg> This device
+        <svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M11 18h2"/></svg> Devices
       </button>
       <button class="set-nav" data-sec="password" aria-selected="false">
         <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Password
@@ -617,7 +640,7 @@
     <div class="set-body">
 
       <!-- ── Connection ── -->
-      <section class="set-sec on" data-sec="connection">
+      <section class="set-sec" data-sec="connection">
         <h2>Connection</h2>
         <p class="lede">One database now. The gate machine sends every scan to the Cloudflare Worker, and the Worker writes the finished record here with the name, class, bus and staff category already attached.</p>
 
@@ -642,15 +665,30 @@
       </section>
 
       <!-- ── Day timings ── -->
-      <section class="set-sec" data-sec="timings">
-        <h2>Day timings</h2>
-        <p class="lede">The cutoff splits a scan into a morning entry or an evening exit. The Worker reads these on every scan, so a change here changes how tomorrow's scans are filed.</p>
+      <section class="set-sec on" data-sec="timings">
+        <h2>Students</h2>
+        <p class="lede">A student's day is split by one cutoff time: scan before it and it counts as arriving, at or after it and it counts as leaving. That works because students all arrive together.</p>
+        <div class="note"><div><b>Staff don't use this.</b> Each staff category has its own arrival and departure windows over in <b>Staff</b> &mdash; a driver starting at 4am and a teacher arriving at 8:30 can't share a dividing line. The cutoff below is only a fallback for a category whose windows are left blank.</div></div>
 
         <div class="group">
-          <h3>Default cutoff</h3>
-          <p class="hint">Scans before this time count as morning entry. At or after it, they count as an exit.</p>
+          <h3>Cutoff time</h3>
+          <p class="hint">Applies to every student, on every day, unless one of the overrides below says otherwise.</p>
           <div class="grid">
             <div class="field"><label for="cutoff-default-input">All days</label><input type="time" id="cutoff-default-input"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>How the student view opens</h3>
+          <p class="hint">Summary is the counts at the top, list is the register itself. This sets the device you're holding &mdash; to set another one, use <b>Devices</b>.</p>
+          <div class="grid">
+            <div class="field"><label for="default-view-input">Show</label>
+              <select id="default-view-input">
+                <option value="list">List only</option>
+                <option value="summary">Summary only</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -762,7 +800,7 @@
 
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
-        <h2>Staff shifts</h2>
+        <h2>Staff</h2>
         <p class="lede">Each category keeps its own arrival and departure windows, because a driver starting at 4am and a teacher arriving at 8:30 can't share one dividing line. A scan inside the morning window is an arrival; inside the evening window it's a departure; outside both it falls back to the cutoff in Day timings.</p>
         <div class="note"><div>Underneath, the same card decides how the day is <b>judged</b>: any scan counts as a full day, or the person must be seen in every shift window &mdash; miss one and it shows as half. Each category can also keep its own working days.</div></div>
         <div id="shift-rules-grid"></div>
@@ -770,26 +808,12 @@
 
       <!-- ── This device ── -->
       <section class="set-sec" data-sec="device">
-        <h2>This device</h2>
-        <p class="lede">A name helps you tell devices apart when you hide categories. The name stays on this device; the hide list is shared.</p>
+        <h2>Devices</h2>
+        <p class="lede">Every phone, tablet and desk PC that opens the register lists itself here, the one you're holding first. Rename any of them, choose what each opens on, and hide staff categories a particular device shouldn't show &mdash; all of it from whichever device you happen to have in hand.</p>
 
         <div class="group">
-          <h3>Name and default view</h3>
-          <div class="grid">
-            <div class="field"><label for="this-device-input">Device name</label><input id="this-device-input" placeholder="e.g. Reception Desk"></div>
-            <div class="field"><label for="default-view-input">Students open on</label>
-              <select id="default-view-input">
-                <option value="list">List</option>
-                <option value="summary">Summary</option>
-                <option value="both">Both</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="group">
-          <h3>Hide staff categories</h3>
-          <p class="hint">Every device that opens the register lists itself here. Tick a category to hide it on that device &mdash; useful when a gate iPad should only show drivers. Rename this one above and it updates in the list.</p>
+          <h3>All devices</h3>
+          <p class="hint">Changes save as you make them, and reach the other devices the next time they open the register.</p>
           <div id="device-list"></div>
         </div>
       </section>
@@ -1246,7 +1270,9 @@ function getHiddenStaffCategoriesForThisDevice(){
   return (mine && Array.isArray(mine.hiddenStaffCategories)) ? mine.hiddenStaffCategories : [];
 }
 function getStudentDefaultView(){
-  const v = localStorage.getItem(LS.studentDefaultView);
+  // per device, and shared — so it can be set for a gate iPad from the office
+  const dev = getDevices()[getDeviceName()];
+  const v = (dev && dev.defaultView) || localStorage.getItem(LS.studentDefaultView);
   return (v === 'summary' || v === 'list' || v === 'both') ? v : 'list';
 }
 
@@ -1314,7 +1340,9 @@ document.getElementById('display-list').addEventListener('click', () => setDispl
 function applyDisplayMode(){
   const insightsOn = DISPLAY !== 'list';
   const listOn = DISPLAY !== 'summary';
-  document.getElementById('summary').style.display = (insightsOn && document.getElementById('summary').dataset.has) ? 'flex' : 'none';
+  // grid, not flex — .summary's auto-fit template only works if the inline
+  // display agrees with it, otherwise the cards shrink to their labels
+  document.getElementById('summary').style.display = (insightsOn && document.getElementById('summary').dataset.has) ? 'grid' : 'none';
   document.getElementById('breakdown-wrap').style.display = insightsOn ? 'flex' : 'none';
   const tbl = document.getElementById('register-table');
   tbl.style.display = (listOn && tbl.dataset.has) ? 'table' : 'none';
@@ -1795,7 +1823,7 @@ function setSummary(cards){
     const tone = c.color || 'var(--accent)';
     return `<div class="stat" style="--tone:${tone}"><div class="n" style="color:${tone}">${c.value}</div><div class="l">${c.label}</div></div>`;
   }).join('');
-  el.style.display = 'flex';
+  el.style.display = 'grid';
 }
 
 function renderDailyTable(){
@@ -2082,7 +2110,6 @@ function loadSettingsFormFromLocal(){
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
-  document.getElementById('this-device-input').value = localStorage.getItem(LS.deviceName) || '';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
   const sMode = getSandwichMode();
   document.querySelectorAll('input[name="sandwich"]').forEach(r => { r.checked = (r.value === sMode); });
@@ -2350,40 +2377,140 @@ document.getElementById('add-cutoff-date-btn').addEventListener('click', () => {
 
 function renderDeviceList(){
   const devices = getDevices();
-  const names = Object.keys(devices).sort();
+  const thisName = getDeviceName();
+  const names = Object.keys(devices).sort((a, b) =>
+    (a === thisName ? -1 : b === thisName ? 1 : a.localeCompare(b)));
   const wrap = document.getElementById('device-list');
-  if(!names.length){ wrap.innerHTML = '<p class="hint" style="margin:0 0 12px;">No devices yet. Add one below to hide categories on it.</p>'; return; }
+
+  if(!names.length){
+    wrap.innerHTML = '<p class="hint" style="margin:0;">No devices yet. Open the register on a phone or tablet and it will appear here.</p>';
+    return;
+  }
+
   wrap.innerHTML = names.map(name => {
-    const hidden = devices[name].hiddenStaffCategories || [];
+    const dev = devices[name] || {};
+    const hidden = dev.hiddenStaffCategories || [];
+    const view = dev.defaultView || 'list';
+    const isThis = name === thisName;
     const checks = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => `
       <label><input type="checkbox" class="device-cat-cb" data-device="${escapeHtml(name)}" data-cat="${escapeHtml(cat)}" ${hidden.includes(cat) ? 'checked' : ''}> Hide ${escapeHtml(cat)}</label>
     `).join('');
-    const isThis = name === getDeviceName();
+    const seen = dev.lastSeen ? `<span class="dev-seen">Last opened ${escapeHtml(dev.lastSeen)}</span>` : '';
+
     return `<div class="device-card${isThis ? ' is-this' : ''}">
-      <div class="device-head"><strong>${escapeHtml(name)}</strong><button type="button" class="ghost small" data-remove-device="${escapeHtml(name)}">Remove</button></div>
+      <div class="device-head">
+        <strong>${escapeHtml(name)}</strong>
+        ${seen}
+        <button type="button" class="ghost small" data-remove-device="${escapeHtml(name)}">Remove</button>
+      </div>
+      <div class="dev-grid">
+        <div class="field">
+          <label>Name</label>
+          <input class="dev-name" data-device="${escapeHtml(name)}" value="${escapeHtml(name)}" placeholder="e.g. Reception Desk">
+        </div>
+        <div class="field">
+          <label>Student view opens on</label>
+          <select class="dev-view" data-device="${escapeHtml(name)}">
+            <option value="list" ${view === 'list' ? 'selected' : ''}>List only</option>
+            <option value="summary" ${view === 'summary' ? 'selected' : ''}>Summary only</option>
+            <option value="both" ${view === 'both' ? 'selected' : ''}>Both</option>
+          </select>
+        </div>
+      </div>
       <div class="cat-checks">${checks}</div>
     </div>`;
   }).join('');
+
+  // Hide-category switches
   wrap.querySelectorAll('.device-cat-cb').forEach(cb => {
     cb.addEventListener('change', () => {
-      const devices = getDevices();
+      const devs = getDevices();
       const name = cb.dataset.device;
-      if(!devices[name]) devices[name] = { hiddenStaffCategories: [] };
-      const set = new Set(devices[name].hiddenStaffCategories || []);
+      if(!devs[name]) devs[name] = { hiddenStaffCategories: [] };
+      const set = new Set(devs[name].hiddenStaffCategories || []);
       cb.checked ? set.add(cb.dataset.cat) : set.delete(cb.dataset.cat);
-      devices[name].hiddenStaffCategories = [...set];
-      localStorage.setItem(LS.devices, JSON.stringify(devices));
+      devs[name].hiddenStaffCategories = [...set];
+      saveDevices(devs, name);
+      if(name === getDeviceName()) loadRegister();
     });
   });
+
+  // Default view — takes effect here immediately if it's this device
+  wrap.querySelectorAll('.dev-view').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const devs = getDevices();
+      const name = sel.dataset.device;
+      if(!devs[name]) devs[name] = { hiddenStaffCategories: [] };
+      devs[name].defaultView = sel.value;
+      saveDevices(devs, name);
+      if(name === getDeviceName()) setDisplay(sel.value);
+    });
+  });
+
+  // Rename, on blur or Enter
+  wrap.querySelectorAll('.dev-name').forEach(input => {
+    const commit = () => {
+      const from = input.dataset.device;
+      const to = input.value.trim();
+      if(!to || to === from){ input.value = from; return; }
+      renameDevice(from, to);
+      renderDeviceList();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') input.blur(); });
+  });
+
   wrap.querySelectorAll('[data-remove-device]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const devices = getDevices();
-      delete devices[btn.dataset.removeDevice];
-      localStorage.setItem(LS.devices, JSON.stringify(devices));
+      const name = btn.dataset.removeDevice;
+      const devs = getDevices();
+      delete devs[name];
+      localStorage.setItem(LS.devices, JSON.stringify(devs));
+      const base = attBase();
+      if(base) fetchJson(`${base}/app_settings/devices/${encodeURIComponent(name)}.json`, { method:'DELETE' });
+      // removing the one you're holding just re-registers it under a fresh name
+      if(name === getDeviceName()){
+        localStorage.removeItem(LS.deviceName);
+        registerThisDevice();
+      }
       renderDeviceList();
     });
   });
 }
+
+/* Writes one device's entry rather than the whole map, so two people
+   editing different devices at once can't clobber each other. */
+function saveDevices(devs, changedName){
+  localStorage.setItem(LS.devices, JSON.stringify(devs));
+  const base = attBase();
+  if(!base || !changedName || !devs[changedName]) return;
+  fetchJson(`${base}/app_settings/devices/${encodeURIComponent(changedName)}.json`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(devs[changedName])
+  });
+}
+
+/* Rename works for any device from any device — the entry moves rather
+   than being copied, so no ghost is left behind in the shared list. */
+function renameDevice(from, to){
+  const devs = getDevices();
+  if(!devs[from] || devs[to]) return;      // gone already, or the name is taken
+  devs[to] = devs[from];
+  delete devs[from];
+  localStorage.setItem(LS.devices, JSON.stringify(devs));
+  if(from === getDeviceName()) localStorage.setItem(LS.deviceName, to);
+
+  const base = attBase();
+  if(!base) return;
+  fetchJson(`${base}/app_settings/devices/${encodeURIComponent(from)}.json`, { method:'DELETE' });
+  fetchJson(`${base}/app_settings/devices/${encodeURIComponent(to)}.json`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(devs[to])
+  });
+}
+
 /* ═══════════════════════════════════════════════════════════
    Devices register themselves
 
@@ -2412,23 +2539,11 @@ async function registerThisDevice(){
 }
 
 // Renaming this device in Settings moves its entry rather than leaving a ghost
+// kept as a thin wrapper — renaming now goes through renameDevice(from, to)
 function renameThisDevice(newName){
-  const oldName = getDeviceName();
-  if(!newName || newName === oldName) return;
-  const devices = getDevices();
-  const entry = devices[oldName] || { hiddenStaffCategories: [] };
-  delete devices[oldName];
-  devices[newName] = entry;
-  localStorage.setItem(LS.devices, JSON.stringify(devices));
-  localStorage.setItem(LS.deviceName, newName);
-  const base = attBase();
-  if(base){
-    fetchJson(`${base}/app_settings/devices/${encodeURIComponent(oldName)}.json`, { method:'DELETE' });
-    fetchJson(`${base}/app_settings/devices/${encodeURIComponent(newName)}.json`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(entry)
-    });
-  }
+  renameDevice(getDeviceName(), String(newName || '').trim());
 }
+
 
 function collectSettingsObject(){
   const shiftRulesObj = {};
@@ -2480,8 +2595,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
-  const deviceName = document.getElementById('this-device-input').value.trim();
-  if(deviceName) renameThisDevice(deviceName);
+  // device names are edited inline in the Devices section
 
   const settings = collectSettingsObject();
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
@@ -2492,6 +2606,12 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.sandwichMode, settings.sandwichMode);
   if(settings.settingsPassHash !== undefined) localStorage.setItem(LS.settingsPassHash, settings.settingsPassHash);
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
+  const devsNow = getDevices();
+  const me = getDeviceName();
+  if(devsNow[me]){
+    devsNow[me].defaultView = settings.studentDefaultView;
+    saveDevices(devsNow, me);
+  }
 
   if(!rUrl){
     showStatus('Saved on this device. Add the attendance database URL to share these settings with the gate machine.', 'info');
