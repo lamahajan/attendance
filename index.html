@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Presenz</title>
+<title>Markd</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
 <meta name="theme-color" content="#F2F2F7"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="Presenz"/>
+<meta name="apple-mobile-web-app-title" content="Markd"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="shortcut icon" href="favicon-64.png"/>
@@ -28,12 +28,15 @@
     --rule-red:#6E6600;
     --present:#0C7853;
     --present-bg:#DFF4EB;
+    --present-line:#9FDCC3;
     --absent:#C43129;
     --absent-bg:#FBE7E5;
-    --pending:#6495ED;
-    --pending-bg:#E0F2F6;
-    --half:#5757CD;
-    --half-bg:#E8E8FB;
+    --pending:#B45309;
+    --pending-bg:#FDF0DA;
+    --pending-line:#EFC98A;
+    --half:#5B3FD6;
+    --half-bg:#EDE9FE;
+    --half-line:#C7BAFA;
     --row-alt:#FAFAFA;
     --card:#FFFFFF;
     --border:#E6E6EB;
@@ -45,7 +48,7 @@
     --accent:#FFFF00;
     --accent-ink:#3A2A00;      /* text that sits on top of the accent */
     --accent-soft:#FFFFB0;
-    --teal:#6495ED;
+    --teal:#0D758A;
     --teal-bg:#E0F2F6;
     --magenta:#B0348C;
     --shadow-1:0 1px 2px rgba(0,0,0,.05);
@@ -62,12 +65,15 @@
     --rule-red:#E5D95C;
     --present:#30D6A0;
     --present-bg:rgba(48,214,160,.14);
+    --present-line:rgba(48,214,160,.45);
     --absent:#FF6B60;
     --absent-bg:rgba(255,107,96,.14);
-    --pending:#3ECBE8;
-    --pending-bg:rgba(62,203,232,.14);
-    --half:#8B8BF5;
-    --half-bg:rgba(139,139,245,.15);
+    --pending:#F0A642;
+    --pending-bg:rgba(240,166,66,.16);
+    --pending-line:rgba(240,166,66,.45);
+    --half:#A594FA;
+    --half-bg:rgba(165,148,250,.16);
+    --half-line:rgba(165,148,250,.45);
     --row-alt:#181B24;
     --card:#181B24;
     --border:#2A2E42;
@@ -472,14 +478,27 @@
   }
   @media (prefers-reduced-motion:reduce){ .live-dot{ animation:none !important; } }
 
-  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; white-space:nowrap; }
-  .badge.present{background:var(--present-bg); color:var(--present);}
-  .badge.absent{background:var(--absent-bg); color:var(--absent);}
-  .badge.gatepass{background:var(--pending-bg); color:var(--pending);}
-  .badge.half{background:var(--half-bg); color:var(--half);}
-  .badge.bus{background:var(--teal-bg); color:var(--teal);}
-  .badge.off{background:var(--row-alt); color:var(--ink-soft);}
-  .badge.late{background:var(--absent-bg); color:var(--absent); font-weight:700;}
+  /* Every status carries a border of its own tone as well as a fill, so the
+     five of them stay apart at a glance — and still read on a mono printout,
+     where the fills all collapse to the same pale grey. */
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px;
+    white-space:nowrap; border:1px solid transparent;
+  }
+  .badge::before{
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:currentColor; flex:none;
+  }
+  .badge.present{ background:var(--present-bg); color:var(--present); border-color:var(--present-line); }
+  .badge.gatepass{ background:var(--pending-bg); color:var(--pending); border-color:var(--pending-line); }
+  .badge.half{ background:var(--half-bg); color:var(--half); border-color:var(--half-line); }
+  .badge.late{ background:var(--absent-bg); color:var(--absent); border-color:var(--absent); font-weight:700; }
+  /* Absent is the one that has to jump out of a long list, so it is filled */
+  .badge.absent{ background:var(--absent); color:#fff; border-color:var(--absent); }
+  .badge.absent::before{ background:rgba(255,255,255,.85); }
+  .badge.off{ background:var(--row-alt); color:var(--ink-soft); border-color:var(--border); }
+  .badge.bus{ background:var(--teal-bg); color:var(--teal); border-color:var(--teal-bg); }
   .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
   .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
 
@@ -770,9 +789,41 @@
     #register-table td[data-l="Attendance"], #register-table td[data-l="Full days"],
     #register-table td[data-l="Half days"]{
       order:5; gap:4px;
-      font-size:11.5px; font-weight:600; color:var(--ink-soft);
-      background:var(--row-alt); border-radius:7px; padding:4px 9px 4px 8px;
+      font-size:11.5px; font-weight:600; color:var(--ink);
+      background:var(--row-alt); border:1px solid var(--border);
+      border-radius:7px; padding:3px 9px 3px 8px;
     }
+    /* An arrival chip and a departure chip shouldn't look identical */
+    #register-table td[data-l="Morning in"], #register-table td[data-l="In"]{
+      background:var(--present-bg); border-color:var(--present-line); color:var(--present);
+    }
+    #register-table td[data-l="Evening out"], #register-table td[data-l="Out"]{
+      background:var(--pending-bg); border-color:var(--pending-line); color:var(--pending);
+    }
+    #register-table td[data-l="Present"], #register-table td[data-l="Full days"]{
+      background:var(--present-bg); border-color:var(--present-line); color:var(--present);
+    }
+    #register-table td[data-l="Half days"]{
+      background:var(--half-bg); border-color:var(--half-line); color:var(--half);
+    }
+    #register-table td[data-l="Absent"]{
+      background:var(--absent-bg); border-color:var(--absent); color:var(--absent);
+    }
+
+    /* A row wears its own status down the left edge, so a screenful of the
+       register can be read without landing on a single badge. */
+    #register-table tr{ position:relative; padding-left:19px; }
+    #register-table tr::before{
+      content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+      background:var(--border);
+    }
+    #register-table tr[data-status="present"]::before{ background:var(--present); }
+    #register-table tr[data-status="gatepass"]::before{ background:var(--pending); }
+    #register-table tr[data-status="half"]::before{ background:var(--half); }
+    #register-table tr[data-status="late"]::before,
+    #register-table tr[data-status="absent"]::before{ background:var(--absent); }
+    #register-table tr[data-status="off"]::before{ background:var(--border); }
+    #register-table tbody tr:nth-child(even){ background:var(--row-alt); }
     #register-table td[data-l="Morning in"]::before, #register-table td[data-l="Evening out"]::before,
     #register-table td[data-l="In"]::before, #register-table td[data-l="Out"]::before,
     #register-table td[data-l="Present"]::before, #register-table td[data-l="Absent"]::before,
@@ -841,17 +892,55 @@
   tbody tr:last-child{ border-bottom:none; }
   td.mono{ font-size:12.5px; }
 
-  /* Numeric and short columns shouldn't take a fair share of the width —
-     the name column absorbs the slack instead. */
+  /* ── Column widths ────────────────────────────────────────────
+     The name column used to be the only one set to auto, so on a wide
+     screen every spare pixel piled up behind the name and pushed the rest
+     of the row to the far edge. Every column is given a share of the width
+     instead, and since the staff table has seven columns where the student
+     one has eight, the shares are declared per view. */
   @media (min-width: 861px){
-    .table-card th:nth-child(1), .table-card td:nth-child(1){ width:52px; }
-    .table-card th:nth-child(2), .table-card td:nth-child(2){ width:104px; }
-    .table-card th:nth-child(3), .table-card td:nth-child(3){ width:auto; min-width:180px; }
-    .table-card th:nth-child(4), .table-card td:nth-child(4){ width:88px; }
-    .table-card th:nth-child(5), .table-card td:nth-child(5){ width:88px; }
-    .table-card th:nth-child(6), .table-card td:nth-child(6){ width:110px; }
-    .table-card th:nth-child(7), .table-card td:nth-child(7){ width:110px; }
-    .table-card th:nth-child(8), .table-card td:nth-child(8){ width:96px; }
+    #register-table{ table-layout:fixed; }
+    #register-table td[data-l="Name"]{ white-space:normal; }
+    #register-table td[data-l="Role"], #register-table td[data-l="Class"]{ white-space:nowrap; }
+
+    /* Students, daily: S.No · Adm · Name · Class · Bus · In · Out · Status */
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(1){ width:5%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(2){ width:11%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(3){ width:29%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(4){ width:9%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(5){ width:8%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(6){ width:13%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(7){ width:13%; }
+    #register-table[data-view="student"][data-mode="daily"] th:nth-child(8){ width:12%; }
+
+    /* Students, monthly: … · Present · Absent · Attendance */
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(1){ width:5%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(2){ width:11%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(3){ width:31%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(4){ width:9%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(5){ width:8%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(6){ width:11%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(7){ width:11%; }
+    #register-table[data-view="student"][data-mode="monthly"] th:nth-child(8){ width:14%; }
+
+    /* Staff, daily: S.No · ID · Name · Role · In · Out · Status — seven */
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(1){ width:5%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(2){ width:12%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(3){ width:30%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(4){ width:16%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(5){ width:13%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(6){ width:13%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(7){ width:11%; }
+
+    /* Staff, monthly: … · Full · Half · Absent · Attendance */
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(1){ width:5%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(2){ width:12%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(3){ width:26%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(4){ width:16%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(5){ width:11%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(6){ width:10%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(7){ width:10%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(8){ width:10%; }
   }
 
   /* ── Badges: compact pills ── */
@@ -1040,6 +1129,29 @@
       margin:0; font-size:23px; font-weight:800; letter-spacing:-.02em; color:#111;
     }
     .print-head .ph-date{ margin:4px 0 0; font-size:11.5px; color:#444; }
+    .print-head .ph-meta{
+      margin:3px 0 0; font-size:10.5px; color:#555;
+      display:flex; gap:14px; flex-wrap:wrap;
+    }
+
+    /* Page setup: the sheet, not the screen */
+    @page{ size:A4 portrait; margin:12mm 10mm; }
+
+    /* A register runs past one page, so the column head has to come with it,
+       and no row may be split down the middle by a page break. */
+    #register-table thead{ display:table-header-group !important; }
+    #register-table tbody{ display:table-row-group !important; }
+    #register-table tr{ break-inside:avoid; page-break-inside:avoid; }
+    .print-head{ break-after:avoid; page-break-after:avoid; }
+
+    /* Zebra banding survives the trip to paper and makes a long list
+       scannable across the width of the page. */
+    #register-table tbody tr:nth-child(even) td{ background:#F7F7F8 !important; }
+    #register-table td[data-l="S.No"]{ color:#777 !important; width:34px; }
+    #register-table td[data-l="Morning in"], #register-table td[data-l="Evening out"],
+    #register-table td[data-l="In"], #register-table td[data-l="Out"]{
+      font-variant-numeric:tabular-nums;
+    }
 
     /* The banner, the pickers and the live chip are screen furniture */
     .hero, .controls, .side, .appbar, .summary, .breakdown-wrap, .sw-pill, .modal-overlay{ display:none !important; }
@@ -1191,7 +1303,7 @@
       <img class="brand-mark" src="Logo.png" alt="" width="34" height="34"
            onerror="this.onerror=null;this.src='icon-192.png';">
       <div class="side-brand-text">
-        <strong>Presenz</strong>
+        <strong>Markd</strong>
         <span id="school-eyebrow">Lotus International School</span>
       </div>
     </div>
@@ -1230,7 +1342,7 @@
       <img class="appbar-mark" src="Logo.png" alt="" width="34" height="34"
            onerror="this.onerror=null;this.src='icon-192.png';">
       <div class="appbar-text">
-        <strong>Presenz</strong>
+        <strong>Markd</strong>
         <span id="appbar-school">Lotus International School</span>
       </div>
       <!-- the date and month pickers are moved in here on a phone -->
@@ -1248,6 +1360,7 @@
       <p class="ph-school" id="ph-school">Lotus International School</p>
       <h2 class="ph-title" id="ph-title">Admission Register</h2>
       <p class="ph-date" id="ph-date"></p>
+      <p class="ph-meta" id="ph-meta"></p>
     </div>
 
     <div class="hero">
@@ -1331,7 +1444,7 @@
     <aside class="set-side">
       <div class="brand">
         <strong>Settings</strong>
-        <span>Presenz</span>
+        <span>Markd</span>
       </div>
 
       <p class="set-group-label">Who</p>
@@ -2601,6 +2714,8 @@ function updateViewTitle(){
 
 function buildDailyHead(){
   const head = document.getElementById('register-head');
+  const tbl = document.getElementById('register-table');
+  tbl.dataset.view = VIEW; tbl.dataset.mode = 'daily';
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th><th>Status</th></tr>`;
   }else{
@@ -2609,6 +2724,8 @@ function buildDailyHead(){
 }
 function buildMonthlyHead(){
   const head = document.getElementById('register-head');
+  const tbl = document.getElementById('register-table');
+  tbl.dataset.view = VIEW; tbl.dataset.mode = 'monthly';
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
@@ -2755,6 +2872,7 @@ function renderDailyTable(){
       const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
     }
+    tr.dataset.status = status;
     enriched.push({ s, status });
     body.appendChild(tr);
   });
@@ -2807,8 +2925,10 @@ function renderMonthlyTable(){
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }
+    // the left stripe reads as a pass/watch/fail band in the monthly view
+    tr.dataset.status = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
     body.appendChild(tr);
-  });
+  }); 
 
   // Staff monthly is a table, not a dashboard — the sums repeated what the
   // columns already say, and two of them were figures we shouldn't compute.
@@ -2890,6 +3010,7 @@ function finishRender(count, unlisted){
   document.getElementById('register-table').dataset.has = hasData ? '1' : '';
   document.getElementById('summary').dataset.has = hasData ? '1' : '';
   applyDisplayMode();
+  updateReportMeta(count);
   const empty = document.getElementById('empty-msg');
   empty.style.display = hasData ? 'none' : 'block';
   if(!hasData){
@@ -2897,6 +3018,34 @@ function finishRender(count, unlisted){
       ? 'Nothing recorded for this day yet.'
       : 'Add your attendance database URL in Settings to load real records.';
   }
+}
+
+/* The printed sheet says what it is a list of. Without this line a filtered
+   register looks exactly like a full one on paper, and the counts at the top
+   of the screen never make it across. */
+function updateReportMeta(count){
+  const el = document.getElementById('ph-meta');
+  if(!el) return;
+  const bits = [];
+  const filter = document.getElementById('category-filter');
+  const pick = filter ? filter.value : '';
+  if(VIEW === 'student') bits.push('Class: ' + (pick || 'All'));
+  else bits.push('Category: ' + (STAFF_CATEGORY || 'All'));
+  bits.push((VIEW === 'student' ? 'Students' : 'Staff') + ': ' + count);
+
+  const tally = {};
+  document.querySelectorAll('#register-body tr[data-status]').forEach(tr => {
+    const k = tr.dataset.status;
+    tally[k] = (tally[k] || 0) + 1;
+  });
+  const label = VIEW === 'student'
+    ? { present:'In school', gatepass:'Went home', absent:'Absent' }
+    : { present:'Full day', late:'Late', half:'Half day', absent:'Absent', off:'Week off' };
+  Object.keys(label).forEach(k => { if(tally[k]) bits.push(label[k] + ': ' + tally[k]); });
+
+  bits.push('Printed ' + new Date().toLocaleString('en-IN',
+    { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }));
+  el.innerHTML = bits.map(b => `<span>${escapeHtml(b)}</span>`).join('');
 }
 function renderTable(){
   freshnessLabel(); MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
