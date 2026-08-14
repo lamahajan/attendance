@@ -16,7 +16,7 @@
    file badlo to CACHE ka number bhi badha dena.
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE = 'markd-v12';
+const CACHE = 'markd-v13';
 
 const SHELL = [
   './',
