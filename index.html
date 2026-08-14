@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Attendance Register</title>
+<title>Presenz</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
 <meta name="theme-color" content="#F2F2F7"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<meta name="apple-mobile-web-app-title" content="L-Haazri"/>
+<meta name="apple-mobile-web-app-title" content="Presenz"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="shortcut icon" href="favicon-64.png"/>
 <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"/>
@@ -936,9 +937,9 @@
   <aside class="side" id="side">
     <div class="side-brand">
       <img class="brand-mark" src="Logo.png" alt="" width="34" height="34"
-           onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://raw.githubusercontent.com/lamahajan/attendance/main/Logo.png';}else{this.src='icon-192.png';}">
+           onerror="this.onerror=null;this.src='icon-192.png';">
       <div class="side-brand-text">
-        <strong>L-Haazri</strong>
+        <strong>Presenz</strong>
         <span id="school-eyebrow">Lotus International School</span>
       </div>
     </div>
@@ -1049,7 +1050,7 @@
     <aside class="set-side">
       <div class="brand">
         <strong>Settings</strong>
-        <span>L-Haazri</span>
+        <span>Presenz</span>
       </div>
 
       <p class="set-group-label">Who</p>
@@ -1095,8 +1096,8 @@
           <h3>Attendance database</h3>
           <p class="hint">The same values as the Worker's <code>RAW_FIREBASE_URL</code> and <code>RAW_FIREBASE_CODE</code> variables. This is the only connection that reads and writes &mdash; settings you save here sync to <code>app_settings.json</code>, which the Worker reads on every scan.</p>
           <div class="grid">
-            <div class="field"><label for="r-url">Database URL</label><input id="r-url" placeholder="https://attendance-xxxx-default-rtdb.firebasedatabase.app"></div>
-            <div class="field"><label for="r-code">Code</label><input id="r-code" placeholder="path segment, e.g. HAAZRI"></div>
+            <div class="field"><label for="r-url">Database URL</label><input id="r-url"></div>
+            <div class="field"><label for="r-code">Code</label><input id="r-code"></div>
           </div>
           <div class="row">
             <button type="button" id="r-test-btn" class="ghost small" style="height:36px;">Test connection</button>

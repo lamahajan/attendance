@@ -1,7 +1,7 @@
 {
-  "name": "L-Haazri",
-  "short_name": "L-Haazri",
-  "description": "L-Haazri \u2014 daily and monthly attendance register for students and staff.",
+  "name": "Presenz",
+  "short_name": "Presenz",
+  "description": "Presenz \u2014 daily and monthly attendance register for students and staff.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
