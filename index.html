@@ -137,24 +137,15 @@
     color:var(--ink-soft); cursor:pointer; transition:.15s; user-select:none;
   }
   .tab:hover{ color:var(--ink); }
-  .tab.active{ background:var(--card); color:var(--rule-red); font-weight:600; box-shadow:0 1px 3px rgba(46,28,74,.12); }
-  .category-pills{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
-  .category-pills-wrap{ margin-top:14px; }
-  .category-pills-wrap .category-pills{ margin-top:0; }
-  .category-select{
-    display:none; width:100%; appearance:none; -webkit-appearance:none;
-    font-family:inherit; font-size:14px; font-weight:600; color:var(--rule-red);
-    background:var(--accent-soft) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%236E6600" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 14px center/16px 16px;
-    border:1px solid var(--head-edge); border-radius:12px; padding:12px 40px 12px 16px;
-  }
+  .tab.active{ background:var(--card); color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(46,28,74,.12); }
   .pill{
     font-size:12.5px; font-weight:500; padding:6px 13px; border-radius:999px;
     border:1px solid var(--border); background:var(--card); color:var(--ink-soft);
     cursor:pointer; transition:.15s;
   }
   .pill:hover{ border-color:var(--ink-soft); color:var(--ink); }
-  .pill.active{ background:var(--accent-soft); border-color:var(--head-edge); color:var(--rule-red); font-weight:600; box-shadow:none; }
-  .page-head .tabs, .page-head .category-pills{ position:relative; }
+  .pill.active{ background:var(--accent-soft); border-color:var(--head-edge); color:var(--ink); font-weight:700; box-shadow:none; }
+  .page-head .tabs{ position:relative; }
   .page-head::after{ content:''; display:block; height:18px; }
 
   /* ── Controls bar ── */
@@ -243,7 +234,7 @@
   }
   .set-nav svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.7; flex:none; opacity:.6; }
   .set-nav:hover{ background:rgba(46,28,74,.05); }
-  .set-nav[aria-selected="true"]{ background:var(--accent); color:var(--accent-ink); font-weight:600; box-shadow:var(--shadow-pop); }
+  .set-nav[aria-selected="true"]{ background:var(--accent); color:#111114; font-weight:700; box-shadow:var(--shadow-pop); }
   .set-nav[aria-selected="true"] svg{ opacity:1; }
 
   /* Content */
@@ -251,8 +242,8 @@
   .set-sec{ display:none; }
   .set-sec.on{ display:block; animation:secIn .18s ease; }
   @keyframes secIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
-  .set-sec > h2{ font-size:20px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px; color:var(--rule-red); }
-  .set-sec > .lede{ font-size:13px; color:var(--ink-soft); margin:0 0 22px; line-height:1.55; max-width:64ch; }
+  .set-sec > h2{ font-size:20px; font-weight:700; letter-spacing:-.01em; margin:0 0 4px; color:var(--ink); }
+  .set-sec > .lede{ font-size:13px; color:var(--ink-soft); margin:0 0 22px; line-height:1.6; max-width:none; }
 
   .group{
     border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:14px;
@@ -488,7 +479,7 @@
   .badge.half{background:var(--half-bg); color:var(--half);}
   .badge.bus{background:var(--teal-bg); color:var(--teal);}
   .badge.off{background:var(--row-alt); color:var(--ink-soft);}
-  .badge.late{background:var(--half-bg); color:var(--half);}
+  .badge.late{background:var(--absent-bg); color:var(--absent); font-weight:700;}
   .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
   .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
 
@@ -514,7 +505,7 @@
     body{background:#fff; padding:0;}
     :root, [data-theme="dark"]{ --paper:#fff; --card:#fff; --card-tint:#fff; --ink:#000; --ink-soft:#444; --border:#bbb; --paper-line:#ddd; --row-alt:#fff; }
     .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs, .sw-pill,
-    .side, .topbar-actions, .category-pills{display:none !important;}
+    .side, .topbar-actions{display:none !important;}
     /* the date is already printed under the title — the picker repeated it */
     .app{ display:block; }
     .main{ padding:0; }
@@ -672,9 +663,9 @@
   .side-nav svg{ width:17px; height:17px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; opacity:.6; }
   .side-nav:hover{ background:var(--row-alt); }
   .side-nav.active, .side-nav.on{
-    background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+    background:var(--accent-soft); color:var(--ink); font-weight:700;
   }
-  .side-nav.active svg, .side-nav.on svg{ opacity:1; }
+  .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--ink); }
   .side-foot{ margin-top:auto; display:flex; gap:8px; padding:12px 8px 0; border-top:1px solid var(--paper-line); }
 
   .main{ min-width:0; padding:18px 22px 60px; margin-left:232px; }
@@ -703,9 +694,9 @@
     }
     .side-nav svg{ width:19px; height:19px; }
     .side-nav.active, .side-nav.on{
-      background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+      background:var(--accent-soft); color:var(--ink); font-weight:700;
     }
-    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
+    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--ink); }
     .side-foot{ margin:0; padding:0; border:none; gap:4px; }
     .main{ margin-left:0; padding:14px 12px 86px; }
     .topbar-title h1{ font-size:20px; }
@@ -716,10 +707,6 @@
      and a card-style register list (no horizontal scrolling)
      ══════════════════════════════════════════════════════════ */
   @media (max-width: 860px){
-
-    /* ── Staff category pills become a dropdown, like the display switch ── */
-    .category-pills{ display:none; }
-    .category-select{ display:block; }
 
     /* ── Stat cards: one tidy line each, two per row ── */
     .summary{ grid-template-columns:1fr 1fr; gap:8px; }
@@ -903,10 +890,10 @@
     /* Pastel tint, matching the softer gold used elsewhere — the fully
        saturated accent read as too dark/heavy for a nav item fill. */
     .side-nav.active, .side-nav.on{
-      background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+      background:var(--accent-soft); color:var(--ink); font-weight:700;
       box-shadow:none;
     }
-    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
+    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--ink); }
     .side-nav.active:hover, .side-nav.on:hover{ background:var(--accent-soft); }
     .side-nav.active::before, .side-nav.on::before{ content:none; }
 
@@ -1018,6 +1005,180 @@
   thead th{ background:var(--row-alt); }
   tbody tr:hover{ background:var(--row-alt); }
   [data-theme="dark"] .side{ border-right:1px solid var(--border); }
+
+  /* ══════════════════════════════════════════════════════════
+     Punch windows, printed sheet, and the yellow mobile shell
+     ══════════════════════════════════════════════════════════ */
+
+  /* ── Staff category card: windows only, no shift row ── */
+  .shift-rule-card .src-head-note{
+    font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-soft); background:var(--row-alt); border:1px solid var(--border);
+    border-radius:999px; padding:4px 10px;
+  }
+  .shift-rule-card .src-explain{
+    margin:10px 0 0; font-size:11.5px; line-height:1.55; color:var(--ink-soft);
+  }
+  /* A scan that landed outside both windows: shown, but struck out, so the
+     row explains itself instead of silently dropping a punch. */
+  .off-window{
+    text-decoration:line-through; color:var(--ink-soft); opacity:.75;
+  }
+
+  /* ── Printed masthead ── */
+  .print-head{ display:none; }
+  @media print{
+    .print-head{
+      display:block; margin:0 0 14px; padding:0 0 10px;
+      border-bottom:2px solid #111;
+    }
+    .print-head .ph-school{
+      margin:0 0 4px; font-size:9.5px; font-weight:700; letter-spacing:.16em;
+      text-transform:uppercase; color:#33406B;
+    }
+    .print-head .ph-title{
+      margin:0; font-size:23px; font-weight:800; letter-spacing:-.02em; color:#111;
+    }
+    .print-head .ph-date{ margin:4px 0 0; font-size:11.5px; color:#444; }
+
+    /* The banner, the pickers and the live chip are screen furniture */
+    .hero, .controls, .side, .appbar, .summary, .breakdown-wrap, .sw-pill, .modal-overlay{ display:none !important; }
+    .table-card{ border:none !important; box-shadow:none !important; border-radius:0 !important; }
+    .table-card-head{ display:none !important; }
+
+    /* The phone layout turns rows into cards; on paper it has to be a table
+       again, whatever width the window happens to be. */
+    #register-table, #register-table thead, #register-table tbody,
+    #register-table tr, #register-table td, #register-table th{
+      display:revert !important;
+    }
+    #register-table{ width:100% !important; border-collapse:collapse !important; }
+    #register-table tr{ padding:0 !important; }
+    #register-table td{
+      padding:7px 10px !important; border-bottom:1px solid #E2E2E6 !important;
+      font-size:11.5px !important; font-weight:400 !important; background:none !important;
+      max-width:none !important; white-space:normal !important;
+    }
+    #register-table td[data-l="Name"]{ font-weight:500 !important; }
+    #register-table td::before{ content:none !important; }
+    #register-table thead th{
+      font-size:8.5px !important; letter-spacing:.1em; padding:7px 10px !important;
+      border-bottom:1.5px solid #111 !important; background:#fff !important; color:#555 !important;
+    }
+    #register-table tr::after{ content:none !important; }
+    /* Status is a right-now value; on paper it means nothing */
+    #register-table thead th:last-child,
+    #register-table td[data-l="Status"]{ display:none !important; }
+    .off-window{ text-decoration:line-through; }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Mobile: same look as the desktop, only tighter
+
+     The solid yellow masthead and search strip were tried and dropped —
+     the phone now keeps the desktop's soft banner and white control bar,
+     and the only real change is that the stat cards shrink.
+     ══════════════════════════════════════════════════════════ */
+  /* ── Phone app bar ──────────────────────────────────────────
+     On a phone this replaces the hero banner outright: it wears the same
+     tinted gradient, and carries the branding, the view title and the date
+     picker in the space the banner used to need on its own. */
+  .appbar{ display:none; }
+  .btn-ico{ display:none; }
+
+  @media (max-width: 860px){
+
+    /* The banner's job is done here now */
+    .hero{ display:none !important; }
+
+    /* One line, pinned to the top of the screen and running the full width
+       of it — the sizes here follow the StaffFlow header the user pointed
+       at: 14/16/10 padding, a 34px mark, a 17px title over an 11px line,
+       an 8px status dot and a 30px theme button. */
+    /* The old page padding sat between this bar and the screen edge, so the
+       bar could never reach it — the shell owns the padding now. */
+    body{ padding:0; }
+    .main{ padding:0 12px 86px; }
+
+    .appbar{
+      display:flex; align-items:center; gap:10px;
+      position:sticky; top:0; z-index:50;
+      margin:0 -12px 12px;
+      padding:calc(12px + env(safe-area-inset-top)) 16px 10px;
+      border:none; border-bottom:1px solid var(--head-edge); border-radius:0;
+      background:linear-gradient(105deg, var(--accent-soft) 0%, var(--head-tint) 60%, var(--head-tint) 100%);
+      backdrop-filter:saturate(180%) blur(20px);
+      -webkit-backdrop-filter:saturate(180%) blur(20px);
+    }
+    .appbar-mark{
+      width:34px; height:34px; flex:none; border-radius:11px;
+      object-fit:contain; background:var(--paper);
+      border:1px solid var(--head-edge); padding:2px;
+    }
+    .appbar-text{ min-width:0; flex:1; }
+    .appbar-text strong{
+      display:block; font-size:17px; font-weight:800; letter-spacing:-.02em;
+      color:var(--ink); line-height:1.15;
+    }
+    .appbar-text span{
+      display:block; font-size:11px; color:var(--ink-soft); margin-top:1px;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .appbar-live{ display:flex; align-items:center; flex:none; }
+    .appbar-live .live-dot{ width:8px; height:8px; }
+    .appbar-live.paused .live-dot{ background:var(--ink-soft); animation:none; box-shadow:none; }
+    .appbar-live.loading .live-dot{ background:var(--accent); animation:livePulse .9s ease-out infinite; }
+    .appbar .gear-btn{
+      width:30px; height:30px; flex:none; border-radius:8px; padding:0;
+      background:var(--card); border:1px solid var(--head-edge);
+    }
+    .appbar .gear-btn svg{ width:16px; height:16px; }
+
+    /* The date picker rides along on the same line */
+    .appbar-date{ flex:none; }
+    .appbar-date .hero-actions{ gap:0; }
+    .appbar-date .field label{ display:none; }
+    .appbar-date #date-field input, .appbar-date #month-field input{
+      background:var(--card); border:1px solid var(--head-edge);
+      border-radius:8px; padding:5px 7px; height:30px; width:116px; min-width:0;
+      font-size:12px !important;
+    }
+
+    /* ── Controls: two short rows instead of four full-width ones ──
+       The switch and the dropdown share the first line; the search box
+       takes the second with the two actions shrunk to icons beside it. */
+    .controls{ padding:8px 9px; gap:7px; border-radius:12px; align-items:center; }
+    .controls .field{ flex:1 1 calc(50% - 4px); min-width:0; gap:0; }
+    .controls #search-field{ flex:1 1 55%; min-width:0; }
+    .controls #mode-switch{ flex:0 0 auto; }
+    .controls .field input, .controls .field select{
+      width:100%; height:38px; padding:7px 10px; border-radius:9px;
+    }
+    .controls button.ghost{
+      flex:0 0 auto; width:38px; height:38px; min-height:38px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center; border-radius:9px;
+    }
+    .controls button.ghost .btn-txt{ display:none; }
+    .controls .btn-ico{ display:block; width:17px; height:17px; }
+
+    /* The selected pill used to stand taller than the track it sits in —
+       a 44px minimum inside a fixed 38px rail. The rail sizes itself now. */
+    .view-switch{ height:auto; padding:3px; }
+    .view-switch button{ min-height:32px; height:32px; padding:0 12px; font-size:12.5px; }
+
+    /* ── Stat cards: half the height they were ── */
+    .summary{ grid-template-columns:1fr 1fr; gap:7px; margin-bottom:10px; }
+    .stat{ padding:8px 10px; border-radius:11px; gap:6px; }
+    .stat-top{ gap:7px; }
+    .stat-top .l{ font-size:8.5px; letter-spacing:.05em; }
+    .stat .n{ font-size:15px; }
+    .stat-icon{ width:22px; height:22px; border-radius:7px; }
+    .stat-icon svg{ width:11px; height:11px; }
+  }
+  @media (max-width: 380px){
+    .summary{ grid-template-columns:1fr 1fr; }
+    .stat .n{ font-size:14px; }
+  }
 </style>
 </head>
 <body>
@@ -1053,7 +1214,7 @@
     <div class="side-foot">
       <span class="side-status"><span class="live-dot" id="live-dot"></span><span id="live-label">Live</span></span>
       <button class="gear-btn" id="theme-btn" type="button" title="Switch theme" aria-label="Switch theme">
-        <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg id="theme-icon" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
@@ -1062,13 +1223,40 @@
 
   <!-- ── Content ── -->
   <main class="main">
+    <!-- Phone-only masthead. The sidebar carries the branding on a desktop,
+         but on a phone it collapses to a bottom bar with no room for it —
+         so the logo, the school and the theme toggle move up here. -->
+    <header class="appbar" id="appbar">
+      <img class="appbar-mark" src="Logo.png" alt="" width="34" height="34"
+           onerror="this.onerror=null;this.src='icon-192.png';">
+      <div class="appbar-text">
+        <strong>Presenz</strong>
+        <span id="appbar-school">Lotus International School</span>
+      </div>
+      <!-- the date and month pickers are moved in here on a phone -->
+      <div class="appbar-date" id="appbar-date-slot"></div>
+      <span class="appbar-live" id="appbar-live"><span class="live-dot"></span></span>
+      <button class="gear-btn" id="theme-btn-m" type="button" title="Switch theme" aria-label="Switch theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Masthead for the printed sheet only -->
+    <div class="print-head" id="print-head">
+      <p class="ph-school" id="ph-school">Lotus International School</p>
+      <h2 class="ph-title" id="ph-title">Admission Register</h2>
+      <p class="ph-date" id="ph-date"></p>
+    </div>
+
     <div class="hero">
       <div class="hero-copy">
         <p class="hero-eyebrow" id="hero-eyebrow">Register &middot; Today</p>
         <h1 id="view-title">Students</h1>
         <p class="hero-sub" id="date-label">Loading&hellip;</p>
       </div>
-      <div class="hero-actions">
+      <div class="hero-actions" id="hero-actions">
         <div class="field" id="date-field">
           <label for="date-input">Date</label>
           <input type="date" id="date-input">
@@ -1078,11 +1266,6 @@
           <input type="month" id="month-input">
         </div>
       </div>
-    </div>
-
-    <div class="category-pills-wrap" id="category-pills-wrap" style="display:none;">
-      <div class="category-pills" id="category-pills"></div>
-      <select class="category-select" id="category-select"></select>
     </div>
 
 <div class="controls">
@@ -1103,15 +1286,19 @@
       </select>
     </div>
     <div class="field" id="category-field">
-      <label for="category-filter" id="category-label">Class</label>
-      <select id="category-filter"><option value="">All classes</option></select>
+      <select id="category-filter" aria-label="Class"><option value="">All classes</option></select>
     </div>
-    <div class="field" style="min-width:200px;">
-      <label for="search-input">Search</label>
-      <input type="text" id="search-input" placeholder="Name or ID">
+    <div class="field" id="search-field" style="min-width:200px;">
+      <input type="text" id="search-input" aria-label="Search" placeholder="Name or admission no.">
     </div>
-    <button class="ghost" id="refresh-btn" title="Updates on its own. Click to refresh now.">Refresh</button>
-    <button class="ghost" id="print-btn">Print</button>
+    <button class="ghost" id="refresh-btn" title="Updates on its own. Click to refresh now.">
+      <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      <span class="btn-txt">Refresh</span>
+    </button>
+    <button class="ghost" id="print-btn" title="Print this register">
+      <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
+      <span class="btn-txt">Print</span>
+    </button>
   </div>
 
 
@@ -1339,8 +1526,8 @@
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
         <h2>Staff</h2>
-        <p class="lede">Each category keeps its own arrival and departure windows, because a driver starting at 4am and a teacher arriving at 8:30 can't share one dividing line. A scan inside the morning window is an arrival; inside the evening window it's a departure; outside both it falls back to the cutoff in Day timings.</p>
-        <div class="note"><div>Underneath, the same card decides how the day is <b>judged</b>: any scan counts as a full day, or the person must be seen in every shift window &mdash; miss one and it shows as half. Each category can also keep its own working days.</div></div>
+        <p class="lede">Set two punch windows per category and nothing else. Say a teacher may scan in between 7 and 8 in the morning and out between 1 and 2 in the afternoon: both windows scanned is a full day, only one of them is a half day, and a scan that lands anywhere else &mdash; 12:00, say &mdash; is ignored, exactly as if it never happened. No shift timings to fill in.</p>
+        <div class="note"><div><b>Only one punch, or none inside the windows?</b> One window scanned makes it a half day; nothing inside either window makes it an absence, even though the machine saw the person. Leave all four times blank and the category goes back to counting any scan as a full day. Each category can also keep its own working days.</div></div>
         <div id="shift-rules-grid"></div>
       </section>
 
@@ -1454,16 +1641,22 @@ function currentTheme(){
 }
 function applyTheme(mode){
   document.documentElement.setAttribute('data-theme', mode);
-  const icon = document.getElementById('theme-icon');
-  if(icon) icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
+  // sidebar and phone app bar each hold one of these
+  document.querySelectorAll('.theme-icon').forEach(icon => {
+    icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
+  });
   const meta = document.querySelector('meta[name="theme-color"]');
   if(meta) meta.setAttribute('content', mode === 'dark' ? '#0D0F14' : '#F2F2F7');
 }
 applyTheme(currentTheme());
-document.getElementById('theme-btn').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  localStorage.setItem(LS.theme, next);
-  applyTheme(next);
+['theme-btn', 'theme-btn-m'].forEach(id => {
+  const btn = document.getElementById(id);
+  if(!btn) return;
+  btn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(LS.theme, next);
+    applyTheme(next);
+  });
 });
 
 
@@ -1588,13 +1781,23 @@ function windowForScan(category, timeStr){
   return null;
 }
 
+/* There is no separate "shift" any more. A category carries two punch
+   windows and nothing else, and those windows do all the judging:
+
+     scan inside the morning window   -> arrival counted
+     scan inside the evening window   -> departure counted
+     scan outside both                -> ignored entirely
+
+   Both counted = full day. One of the two = half day. Neither = absent.
+   Leave both windows blank and the category falls back to "any scan is a
+   full day", which is what an unconfigured category used to do. */
 const DEFAULT_SHIFT_RULES = {
-  Teacher:  { mode:'any' },
-  Maid:     { mode:'any' },
-  Cleaner:  { mode:'shifts', shifts:[{from:'06:00', to:'09:30'}, {from:'13:30', to:'17:00'}] },
-  Driver:   { mode:'shifts', shifts:[{from:'06:00', to:'09:30'}, {from:'13:30', to:'17:00'}] },
-  Security: { mode:'any' },
-  Gardner:  { mode:'any' }
+  Teacher:  {},
+  Maid:     {},
+  Cleaner:  {},
+  Driver:   {},
+  Security: {},
+  Gardner:  {}
 };
 function normalizedRole(role){ return ROLE_MERGE_MAP[role] || role; }
 function getShiftRulesMap(){
@@ -1608,8 +1811,8 @@ function getShiftRulesMap(){
     Object.keys(stored).forEach(cat => {
       const v = stored[cat];
       // backward-compat: older versions stored a plain number of hours per category
-      if(typeof v === 'number'){ merged[cat] = v > 0 ? { mode:'shifts', shifts:[{from:'',to:''}] } : { mode:'any' }; }
-      else if(v && typeof v === 'object'){ merged[cat] = v; }
+      if(typeof v === 'number'){ /* nothing to carry over — windows replaced hours */ }
+      else if(v && typeof v === 'object'){ merged[cat] = { ...(merged[cat] || {}), ...v }; }
     });
     return merged;
   }catch(e){ return { ...DEFAULT_SHIFT_RULES }; }
@@ -1635,34 +1838,51 @@ function getHolidays(){
     return Array.isArray(stored) ? stored : [];
   }catch(e){ return []; }
 }
+/* Sorts a day's scans into the two windows and throws away the rest.
+   Returns { morning:[recs], evening:[recs], ignored:[recs], hasM, hasE }. */
+function splitScansByWindow(recs, category){
+  const rule = getShiftRulesMap()[category] || {};
+  const hasM = !!(rule.mFrom && rule.mTo);
+  const hasE = !!(rule.eFrom && rule.eTo);
+  const morning = [], evening = [], ignored = [];
+  recs.forEach(r => {
+    const w = (hasM || hasE) ? windowForScan(category, r.time) : null;
+    if(w === 'morning') morning.push(r);
+    else if(w === 'evening') evening.push(r);
+    else ignored.push(r);
+  });
+  return { morning, evening, ignored, hasM, hasE, rule };
+}
+
 /* Staff day status: absent | half | late | present
-   - shift windows decide whether the day is full or half
-   - "must arrive by" is separate: it only downgrades a full day to late, so a
-     teacher who turns up at 8:40 is still here for the whole day, just late */
+
+   Only the two punch windows decide the day. A scan that lands between them
+   — the 12:00 punch when the evening window is 13:00–14:00 — is not counted
+   at all, so a morning punch on its own leaves a half day.
+
+   "Must arrive by" changes nothing about how the day is paid. It only paints
+   the status red, so a full day that started late still reads as a full day. */
 function computeStaffDayStatus(recs, category){
   if(!recs.length) return 'absent';
-  const rule = getShiftRulesMap()[category] || { mode:'any' };
-  const scanMinutes = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
-
-  const shifts = (rule.mode === 'shifts' && Array.isArray(rule.shifts))
-    ? rule.shifts.filter(sh => sh && sh.from && sh.to)
-    : [];
-
-  let base = 'present';
-  if(shifts.length){
-    const shiftsHit = shifts.filter(sh => {
-      const from = timeStrToMinutes(sh.from), to = timeStrToMinutes(sh.to);
-      if(from == null || to == null) return false;
-      return scanMinutes.some(m => m >= from && m <= to);
-    }).length;
-    base = shiftsHit >= shifts.length ? 'present' : 'half';
-  }
-
+  const { morning, evening, hasM, hasE, rule } = splitScansByWindow(recs, category);
   const by = timeStrToMinutes(rule.arriveBy);
-  if(base === 'present' && by != null && scanMinutes.length && Math.min(...scanMinutes) > by){
-    return 'late';
+  const lateCheck = (list, fallback) => {
+    if(by == null) return false;
+    const mins = (list.length ? list : fallback)
+      .map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
+    return mins.length ? Math.min(...mins) > by : false;
+  };
+
+  // No windows set for this category — any scan is still a full day
+  if(!hasM && !hasE){
+    return lateCheck([], recs) ? 'late' : 'present';
   }
-  return base;
+
+  const need = (hasM ? 1 : 0) + (hasE ? 1 : 0);
+  const hit  = (hasM && morning.length ? 1 : 0) + (hasE && evening.length ? 1 : 0);
+  if(!hit) return 'absent';                 // every scan fell outside the windows
+  if(hit < need) return 'half';
+  return lateCheck(morning, recs) ? 'late' : 'present';
 }
 
 const TODAY = todayKolkata();
@@ -1836,8 +2056,12 @@ document.querySelectorAll('.tab').forEach(tab => {
     VIEW = tab.dataset.type;
     STAFF_CATEGORY = 'All';
     document.getElementById('search-input').placeholder = VIEW === 'student' ? 'Name or admission no.' : 'Name or staff ID';
-    document.getElementById('category-field').style.display = VIEW === 'student' ? 'flex' : 'none';
-    document.getElementById('category-pills-wrap').style.display = VIEW === 'staff' ? '' : 'none';
+    const catSel = document.getElementById('category-filter');
+    catSel.style.display = '';
+    document.getElementById('category-field').style.display = 'flex';
+    catSel.innerHTML = VIEW === 'student'
+      ? '<option value="">All classes</option>'
+      : '<option value="All">All categories</option>';
     updateModeSwitchVisibility();
     updateDisplaySwitchVisibility();
     loadRegister();
@@ -1937,6 +2161,13 @@ function setLiveState(state, label){
   chip.classList.toggle('loading', state === 'connecting');
   chip.classList.toggle('paused', state === 'paused');
   document.getElementById('live-label').textContent = label;
+  // the phone app bar shows the same dot, with the label as its tooltip
+  const ab = document.getElementById('appbar-live');
+  if(ab){
+    ab.classList.toggle('loading', state === 'connecting');
+    ab.classList.toggle('paused', state === 'paused');
+    ab.title = label;
+  }
 }
 function freshnessLabel(){
   if(!viewingToday()){ setLiveState('paused', 'Refresh'); return; }
@@ -2094,12 +2325,22 @@ setInterval(freshnessLabel, 20000);
 document.getElementById('print-btn').addEventListener('click', () => window.print());
 document.getElementById('date-input').addEventListener('change', () => { stopLive(); loadRegister(); });
 document.getElementById('month-input').addEventListener('change', () => { stopLive(); loadRegister(); });
-document.getElementById('category-filter').addEventListener('change', renderTable);
+document.getElementById('category-filter').addEventListener('change', (e) => {
+  // one dropdown, two jobs: class for students, category for staff
+  if(VIEW === 'staff'){
+    STAFF_CATEGORY = e.target.value || 'All';
+    loadRegister();
+  }else{
+    renderTable();
+  }
+});
 document.getElementById('search-input').addEventListener('input', renderTable);
 
 async function loadRegister(){
+  updateViewTitle();
   if(MODE === 'daily') await loadDaily();
   else await loadMonthly();
+  updateViewTitle();
 }
 
 // ── Daily ─────────────────────────────────────────────────────────────
@@ -2109,6 +2350,7 @@ async function loadDaily(){
   const date = document.getElementById('date-input').value || TODAY;
   document.getElementById('date-label').textContent =
     new Date(date + 'T00:00:00').toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  updateViewTitle();
 
   const base = attBase();
   const group = groupKey();
@@ -2293,31 +2535,40 @@ function applyStaffVisibility(list){
   return out;
 }
 
+/* Staff categories used to sit in a pill row of their own above the controls.
+   They now share the same dropdown slot the class filter uses for students,
+   so both views have one strip of controls that line up. */
 function buildCategoryPills(visibleStaff){
-  const wrap = document.getElementById('category-pills');
-  const select = document.getElementById('category-select');
+  const select = document.getElementById('category-filter');
   const found = [...new Set(STAFF_ALL_CATEGORIES.concat(visibleStaff.map(s => normalizedRole(s.role))).filter(Boolean))];
   STAFF_ALL_CATEGORIES = found;
   const ordered = PREFERRED_STAFF_CATEGORY_ORDER.filter(c => found.includes(c));
   const extras = found.filter(c => !PREFERRED_STAFF_CATEGORY_ORDER.includes(c)).sort();
   const categories = ['All', ...ordered, ...extras];
-  wrap.innerHTML = categories.map(c =>
-    `<span class="pill ${c === STAFF_CATEGORY ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</span>`
-  ).join('');
-  wrap.querySelectorAll('.pill').forEach(p => {
-    p.addEventListener('click', () => {
-      STAFF_CATEGORY = p.dataset.cat;
-      loadRegister();
-    });
-  });
   select.innerHTML = categories.map(c =>
     `<option value="${escapeHtml(c)}" ${c === STAFF_CATEGORY ? 'selected' : ''}>${escapeHtml(c === 'All' ? 'All categories' : c)}</option>`
   ).join('');
+  select.value = STAFF_CATEGORY;
 }
-document.getElementById('category-select').addEventListener('change', (e) => {
-  STAFF_CATEGORY = e.target.value;
-  loadRegister();
-});
+
+/* One date picker, two homes.
+
+   On a desktop it belongs to the hero banner. On a phone the hero is gone
+   and the app bar carries it instead. Rather than keeping two copies in
+   sync, the same element is moved between the two slots whenever the
+   breakpoint is crossed. */
+const PHONE_MQ = window.matchMedia('(max-width: 860px)');
+function placeDatePickers(){
+  const actions = document.getElementById('hero-actions');
+  if(!actions) return;
+  const slot = PHONE_MQ.matches
+    ? document.getElementById('appbar-date-slot')
+    : document.querySelector('.hero');
+  if(slot && actions.parentElement !== slot) slot.appendChild(actions);
+}
+placeDatePickers();
+if(PHONE_MQ.addEventListener) PHONE_MQ.addEventListener('change', placeDatePickers);
+else if(PHONE_MQ.addListener) PHONE_MQ.addListener(placeDatePickers);
 
 function updateViewTitle(){
   const t = document.getElementById('view-title');
@@ -2329,6 +2580,23 @@ function updateViewTitle(){
   }
   const tt = document.getElementById('table-title');
   if(tt) tt.textContent = VIEW === 'student' ? 'Student Register' : 'Staff Register';
+
+  /* The printed sheet carries its own masthead: school, what the list is,
+     and the day it covers. On screen it is hidden. */
+  const pt = document.getElementById('ph-title');
+  if(pt){
+    pt.textContent = VIEW === 'student'
+      ? (MODE === 'monthly' ? 'Monthly Attendance Register' : 'Admission Register')
+      : (MODE === 'monthly' ? 'Monthly Staff Register' : 'Staff Attendance Register');
+  }
+  const ps = document.getElementById('ph-school');
+  const se = document.getElementById('school-eyebrow');
+  if(ps && se) ps.textContent = se.textContent;
+  const abs = document.getElementById('appbar-school');
+  if(abs && se) abs.textContent = se.textContent;
+  const pd = document.getElementById('ph-date');
+  const dl = document.getElementById('date-label');
+  if(pd && dl) pd.textContent = dl.textContent;
 }
 
 function buildDailyHead(){
@@ -2350,9 +2618,7 @@ function buildMonthlyHead(){
 
 function populateClassFilter(){
   const sel = document.getElementById('category-filter');
-  const label = document.getElementById('category-label');
   const current = sel.value;
-  label.textContent = 'Class';
   const values = [...new Set(ROSTER.map(s => s.class).filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric:true}));
   sel.innerHTML = '<option value="">All classes</option>' + values.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   sel.value = values.includes(current) ? current : '';
@@ -2392,9 +2658,11 @@ const ICONS = {
 function statIcon(label){
   const l = label.toLowerCase();
   if(l.includes('absent')) return ICONS.personX;
-  if(l.includes('exit')) return ICONS.arrowOut;
-  if(l.includes('still in') || l.includes('present') || l.includes('in campus')) return ICONS.arrowIn;
+  if(l.includes('exit') || l.includes('went home')) return ICONS.arrowOut;
+  if(l.includes('still in') || l.includes('present') || l.includes('in campus') || l.includes('in school')) return ICONS.arrowIn;
   if(l.includes('half') || l.includes('late')) return ICONS.clock;
+  if(l.includes('full day')) return ICONS.arrowIn;
+  if(l.includes('week off')) return ICONS.calendar;
   if(l.includes('day')) return ICONS.calendar;
   return ICONS.people;
 }
@@ -2448,8 +2716,8 @@ function renderDailyTable(){
       const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : '\u2014';
       const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
       const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
-        : status === 'gatepass' ? '<span class="badge gatepass">Exited</span>'
-        : '<span class="badge present">In</span>';
+        : status === 'gatepass' ? '<span class="badge gatepass">Went home</span>'
+        : '<span class="badge present">In school</span>';
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
     }else{
       const category = normalizedRole(s.role || '');
@@ -2462,17 +2730,30 @@ function renderDailyTable(){
       else if(status === 'half') half++;
       else if(status === 'off') offDay++;
       else absent++;
-      const [s1in, s1out, s2in, s2out] = sortedRecs;
+      /* In and Out now come from the punch windows themselves, so a scan
+         that fell outside both is shown struck through rather than quietly
+         filed as an arrival. */
+      const split = splitScansByWindow(sortedRecs, category);
+      let inList = split.morning, outList = split.evening, ignored = split.ignored;
+      if(!split.hasM && !split.hasE && sortedRecs.length){
+        inList = [sortedRecs[0]];
+        outList = sortedRecs.length > 1 ? [sortedRecs[sortedRecs.length - 1]] : [];
+        ignored = sortedRecs.slice(1, -1);
+      }
       const stack = list => {
         const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)));
         return lines.length ? lines.join('<br>') : '\u2014';
       };
-      const badge = status === 'present' ? '<span class="badge present">Present</span>'
-        : status === 'late' ? '<span class="badge late">Late</span>'
+      const ignoredHtml = ignored.length
+        ? `<span class="off-window" title="Outside the allowed punch windows, so it was not counted">${ignored.map(r => escapeHtml(timeOnly(r.time))).join('<br>')}</span>`
+        : '';
+      const badge = status === 'present' ? '<span class="badge present">Full day</span>'
+        : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
         : status === 'half' ? '<span class="badge half">Half day</span>'
-        : status === 'off' ? '<span class="badge off">Off</span>'
+        : status === 'off' ? '<span class="badge off">Week off</span>'
         : '<span class="badge absent">Absent</span>';
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${stack([s1in, s2in])}</td><td class="mono" data-l="Out">${stack([s1out, s2out])}</td><td data-l="Status">${badge}</td>`;
+      const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
     }
     enriched.push({ s, status });
     body.appendChild(tr);
@@ -2483,19 +2764,19 @@ function renderDailyTable(){
   if(VIEW === 'student'){
     dailyCards = [
       {value: rows.length, label: unlisted ? 'Students scanned' : 'On the register'},
-      {value: present, label: 'Still in', color:'var(--present)'},
-      {value: exit, label: 'Exited', color:'var(--pending)'}
+      {value: present, label: 'In school', color:'var(--present)'},
+      {value: exit, label: 'Went home', color:'var(--pending)'}
     ];
     if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent)'});
   }else{
     dailyCards = [
       {value: rows.length, label: unlisted ? 'Staff scanned' : 'Total staff'},
-      {value: present, label: 'Present', color:'var(--present)'},
+      {value: present, label: 'Full day', color:'var(--present)'},
       {value: half, label: 'Half day', color:'var(--half)'},
       {value: absent, label: 'Absent', color:'var(--absent)'}
     ];
-    if(lateDay) dailyCards.push({value: lateDay, label:'Late in', color:'#B5560E'});
-    if(offDay) dailyCards.push({value: offDay, label:'Off today'});
+    if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent)'});
+    if(offDay) dailyCards.push({value: offDay, label:'Week off'});
   }
   setSummary(dailyCards);
   renderBreakdown(enriched, 'daily');
@@ -2731,11 +3012,7 @@ function buildShiftRulesGrid(){
   const map = getShiftRulesMap();
   const grid = document.getElementById('shift-rules-grid');
   grid.innerHTML = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => {
-    const rule = map[cat] && map[cat].mode ? map[cat] : { mode:'any' };
-    const shifts = Array.isArray(rule.shifts) ? rule.shifts : [];
-    const s1 = shifts[0] || {from:'', to:''};
-    const s2 = shifts[1] || {from:'', to:''};
-    const isShifts = rule.mode === 'shifts';
+    const rule = map[cat] || {};
     const days = Array.isArray(rule.days) ? rule.days : [];
     const dayPills = WEEKDAY_NAMES.map((n, i) =>
       `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
@@ -2743,42 +3020,28 @@ function buildShiftRulesGrid(){
     return `<div class="shift-rule-card" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
         <strong>${escapeHtml(cat)}</strong>
-        <select class="src-mode" data-cat="${escapeHtml(cat)}">
-          <option value="any" ${!isShifts ? 'selected' : ''}>Any scan = full day</option>
-          <option value="shifts" ${isShifts ? 'selected' : ''}>Time-based shifts</option>
-        </select>
+        <span class="src-head-note">Punch windows only</span>
       </div>
+      <div class="src-windows">
+        <div class="field"><label>Morning punch from</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
+        <div class="field"><label>Morning punch to</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
+        <div class="field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
+        <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
+      </div>
+      <p class="src-explain">Both windows scanned is a full day, one of them is a half day. A scan that lands outside both is ignored. Leave all four blank and any scan counts as a full day.</p>
       <div class="src-arrive">
         <div class="field">
           <label>Must arrive by</label>
           <input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}">
         </div>
-        <span>Scanning in after this marks the day late. It still counts as a full day. Leave it blank for no arrival time.</span>
+        <span>Only paints the status red. The day still counts in full. Blank for no arrival time.</span>
       </div>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 nothing ticked, so this category follows the school working days'}</span>
         <div class="daypick">${dayPills}</div>
       </div>
-      <div class="src-windows">
-        <div class="field"><label>Morning from</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
-        <div class="field"><label>Morning to</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
-        <div class="field"><label>Evening from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
-        <div class="field"><label>Evening to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
-      </div>
-      <div class="src-shifts" data-cat="${escapeHtml(cat)}" style="display:${isShifts ? 'flex' : 'none'};">
-        <div class="field"><label>Shift 1 from</label><input type="time" class="src-s1-from" value="${escapeHtml(s1.from)}"></div>
-        <div class="field"><label>Shift 1 to</label><input type="time" class="src-s1-to" value="${escapeHtml(s1.to)}"></div>
-        <div class="field"><label>Shift 2 from (optional)</label><input type="time" class="src-s2-from" value="${escapeHtml(s2.from)}"></div>
-        <div class="field"><label>Shift 2 to (optional)</label><input type="time" class="src-s2-to" value="${escapeHtml(s2.to)}"></div>
-      </div>
     </div>`;
   }).join('');
-  grid.querySelectorAll('.src-mode').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const wrap = grid.querySelector(`.src-shifts[data-cat="${CSS.escape(sel.dataset.cat)}"]`);
-      wrap.style.display = sel.value === 'shifts' ? 'flex' : 'none';
-    });
-  });
 }
 
 // Category tick-boxes shown under Holidays and Repeating holidays when the
@@ -3153,31 +3416,16 @@ function collectSettingsObject(){
   const shiftRulesObj = {};
   document.querySelectorAll('#shift-rules-grid .shift-rule-card').forEach(card => {
     const cat = card.dataset.cat;
-    const mode = card.querySelector('.src-mode').value;
-    if(mode === 'shifts'){
-      const s1from = card.querySelector('.src-s1-from').value;
-      const s1to   = card.querySelector('.src-s1-to').value;
-      const s2from = card.querySelector('.src-s2-from').value;
-      const s2to   = card.querySelector('.src-s2-to').value;
-      const shifts = [];
-      if(s1from && s1to) shifts.push({from:s1from, to:s1to});
-      if(s2from && s2to) shifts.push({from:s2from, to:s2to});
-      shiftRulesObj[cat] = shifts.length ? { mode:'shifts', shifts } : { mode:'any' };
-    }else{
-      shiftRulesObj[cat] = { mode:'any' };
-    }
-    const days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
-    if(days.length) shiftRulesObj[cat].days = days;
-    const arriveBy = card.querySelector('.src-arrive-by').value;
-    if(arriveBy) shiftRulesObj[cat].arriveBy = arriveBy;
-    // arrival / departure windows
+    shiftRulesObj[cat] = {};
+    // every field is written, blanks included — otherwise clearing a window
+    // would leave the old time sitting in the saved object
+    shiftRulesObj[cat].days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
+    shiftRulesObj[cat].arriveBy = card.querySelector('.src-arrive-by').value || '';
     const g = sel => { const el = card.querySelector(sel); return el ? el.value : ''; };
-    const mFrom = g('.scw-m-from'), mTo = g('.scw-m-to');
-    const eFrom = g('.scw-e-from'), eTo = g('.scw-e-to');
-    if(mFrom) shiftRulesObj[cat].mFrom = mFrom;
-    if(mTo)   shiftRulesObj[cat].mTo   = mTo;
-    if(eFrom) shiftRulesObj[cat].eFrom = eFrom;
-    if(eTo)   shiftRulesObj[cat].eTo   = eTo;
+    shiftRulesObj[cat].mFrom = g('.scw-m-from');
+    shiftRulesObj[cat].mTo   = g('.scw-m-to');
+    shiftRulesObj[cat].eFrom = g('.scw-e-from');
+    shiftRulesObj[cat].eTo   = g('.scw-e-to');
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
