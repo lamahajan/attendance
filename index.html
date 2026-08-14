@@ -93,7 +93,7 @@
     background:var(--wash);
     font-family:'Inter',sans-serif;
     color:var(--ink);
-    padding:26px 18px 72px;
+    padding:0;
     -webkit-font-smoothing:antialiased;
   }
   .book{ max-width:1180px; margin:0 auto; }
@@ -638,7 +638,7 @@
   .app{ display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
 
   .side{
-    position:sticky; top:0; align-self:start; height:100vh;
+    position:fixed; top:0; left:0; z-index:5; width:232px; height:100vh;
     display:flex; flex-direction:column; gap:2px;
     padding:18px 12px calc(14px + env(safe-area-inset-bottom));
     background:var(--paper); border-right:1px solid var(--border);
@@ -682,7 +682,7 @@
   @media (max-width: 860px){
     .app{ grid-template-columns:1fr; }
     .side{
-      position:fixed; bottom:0; left:0; right:0; top:auto; height:auto; z-index:60;
+      position:fixed; bottom:0; left:0; right:0; top:auto; width:auto; height:auto; z-index:60;
       flex-direction:row; align-items:center; gap:4px;
       padding:6px 8px calc(6px + env(safe-area-inset-bottom));
       border-right:none; border-top:1px solid var(--border);
@@ -793,7 +793,7 @@
 
   /* ── Sidebar (desktop only — mobile keeps its own compact bottom-bar rules) ── */
   @media (min-width: 861px){
-    .side{ padding:22px 18px calc(18px + env(safe-area-inset-bottom)); gap:4px; }
+    .side{ width:288px; padding:22px 18px calc(18px + env(safe-area-inset-bottom)); gap:4px; }
     .side-brand{ gap:12px; padding:2px 6px 22px; }
     .side-brand .brand-mark{
       width:44px; height:44px; border-radius:50%; padding:3px;
