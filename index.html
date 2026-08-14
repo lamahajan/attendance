@@ -139,6 +139,14 @@
   .tab:hover{ color:var(--ink); }
   .tab.active{ background:var(--card); color:var(--rule-red); font-weight:600; box-shadow:0 1px 3px rgba(46,28,74,.12); }
   .category-pills{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .category-pills-wrap{ margin-top:14px; }
+  .category-pills-wrap .category-pills{ margin-top:0; }
+  .category-select{
+    display:none; width:100%; appearance:none; -webkit-appearance:none;
+    font-family:inherit; font-size:14px; font-weight:600; color:var(--rule-red);
+    background:var(--accent-soft) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%236E6600" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 14px center/16px 16px;
+    border:1px solid var(--head-edge); border-radius:12px; padding:12px 40px 12px 16px;
+  }
   .pill{
     font-size:12.5px; font-weight:500; padding:6px 13px; border-radius:999px;
     border:1px solid var(--border); background:var(--card); color:var(--ink-soft);
@@ -636,7 +644,7 @@
   /* ══════════════════════════════════════════════════════════
      App shell — fixed left navigation, scrolling content
      ══════════════════════════════════════════════════════════ */
-  .app{ display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
+  .app{ display:block; min-height:100vh; }
 
   .side{
     position:fixed; top:0; left:0; z-index:5; width:232px; height:100vh;
@@ -669,7 +677,7 @@
   .side-nav.active svg, .side-nav.on svg{ opacity:1; }
   .side-foot{ margin-top:auto; display:flex; gap:8px; padding:12px 8px 0; border-top:1px solid var(--paper-line); }
 
-  .main{ min-width:0; padding:18px 22px 60px; }
+  .main{ min-width:0; padding:18px 22px 60px; margin-left:232px; }
 
   .topbar{
     display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
@@ -681,7 +689,6 @@
 
   /* ── Mobile: the sidebar becomes a bottom bar ── */
   @media (max-width: 860px){
-    .app{ grid-template-columns:1fr; }
     .side{
       position:fixed; bottom:0; left:0; right:0; top:auto; width:auto; height:auto; z-index:60;
       flex-direction:row; align-items:center; gap:4px;
@@ -700,8 +707,93 @@
     }
     .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
     .side-foot{ margin:0; padding:0; border:none; gap:4px; }
-    .main{ padding:14px 12px 86px; }
+    .main{ margin-left:0; padding:14px 12px 86px; }
     .topbar-title h1{ font-size:20px; }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     Mobile polish — compact stat cards, dropdown category filter,
+     and a card-style register list (no horizontal scrolling)
+     ══════════════════════════════════════════════════════════ */
+  @media (max-width: 860px){
+
+    /* ── Staff category pills become a dropdown, like the display switch ── */
+    .category-pills{ display:none; }
+    .category-select{ display:block; }
+
+    /* ── Stat cards: one tidy line each, two per row ── */
+    .summary{ grid-template-columns:1fr 1fr; gap:8px; }
+    .stat{
+      flex-direction:row; align-items:center; gap:9px;
+      padding:10px 12px; border-radius:12px;
+    }
+    .stat-top{ flex:1; min-width:0; gap:8px; }
+    .stat-top .l{
+      text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      font-size:10px;
+    }
+    .stat .n{ font-size:17px; }
+    .stat-icon{ width:26px; height:26px; border-radius:8px; }
+    .stat-icon svg{ width:13px; height:13px; }
+
+    /* ── Register table becomes a card list — everything fits, nothing scrolls ──
+       Line 1: name, admission/staff details, and status badge.
+       Line 2: the times (or, in Monthly view, the attendance counts). */
+    .table-scroll{ overflow-x:visible; -webkit-overflow-scrolling:auto; }
+    #register-table{ min-width:0; width:100%; border-collapse:collapse; }
+    #register-table thead{ display:none; }
+    #register-table, #register-table tbody{ display:block; width:100%; }
+    #register-table tr{
+      display:flex; flex-wrap:wrap; align-items:center;
+      column-gap:7px; row-gap:7px;
+      padding:13px 16px; border-bottom:1px solid var(--paper-line);
+    }
+    #register-table tr:last-child{ border-bottom:none; }
+    #register-table td{
+      display:inline-flex; align-items:center; padding:0; border:none; height:auto; line-height:1.3;
+    }
+    #register-table td[data-l="S.No"]{ display:none; }
+
+    /* Line 1 — identity */
+    #register-table td[data-l="Name"]{
+      order:1; font-size:14.5px; font-weight:600; color:var(--ink);
+      flex:0 1 auto; max-width:68%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    #register-table td[data-l="Adm. No."],
+    #register-table td[data-l="Staff ID"],
+    #register-table td[data-l="Class"],
+    #register-table td[data-l="Bus"],
+    #register-table td[data-l="Role"]{
+      order:2; font-size:12px; color:var(--ink-soft);
+    }
+    #register-table td[data-l="Adm. No."]::before,
+    #register-table td[data-l="Staff ID"]::before{ content:'#'; opacity:.6; margin-right:1px; }
+    #register-table td[data-l="Class"]::before,
+    #register-table td[data-l="Bus"]::before,
+    #register-table td[data-l="Role"]::before{ content:'\00b7'; margin-right:7px; opacity:.5; }
+    #register-table td[data-l="Status"]{ order:3; margin-left:auto; }
+
+    /* Forced line break between identity (line 1) and times/stats (line 2) */
+    #register-table tr::after{ content:''; order:4; flex-basis:100%; height:0; }
+
+    /* Line 2 — times (daily) or attendance counts (monthly), as small chips */
+    #register-table td[data-l="Morning in"], #register-table td[data-l="Evening out"],
+    #register-table td[data-l="In"], #register-table td[data-l="Out"],
+    #register-table td[data-l="Present"], #register-table td[data-l="Absent"],
+    #register-table td[data-l="Attendance"], #register-table td[data-l="Full days"],
+    #register-table td[data-l="Half days"]{
+      order:5; gap:4px;
+      font-size:11.5px; font-weight:600; color:var(--ink-soft);
+      background:var(--row-alt); border-radius:7px; padding:4px 9px 4px 8px;
+    }
+    #register-table td[data-l="Morning in"]::before, #register-table td[data-l="Evening out"]::before,
+    #register-table td[data-l="In"]::before, #register-table td[data-l="Out"]::before,
+    #register-table td[data-l="Present"]::before, #register-table td[data-l="Absent"]::before,
+    #register-table td[data-l="Attendance"]::before, #register-table td[data-l="Full days"]::before,
+    #register-table td[data-l="Half days"]::before{
+      content:attr(data-l); font-weight:700; color:var(--ink-soft); text-transform:uppercase;
+      font-size:8.5px; letter-spacing:.03em; opacity:.7;
+    }
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -787,8 +879,7 @@
      StaffFlow-shaped shell — wide sidebar, hero banner, KPI cards
      ══════════════════════════════════════════════════════════ */
   @media (min-width: 861px){
-    .app{ grid-template-columns:288px 1fr; }
-    .main{ padding:26px 30px 70px; }
+    .main{ padding:26px 30px 70px; margin-left:288px; }
     .main > *, .hero{ max-width:1220px; }
   }
 
@@ -989,7 +1080,10 @@
       </div>
     </div>
 
-    <div class="category-pills" id="category-pills" style="display:none;"></div>
+    <div class="category-pills-wrap" id="category-pills-wrap" style="display:none;">
+      <div class="category-pills" id="category-pills"></div>
+      <select class="category-select" id="category-select"></select>
+    </div>
 
 <div class="controls">
     <div class="view-switch" id="mode-switch" style="display:none;">
@@ -1743,7 +1837,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     STAFF_CATEGORY = 'All';
     document.getElementById('search-input').placeholder = VIEW === 'student' ? 'Name or admission no.' : 'Name or staff ID';
     document.getElementById('category-field').style.display = VIEW === 'student' ? 'flex' : 'none';
-    document.getElementById('category-pills').style.display = VIEW === 'staff' ? 'flex' : 'none';
+    document.getElementById('category-pills-wrap').style.display = VIEW === 'staff' ? '' : 'none';
     updateModeSwitchVisibility();
     updateDisplaySwitchVisibility();
     loadRegister();
@@ -2201,6 +2295,7 @@ function applyStaffVisibility(list){
 
 function buildCategoryPills(visibleStaff){
   const wrap = document.getElementById('category-pills');
+  const select = document.getElementById('category-select');
   const found = [...new Set(STAFF_ALL_CATEGORIES.concat(visibleStaff.map(s => normalizedRole(s.role))).filter(Boolean))];
   STAFF_ALL_CATEGORIES = found;
   const ordered = PREFERRED_STAFF_CATEGORY_ORDER.filter(c => found.includes(c));
@@ -2215,7 +2310,14 @@ function buildCategoryPills(visibleStaff){
       loadRegister();
     });
   });
+  select.innerHTML = categories.map(c =>
+    `<option value="${escapeHtml(c)}" ${c === STAFF_CATEGORY ? 'selected' : ''}>${escapeHtml(c === 'All' ? 'All categories' : c)}</option>`
+  ).join('');
 }
+document.getElementById('category-select').addEventListener('change', (e) => {
+  STAFF_CATEGORY = e.target.value;
+  loadRegister();
+});
 
 function updateViewTitle(){
   const t = document.getElementById('view-title');
