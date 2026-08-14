@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admission Register</title>
+<title>Attendance Register</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
 <meta name="theme-color" content="#7A3FD3"/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -429,7 +429,24 @@
   tbody td{ padding:11px 18px; border-bottom:1px solid var(--paper-line); vertical-align:middle; line-height:1.55; }
   tbody tr:last-child td{ border-bottom:none; }
   tbody tr:hover{ background:var(--accent-soft); }
-  td.mono, th.mono-col{ font-size:12.5px; font-variant-numeric:tabular-nums; }
+  /* Body cells only — headers keep the uniform thead size above */
+  td.mono{ font-size:12.5px; font-variant-numeric:tabular-nums; }
+  th.mono-col{ font-variant-numeric:tabular-nums; }
+
+  /* ── Live refresh chip ── */
+  .live-chip{ display:inline-flex; align-items:center; gap:8px; }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%; background:var(--present); flex:none;
+    box-shadow:0 0 0 0 rgba(14,143,99,.5); animation:livePulse 2.4s ease-out infinite;
+  }
+  .live-chip.paused .live-dot{ background:var(--ink-soft); animation:none; box-shadow:none; }
+  .live-chip.loading .live-dot{ background:var(--accent); animation:livePulse .9s ease-out infinite; }
+  @keyframes livePulse{
+    0%{ box-shadow:0 0 0 0 rgba(14,143,99,.45); }
+    70%{ box-shadow:0 0 0 7px rgba(14,143,99,0); }
+    100%{ box-shadow:0 0 0 0 rgba(14,143,99,0); }
+  }
+  @media (prefers-reduced-motion:reduce){ .live-dot{ animation:none !important; } }
 
   .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; white-space:nowrap; }
   .badge.present{background:var(--present-bg); color:var(--present);}
@@ -488,7 +505,7 @@
     <div class="head-top">
       <div>
         <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
-        <h1>Admission Register</h1>
+        <h1>Attendance Register</h1>
         <p class="sub" id="date-label">Loading&hellip;</p>
       </div>
       <div class="head-actions">
@@ -544,11 +561,12 @@
       <label for="search-input">Search</label>
       <input type="text" id="search-input" placeholder="Name or ID">
     </div>
-    <button class="ghost" id="refresh-btn">&#8635; Refresh</button>
+    <button class="ghost live-chip" id="refresh-btn" title="Updates on its own. Click to refresh now.">
+      <span class="live-dot" id="live-dot"></span><span id="live-label">Live</span>
+    </button>
     <button class="ghost" id="print-btn">Print</button>
   </div>
 
-  <div class="demo-note" id="roster-note" style="display:none;"></div>
 
   <div class="summary" id="summary" style="display:none;"></div>
 
@@ -571,7 +589,7 @@
     <aside class="set-side">
       <div class="brand">
         <strong>Settings</strong>
-        <span>Admission Register</span>
+        <span>Attendance Register</span>
       </div>
       <button class="set-nav" data-sec="connection" aria-selected="true">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> Connection
@@ -771,12 +789,8 @@
 
         <div class="group">
           <h3>Hide staff categories</h3>
-          <p class="hint">Tick a category to hide it on that device &mdash; useful when a gate iPad should only show drivers.</p>
+          <p class="hint">Every device that opens the register lists itself here. Tick a category to hide it on that device &mdash; useful when a gate iPad should only show drivers. Rename this one above and it updates in the list.</p>
           <div id="device-list"></div>
-          <div class="row">
-            <div class="field" style="min-width:200px;"><label for="new-device-input">Add a device by name</label><input id="new-device-input" placeholder="e.g. Gate iPad"></div>
-            <button type="button" id="add-device-btn" class="ghost small" style="height:36px;">Add device</button>
-          </div>
         </div>
       </section>
 
@@ -1320,7 +1334,58 @@ function setMode(m){
 
 document.getElementById('date-input').value = TODAY;
 document.getElementById('month-input').value = TODAY.slice(0,7);
-document.getElementById('refresh-btn').addEventListener('click', loadRegister);
+/* ═══════════════════════════════════════════════════════════
+   Auto refresh
+
+   Today's register reloads on its own every 30 seconds. Older dates
+   never poll — they can't change. Polling also stops while the tab is
+   hidden or the Settings popup is open, and fires once immediately on
+   coming back, so a phone left in a pocket shows fresh numbers the
+   moment you look at it rather than 30 seconds later.
+   ═══════════════════════════════════════════════════════════ */
+const REFRESH_MS = 30000;
+let lastLoadAt = 0;
+let refreshTimer = null;
+
+function viewingToday(){
+  if(MODE === 'monthly') return document.getElementById('month-input').value === TODAY.slice(0,7);
+  return (document.getElementById('date-input').value || TODAY) === TODAY;
+}
+function autoRefreshAllowed(){
+  return viewingToday()
+    && document.visibilityState !== 'hidden'
+    && !document.getElementById('settings-modal').classList.contains('open');
+}
+function markLive(state){
+  const chip = document.getElementById('refresh-btn');
+  chip.classList.toggle('loading', state === 'loading');
+  chip.classList.toggle('paused', state === 'paused');
+}
+function freshnessLabel(){
+  const label = document.getElementById('live-label');
+  if(!viewingToday()){ label.textContent = 'Refresh'; markLive('paused'); return; }
+  if(!lastLoadAt){ label.textContent = 'Live'; return; }
+  const secs = Math.round((Date.now() - lastLoadAt) / 1000);
+  label.textContent = secs < 45 ? 'Live' : secs < 90 ? '1 min ago' : Math.round(secs/60) + ' min ago';
+  markLive(autoRefreshAllowed() ? '' : 'paused');
+}
+async function refreshNow(){
+  markLive('loading');
+  await loadRegister();
+  lastLoadAt = Date.now();
+  freshnessLabel();
+}
+function scheduleRefresh(){
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => { if(autoRefreshAllowed()) refreshNow(); }, REFRESH_MS);
+}
+document.getElementById('refresh-btn').addEventListener('click', refreshNow);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && viewingToday()) refreshNow();
+  else freshnessLabel();
+});
+setInterval(freshnessLabel, 15000);
+scheduleRefresh();
 document.getElementById('print-btn').addEventListener('click', () => window.print());
 document.getElementById('date-input').addEventListener('change', loadRegister);
 document.getElementById('month-input').addEventListener('change', loadRegister);
@@ -1766,16 +1831,9 @@ function finishRender(count, unlisted){
       ? 'Nothing recorded for this day yet.'
       : 'Add your attendance database URL in Settings to load real records.';
   }
-  const note = document.getElementById('roster-note');
-  if(note){
-    const show = hasData && MODE === 'daily' && unlisted;
-    note.style.display = show ? 'block' : 'none';
-    note.textContent = show
-      ? 'Showing only people who scanned \u2014 the absentee list for this day has not been prepared yet. It fills in after the evening run.'
-      : '';
-  }
 }
-function renderTable(){ MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
+function renderTable(){
+  freshnessLabel(); MODE === 'daily' ? renderDailyTable() : renderMonthlyTable(); }
 
 /* =========================================================
    Settings password
@@ -2173,16 +2231,51 @@ function renderDeviceList(){
     });
   });
 }
-document.getElementById('add-device-btn').addEventListener('click', () => {
-  const input = document.getElementById('new-device-input');
-  const name = input.value.trim();
-  if(!name) return;
+/* ═══════════════════════════════════════════════════════════
+   Devices register themselves
+
+   Nobody types a device in. The moment a phone, iPad or desk PC opens
+   the register it adds itself to the shared list, so the hide-category
+   switches for it appear on every other device automatically.
+   ═══════════════════════════════════════════════════════════ */
+async function registerThisDevice(){
+  const name = getDeviceName();
   const devices = getDevices();
-  if(!devices[name]) devices[name] = { hiddenStaffCategories: [] };
+  if(!devices[name]){
+    devices[name] = { hiddenStaffCategories: [] };
+    localStorage.setItem(LS.devices, JSON.stringify(devices));
+  }
+  devices[name].lastSeen = todayKolkata();
   localStorage.setItem(LS.devices, JSON.stringify(devices));
-  input.value = '';
-  renderDeviceList();
-});
+
+  // push just this device, so two devices opening at once don't overwrite each other
+  const base = attBase();
+  if(!base) return;
+  await fetchJson(`${base}/app_settings/devices/${encodeURIComponent(name)}.json`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(devices[name])
+  });
+}
+
+// Renaming this device in Settings moves its entry rather than leaving a ghost
+function renameThisDevice(newName){
+  const oldName = getDeviceName();
+  if(!newName || newName === oldName) return;
+  const devices = getDevices();
+  const entry = devices[oldName] || { hiddenStaffCategories: [] };
+  delete devices[oldName];
+  devices[newName] = entry;
+  localStorage.setItem(LS.devices, JSON.stringify(devices));
+  localStorage.setItem(LS.deviceName, newName);
+  const base = attBase();
+  if(base){
+    fetchJson(`${base}/app_settings/devices/${encodeURIComponent(oldName)}.json`, { method:'DELETE' });
+    fetchJson(`${base}/app_settings/devices/${encodeURIComponent(newName)}.json`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(entry)
+    });
+  }
+}
 
 function collectSettingsObject(){
   const shiftRulesObj = {};
@@ -2235,7 +2328,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
   const deviceName = document.getElementById('this-device-input').value.trim();
-  if(deviceName){ localStorage.setItem(LS.deviceName, deviceName); }
+  if(deviceName) renameThisDevice(deviceName);
 
   const settings = collectSettingsObject();
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
@@ -2532,11 +2625,9 @@ document.addEventListener('keydown', (e) => {
 updateModeSwitchVisibility();
 updateDisplaySwitchVisibility();
 syncSettingsFromCloud().finally(() => {
-  const dn = getDeviceName();
-  const devs = getDevices();
-  if(!devs[dn]){ devs[dn] = { hiddenStaffCategories: [] }; localStorage.setItem(LS.devices, JSON.stringify(devs)); }
+  registerThisDevice();
   setDisplay(getStudentDefaultView());
-  loadRegister();
+  refreshNow();
 });
 </script>
 
