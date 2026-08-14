@@ -144,7 +144,7 @@
     cursor:pointer; transition:.15s;
   }
   .pill:hover{ border-color:var(--ink-soft); color:var(--ink); }
-  .pill.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:600; box-shadow:var(--shadow-pop); }
+  .pill.active{ background:var(--accent-soft); border-color:var(--head-edge); color:var(--rule-red); font-weight:600; box-shadow:none; }
   .page-head .tabs, .page-head .category-pills{ position:relative; }
   .page-head::after{ content:''; display:block; height:18px; }
 
@@ -156,6 +156,7 @@
     box-shadow:0 1px 2px rgba(46,28,74,.05);
   }
   .view-switch{ display:flex; gap:2px; padding:3px; background:var(--row-alt); border-radius:9px; height:38px; }
+  #display-select{ display:none; }
   .view-switch button{
     border:none; border-radius:7px; background:transparent; color:var(--ink-soft);
     font-size:12.5px; font-weight:500; padding:0 14px; height:100%;
@@ -578,41 +579,15 @@
     .breakdown-card table{ min-width:0; }
     .breakdown-card thead th, .breakdown-card tbody td{ padding:10px 12px; }
 
-    /* ── Register: each row becomes a card ──
-       Eight columns can't fit 390px, and a sideways-scrolling register is
-       miserable to read. The header row is dropped and every cell carries
-       its own label instead. */
-    .table-card{ border-radius:12px; }
-    .table-card table, .table-card tbody, .table-card tr, .table-card td{ display:block; width:auto; }
-    .table-card thead{ display:none; }
-    .table-card tr{
-      padding:12px 14px 13px; border-bottom:1px solid var(--paper-line);
-      display:grid; grid-template-columns:1fr auto; gap:2px 12px;
-    }
-    .table-card tr:nth-child(even){ background:transparent; }
-    .table-card td{
-      border:none; padding:0; font-size:13.5px; line-height:1.5;
-      display:flex; align-items:baseline; gap:8px;
-    }
-    .table-card td::before{
-      content:attr(data-l); flex:none; min-width:74px;
-      font-size:10px; letter-spacing:.06em; text-transform:uppercase;
-      color:var(--ink-soft); font-weight:600;
-    }
-    /* name headlines the card, status sits beside it, serial number goes */
-    .table-card td[data-l="S.No"]{ display:none; }
-    .table-card td[data-l="Name"]{
-      grid-column:1; grid-row:1; font-size:16px; font-weight:600; letter-spacing:-.01em;
-    }
-    .table-card td[data-l="Name"]::before{ display:none; }
-    .table-card td[data-l="Status"]{ grid-column:2; grid-row:1; justify-content:flex-end; }
-    .table-card td[data-l="Status"]::before{ display:none; }
-    .table-card td[data-l="Attendance"]{ grid-column:2; grid-row:1; justify-content:flex-end; }
-    .table-card td[data-l="Attendance"]::before{ display:none; }
-    .table-card td:not([data-l="Name"]):not([data-l="Status"]):not([data-l="Attendance"]){
-      grid-column:1 / -1;
-    }
-    .table-card tbody tr:hover{ background:transparent; }
+    /* ── Register: a real table, not stacked cards ──
+       Scrolls sideways inside its own card so the page itself never
+       gains a horizontal scrollbar — the header row (and card title
+       above it) stay put while the body scrolls under your thumb. */
+    .table-card{ border-radius:12px; overflow:hidden; }
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; max-width:100%; }
+    .table-scroll table{ min-width:620px; }
+    thead th, tbody td{ padding:10px 12px; white-space:nowrap; }
+    tbody td[data-l="Name"]{ white-space:normal; }
 
     /* ── Settings: a full-screen sheet ── */
     .modal-overlay{ padding:0; align-items:stretch; }
@@ -714,12 +689,15 @@
       box-shadow:0 -2px 20px rgba(0,0,0,.06);
     }
     .side-brand, .side-label{ display:none; }
-    #mode-switch{ display:flex; gap:4px; flex:1; }
     .side-nav{
-      flex-direction:column; gap:3px; padding:6px 4px; font-size:10.5px;
-      min-height:50px; justify-content:center; text-align:center; border-radius:11px;
+      flex:1; flex-direction:column; gap:3px; padding:7px 4px; font-size:10.5px;
+      min-height:52px; justify-content:center; text-align:center; border-radius:11px;
     }
-    .side-nav svg{ width:20px; height:20px; }
+    .side-nav svg{ width:19px; height:19px; }
+    .side-nav.active, .side-nav.on{
+      background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+    }
+    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
     .side-foot{ margin:0; padding:0; border:none; gap:4px; }
     .main{ padding:14px 12px 86px; }
     .topbar-title h1{ font-size:20px; }
@@ -739,15 +717,17 @@
     .topbar{ max-width:1160px; }
   }
 
-  /* ── Sidebar: tighter, with an active marker ── */
-  .side{ padding-top:16px; }
-  .side-nav{ position:relative; font-size:13.5px; padding:9px 11px; min-height:38px; border-radius:8px; }
-  .side-nav svg{ width:16px; height:16px; }
-  .side-nav.active::before, .side-nav.on::before{
-    content:''; position:absolute; left:-12px; top:9px; bottom:9px; width:3px;
-    border-radius:0 3px 3px 0; background:var(--accent);
+  /* ── Sidebar: tighter, with an active marker (desktop only) ── */
+  @media (min-width: 861px){
+    .side{ padding-top:16px; }
+    .side-nav{ position:relative; font-size:13.5px; padding:9px 11px; min-height:38px; border-radius:8px; }
+    .side-nav svg{ width:16px; height:16px; }
+    .side-nav.active::before, .side-nav.on::before{
+      content:''; position:absolute; left:-12px; top:9px; bottom:9px; width:3px;
+      border-radius:0 3px 3px 0; background:var(--accent);
+    }
+    .side-label{ margin:16px 10px 4px; }
   }
-  .side-label{ margin:16px 10px 4px; }
 
   /* ── Controls: one tidy strip ── */
   .controls{
@@ -811,33 +791,39 @@
     .main > *, .hero{ max-width:1220px; }
   }
 
-  /* ── Sidebar ── */
-  .side{ padding:22px 18px calc(18px + env(safe-area-inset-bottom)); gap:4px; }
-  .side-brand{ gap:12px; padding:2px 6px 22px; }
-  .side-brand .brand-mark{
-    width:46px; height:46px; border-radius:13px; padding:5px;
-    background:var(--accent); box-shadow:0 2px 8px rgba(233,164,0,.28);
-  }
-  .side-brand-text strong{ font-size:18px; letter-spacing:-.02em; }
-  .side-brand-text span{ font-size:11.5px; max-width:170px; }
+  /* ── Sidebar (desktop only — mobile keeps its own compact bottom-bar rules) ── */
+  @media (min-width: 861px){
+    .side{ padding:22px 18px calc(18px + env(safe-area-inset-bottom)); gap:4px; }
+    .side-brand{ gap:12px; padding:2px 6px 22px; }
+    .side-brand .brand-mark{
+      width:44px; height:44px; border-radius:50%; padding:3px;
+      background:var(--paper); border:1px solid var(--border); box-shadow:none;
+    }
+    .side-brand-text strong{ font-size:18px; letter-spacing:-.02em; }
+    .side-brand-text span{ font-size:11.5px; max-width:170px; }
 
-  .side-label{ margin:18px 12px 6px; font-size:10px; }
-  .side-nav{
-    font-size:15px; font-weight:500; padding:12px 14px;
-    border-radius:12px; min-height:46px; gap:13px;
-  }
-  .side-nav svg{ width:20px; height:20px; stroke-width:2; opacity:.55; }
-  .side-nav.active, .side-nav.on{
-    background:var(--accent-soft); color:var(--rule-red); font-weight:600;
-  }
-  .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
-  .side-nav.active::before, .side-nav.on::before{ content:none; }
+    .side-label{ margin:18px 12px 6px; font-size:10px; }
+    .side-nav{
+      font-size:15px; font-weight:500; padding:12px 14px;
+      border-radius:12px; min-height:46px; gap:13px;
+    }
+    .side-nav svg{ width:20px; height:20px; stroke-width:2; opacity:.55; }
+    /* Pastel tint, matching the softer gold used elsewhere — the fully
+       saturated accent read as too dark/heavy for a nav item fill. */
+    .side-nav.active, .side-nav.on{
+      background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+      box-shadow:none;
+    }
+    .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
+    .side-nav.active:hover, .side-nav.on:hover{ background:var(--accent-soft); }
+    .side-nav.active::before, .side-nav.on::before{ content:none; }
 
-  .side-foot{
-    margin-top:auto; display:flex; align-items:center; justify-content:space-between;
-    gap:10px; padding:14px 6px 0; border-top:1px solid var(--paper-line);
+    .side-foot{
+      margin-top:auto; display:flex; align-items:center; justify-content:space-between;
+      gap:10px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--row-alt);
+    }
+    .side-status{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); }
   }
-  .side-status{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); }
 
   /* ── Hero banner ── */
   .hero{
@@ -850,6 +836,13 @@
   .hero::after{
     content:''; position:absolute; top:-58px; right:-30px; width:190px; height:190px;
     border-radius:50%; background:var(--accent); opacity:.16; pointer-events:none;
+  }
+  .hero::before{
+    content:''; position:absolute; top:0; right:0; bottom:0; width:240px; pointer-events:none;
+    background-image:radial-gradient(var(--head-edge) 1.4px, transparent 1.4px);
+    background-size:14px 14px;
+    -webkit-mask-image:linear-gradient(to left, #000 25%, transparent 92%);
+    mask-image:linear-gradient(to left, #000 25%, transparent 92%);
   }
   .hero-copy{ position:relative; z-index:1; }
   .hero-eyebrow{
@@ -875,16 +868,53 @@
     text-transform:uppercase; color:var(--ink-soft);
   }
   .stat .n{ font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
+  .stat-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .stat-icon{
+    width:38px; height:38px; border-radius:11px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .stat-icon svg{ width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; }
+  .stat .l{ text-align:right; }
 
   /* ── Section cards ── */
   .table-card, .breakdown-card{ border-radius:14px; }
 
+  /* ── Card headers: icon + caps label above a table ── */
+  .card-head, .table-card-head{
+    display:flex; align-items:center; gap:9px; padding:13px 18px;
+    font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--ink); border-bottom:1px solid var(--paper-line); background:var(--card);
+  }
+  .card-head svg, .table-card-head svg{
+    width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; color:var(--ink-soft);
+  }
+
   @media (max-width: 860px){
-    .hero{ padding:18px 18px; border-radius:14px; }
-    .hero h1{ font-size:24px; }
-    .hero::after{ width:130px; height:130px; top:-46px; right:-24px; }
+    /* Compact hero: title and date share one row, eyebrow/long-date text
+       drop out — the table is what people came for, not the banner. */
+    .hero{
+      padding:12px 14px; border-radius:12px; flex-wrap:nowrap;
+      align-items:center; gap:10px;
+    }
+    .hero-eyebrow, .hero-sub{ display:none; }
+    .hero-copy{ min-width:0; flex:1; }
+    .hero h1{ font-size:19px; }
+    .hero::after{ width:100px; height:100px; top:-36px; right:-18px; }
+    .hero-actions{ flex:none; gap:0; }
+    .hero-actions .field{ gap:0; }
+    .hero-actions .field label{ display:none; }
+    #date-field input, #month-field input{
+      padding:6px 8px; font-size:12.5px; height:32px; width:126px; min-width:0;
+    }
     .side-foot{ display:none; }
     .side-brand .brand-mark{ box-shadow:none; }
+    .stat-icon{ width:32px; height:32px; border-radius:9px; }
+    .stat-icon svg{ width:14px; height:14px; }
+
+    /* Both/Summary/List becomes a dropdown — three buttons cost a whole
+       row that the table could use instead. */
+    #display-switch{ display:none; }
+    #display-select{ display:block; }
   }
 
   /* ── White page: separation now comes from hairlines, not a grey field ── */
@@ -913,7 +943,7 @@
       </div>
     </div>
 
-    <p class="side-label">Register</p>
+    <p class="side-label">Menu</p>
     <button class="side-nav tab active" data-type="student" type="button">
       <svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4z"/><path d="M6 11v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/></svg>
       <span>Students</span>
@@ -922,18 +952,6 @@
       <svg viewBox="0 0 24 24"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="9" r="3.5"/></svg>
       <span>Staff</span>
     </button>
-
-    <p class="side-label" id="period-label">Period</p>
-    <div id="mode-switch">
-      <button class="side-nav on" id="view-daily" type="button">
-        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-        <span>Daily</span>
-      </button>
-      <button class="side-nav" id="view-monthly" type="button">
-        <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
-        <span>Monthly</span>
-      </button>
-    </div>
 
     <button class="side-nav" id="settings-btn" type="button">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -973,10 +991,21 @@
     <div class="category-pills" id="category-pills" style="display:none;"></div>
 
 <div class="controls">
-    <div class="view-switch" id="display-switch">
-      <button id="display-both" class="on">Both</button>
-      <button id="display-summary">Summary</button>
-      <button id="display-list">List</button>
+    <div class="view-switch" id="mode-switch" style="display:none;">
+      <button id="view-daily" class="on" type="button">Daily</button>
+      <button id="view-monthly" type="button">Monthly</button>
+    </div>
+    <div class="field" id="display-switch-wrap">
+      <div class="view-switch" id="display-switch">
+        <button id="display-both" class="on">Both</button>
+        <button id="display-summary">Summary</button>
+        <button id="display-list">List</button>
+      </div>
+      <select id="display-select">
+        <option value="both">Both</option>
+        <option value="summary">Summary</option>
+        <option value="list">List</option>
+      </select>
     </div>
     <div class="field" id="category-field">
       <label for="category-filter" id="category-label">Class</label>
@@ -996,10 +1025,16 @@
   <div class="breakdown-wrap" id="breakdown-wrap"></div>
 
   <div class="table-card" id="table-card">
-    <table id="register-table" style="display:none;">
-      <thead id="register-head"></thead>
-      <tbody id="register-body"></tbody>
-    </table>
+    <div class="table-card-head">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-6 7-6s7 2.7 7 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 13c2.8 0 5 2.1 5 5"/></svg>
+      <span id="table-title">Student Register</span>
+    </div>
+    <div class="table-scroll">
+      <table id="register-table" style="display:none;">
+        <thead id="register-head"></thead>
+        <tbody id="register-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="empty" id="empty-msg" style="display:none;"></div>
@@ -1719,9 +1754,7 @@ document.querySelectorAll('.tab').forEach(tab => {
 function updateModeSwitchVisibility(){
   // monthly is a staff view only, so the whole Period group hides for students
   const show = VIEW !== 'student';
-  document.getElementById('mode-switch').style.display = show ? 'block' : 'none';
-  const lbl = document.getElementById('period-label');
-  if(lbl) lbl.style.display = show ? 'block' : 'none';
+  document.getElementById('mode-switch').style.display = show ? 'flex' : 'none';
   if(VIEW === 'student' && MODE !== 'daily'){
     MODE = 'daily';
     document.getElementById('view-daily').classList.add('on');
@@ -1733,7 +1766,7 @@ function updateModeSwitchVisibility(){
 
 function updateDisplaySwitchVisibility(){
   const show = VIEW === 'student' && MODE === 'daily';
-  document.getElementById('display-switch').style.display = show ? 'flex' : 'none';
+  document.getElementById('display-switch-wrap').style.display = show ? '' : 'none';
   if(!show && DISPLAY !== 'both') setDisplay('both');
 }
 
@@ -1742,11 +1775,13 @@ function setDisplay(d){
   document.getElementById('display-both').classList.toggle('on', d === 'both');
   document.getElementById('display-summary').classList.toggle('on', d === 'summary');
   document.getElementById('display-list').classList.toggle('on', d === 'list');
+  document.getElementById('display-select').value = d;
   applyDisplayMode();
 }
 document.getElementById('display-both').addEventListener('click', () => setDisplay('both'));
 document.getElementById('display-summary').addEventListener('click', () => setDisplay('summary'));
 document.getElementById('display-list').addEventListener('click', () => setDisplay('list'));
+document.getElementById('display-select').addEventListener('change', (e) => setDisplay(e.target.value));
 
 function applyDisplayMode(){
   const insightsOn = DISPLAY !== 'list';
@@ -2189,6 +2224,8 @@ function updateViewTitle(){
     const when = MODE === 'monthly' ? 'Monthly' : (viewingToday() ? 'Today' : 'Past day');
     eb.textContent = 'Register \u00b7 ' + when;
   }
+  const tt = document.getElementById('table-title');
+  if(tt) tt.textContent = VIEW === 'student' ? 'Student Register' : 'Staff Register';
 }
 
 function buildDailyHead(){
@@ -2239,6 +2276,33 @@ function filteredRows(){
   return rows;
 }
 
+const ICONS = {
+  people:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-6 7-6s7 2.7 7 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 13c2.8 0 5 2.1 5 5"/></svg>',
+  arrowIn:'<svg viewBox="0 0 24 24"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="M11 8l4 4-4 4"/><path d="M15 12H3"/></svg>',
+  arrowOut:'<svg viewBox="0 0 24 24"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><path d="M15 16l4-4-4-4"/><path d="M19 12H7"/></svg>',
+  personX:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2 20c0-3.5 3.1-6.2 7-6.2s7 2.7 7 6.2"/><path d="M17 8l4 4M21 8l-4 4"/></svg>',
+  calendar:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  book:'<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/></svg>',
+  bus:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="10" rx="2"/><path d="M3 12h18"/><circle cx="7.5" cy="18.5" r="1.5"/><circle cx="16.5" cy="18.5" r="1.5"/></svg>'
+};
+function statIcon(label){
+  const l = label.toLowerCase();
+  if(l.includes('absent')) return ICONS.personX;
+  if(l.includes('exit')) return ICONS.arrowOut;
+  if(l.includes('still in') || l.includes('present') || l.includes('in campus')) return ICONS.arrowIn;
+  if(l.includes('half') || l.includes('late')) return ICONS.clock;
+  if(l.includes('day')) return ICONS.calendar;
+  return ICONS.people;
+}
+function statBg(colorVar){
+  const map = {
+    'var(--present)':'var(--present-bg)', 'var(--absent)':'var(--absent-bg)',
+    'var(--pending)':'var(--pending-bg)', 'var(--half)':'var(--half-bg)',
+    '#B5560E':'var(--half-bg)'
+  };
+  return map[colorVar] || 'var(--accent-soft)';
+}
 function setSummary(cards){
   const el = document.getElementById('summary');
   el.innerHTML = cards.map(c => {
@@ -2246,7 +2310,14 @@ function setSummary(cards){
     // fall back to the darker tone of the same hue
     const tone = c.color || 'var(--accent)';
     const ink = c.color || 'var(--rule-red)';
-    return `<div class="stat" style="--tone:${tone}"><div class="n" style="color:${ink}">${c.value}</div><div class="l">${c.label}</div></div>`;
+    const bg = statBg(tone);
+    return `<div class="stat" style="--tone:${tone}">
+      <div class="stat-top">
+        <div class="stat-icon" style="color:${ink}; background:${bg}">${statIcon(c.label)}</div>
+        <div class="l">${c.label}</div>
+      </div>
+      <div class="n" style="color:${ink}">${c.value}</div>
+    </div>`;
   }).join('');
   el.style.display = 'grid';
 }
@@ -2424,7 +2495,8 @@ function renderBreakdown(enriched, mode){
       }).join('');
     }
     // one header row — the first column says what the rows are grouped by
-    card.innerHTML = `<table><thead><tr><th>${escapeHtml(gf.label)}</th>${headCols}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+    const headIcon = gf.key === 'class' ? ICONS.book : gf.key === 'busNumber' ? ICONS.bus : ICONS.people;
+    card.innerHTML = `<div class="card-head">${headIcon}<span>By ${escapeHtml(gf.label)}</span></div><table><thead><tr><th>${escapeHtml(gf.label)}</th>${headCols}</tr></thead><tbody>${bodyRows}</tbody></table>`;
     wrap.appendChild(card);
   });
 }
