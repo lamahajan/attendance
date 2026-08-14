@@ -112,10 +112,12 @@
   .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
   .brand-row{ display:flex; align-items:center; gap:14px; }
   .brand-mark{
-    width:46px; height:46px; border-radius:12px; flex:none;
-    box-shadow:0 2px 8px rgba(46,28,74,.22);
+    width:52px; height:52px; flex:none; border-radius:50%;
+    object-fit:contain; background:transparent;
   }
-  @media (max-width:600px){ .brand-mark{ width:38px; height:38px; border-radius:10px; } }
+  /* the crest is dark green and red on cream — give it a disc to sit on in dark mode */
+  [data-theme="dark"] .brand-mark{ background:#FBF6D9; padding:2px; }
+  @media (max-width:600px){ .brand-mark{ width:42px; height:42px; } }
   .eyebrow{
     font-size:11px; letter-spacing:.1em; text-transform:uppercase;
     color:var(--accent); margin:0 0 5px; font-weight:600;
@@ -528,7 +530,8 @@
   <header class="page-head">
     <div class="head-top">
       <div class="brand-row">
-        <img class="brand-mark" src="icon-192.png" alt="" width="46" height="46">
+        <img class="brand-mark" src="Logo.png" alt="Lotus International School" width="52" height="52"
+             onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://raw.githubusercontent.com/lamahajan/attendance/main/Logo.png';}else{this.src='icon-192.png';}">
         <div>
         <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
         <h1>Attendance Register</h1>
