@@ -1,7 +1,7 @@
 {
-  "name": "Presenz",
-  "short_name": "Presenz",
-  "description": "Presenz \u2014 daily and monthly attendance register for students and staff.",
+  "name": "Markd",
+  "short_name": "Markd",
+  "description": "Markd — daily and monthly attendance register for students and staff.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
