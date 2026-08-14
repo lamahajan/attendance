@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Attendance Register</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
 <meta name="theme-color" content="#F2F2F7"/>
@@ -503,7 +503,14 @@
   @media print{
     body{background:#fff; padding:0;}
     :root, [data-theme="dark"]{ --paper:#fff; --card:#fff; --card-tint:#fff; --ink:#000; --ink-soft:#444; --border:#bbb; --paper-line:#ddd; --row-alt:#fff; }
-    .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs, .sw-pill{display:none !important;}
+    .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs, .sw-pill,
+    .side, .topbar-actions, .category-pills{display:none !important;}
+    /* the date is already printed under the title — the picker repeated it */
+    .app{ display:block; }
+    .main{ padding:0; }
+    .topbar{ margin-bottom:10px; }
+    /* status is a live-at-this-moment value; on paper it means nothing */
+    .table-card th:last-child, .table-card td[data-l="Status"]{ display:none; }
     .brand-mark{ box-shadow:none; }
     .page-head{ background:#fff !important; border-top-width:3px; }
     .page-head, .table-card, .stat, .breakdown-card{ box-shadow:none; border-color:#D5D9E4; }
@@ -520,24 +527,265 @@
     thead th, tbody td{ padding:10px 12px; }
     .summary{ grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
   }
+
+  /* ══════════════════════════════════════════════════════════
+     Mobile
+     ══════════════════════════════════════════════════════════ */
+  @media (max-width: 640px){
+
+    /* iOS zooms the whole page when a focused field is under 16px,
+       and never zooms back out. Everything typeable goes to 16px. */
+    input, select, textarea{ font-size:16px !important; }
+
+    body{
+      padding:12px 12px calc(16px + env(safe-area-inset-bottom));
+    }
+    .book{ max-width:100%; }
+
+    /* ── Header ── */
+    .page-head{ padding:16px 16px 0; border-radius:12px; }
+    .head-top{ gap:12px; }
+    h1{ font-size:20px; }
+    .sub{ font-size:12.5px; }
+    .eyebrow{ font-size:10px; }
+    .head-actions{ width:100%; gap:8px; }
+    .head-actions .field:first-child{ flex:1; }
+    .head-actions .field input{ width:100%; }
+
+    /* ── Touch targets: 44px minimum ── */
+    .gear-btn{ width:44px; height:44px; }
+    .tabs{ width:100%; }
+    .tab{ flex:1; text-align:center; padding:11px 12px; font-size:14px; }
+    .view-switch button{ padding:12px 14px; font-size:13.5px; min-height:44px; }
+    .sw-pill button{ min-height:44px; }
+    .pill{ padding:10px 15px; font-size:13.5px; }
+    button.ghost, #print-btn, #refresh-btn{ min-height:44px; }
+
+    /* ── Controls ── */
+    .controls{ padding:12px 14px; gap:10px; border-radius:12px; }
+    .controls .field{ flex:1 1 100%; }
+    .controls .field input, .controls .field select{ width:100%; }
+
+    /* ── Stat cards: two up, tighter ── */
+    .summary{ grid-template-columns:1fr 1fr; gap:8px; }
+    .stat{ padding:12px 12px 12px 16px; border-radius:12px; }
+    .stat .n{ font-size:22px; }
+    .stat .l{ font-size:9.5px; letter-spacing:.06em; }
+
+    /* ── Breakdown tables: scroll rather than clip ── */
+    .breakdown-wrap{ gap:10px; }
+    .breakdown-card{ min-width:0; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:12px; }
+    .breakdown-card table{ min-width:0; }
+    .breakdown-card thead th, .breakdown-card tbody td{ padding:10px 12px; }
+
+    /* ── Register: each row becomes a card ──
+       Eight columns can't fit 390px, and a sideways-scrolling register is
+       miserable to read. The header row is dropped and every cell carries
+       its own label instead. */
+    .table-card{ border-radius:12px; }
+    .table-card table, .table-card tbody, .table-card tr, .table-card td{ display:block; width:auto; }
+    .table-card thead{ display:none; }
+    .table-card tr{
+      padding:12px 14px 13px; border-bottom:1px solid var(--paper-line);
+      display:grid; grid-template-columns:1fr auto; gap:2px 12px;
+    }
+    .table-card tr:nth-child(even){ background:transparent; }
+    .table-card td{
+      border:none; padding:0; font-size:13.5px; line-height:1.5;
+      display:flex; align-items:baseline; gap:8px;
+    }
+    .table-card td::before{
+      content:attr(data-l); flex:none; min-width:74px;
+      font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--ink-soft); font-weight:600;
+    }
+    /* name headlines the card, status sits beside it, serial number goes */
+    .table-card td[data-l="S.No"]{ display:none; }
+    .table-card td[data-l="Name"]{
+      grid-column:1; grid-row:1; font-size:16px; font-weight:600; letter-spacing:-.01em;
+    }
+    .table-card td[data-l="Name"]::before{ display:none; }
+    .table-card td[data-l="Status"]{ grid-column:2; grid-row:1; justify-content:flex-end; }
+    .table-card td[data-l="Status"]::before{ display:none; }
+    .table-card td[data-l="Attendance"]{ grid-column:2; grid-row:1; justify-content:flex-end; }
+    .table-card td[data-l="Attendance"]::before{ display:none; }
+    .table-card td:not([data-l="Name"]):not([data-l="Status"]):not([data-l="Attendance"]){
+      grid-column:1 / -1;
+    }
+    .table-card tbody tr:hover{ background:transparent; }
+
+    /* ── Settings: a full-screen sheet ── */
+    .modal-overlay{ padding:0; align-items:stretch; }
+    .settings-panel{
+      height:100dvh; max-width:none; border-radius:0;
+      grid-template-rows:auto 1fr auto;
+    }
+    .set-side{
+      padding:calc(10px + env(safe-area-inset-top)) 60px 10px 12px;
+      gap:6px; align-items:center;
+    }
+    .set-nav{ min-height:40px; }
+    .modal-close{
+      position:absolute; top:calc(8px + env(safe-area-inset-top)); right:10px;
+      width:40px; height:40px; background:var(--paper); border:1px solid var(--border);
+      z-index:5; font-size:20px;
+    }
+    .set-body{ padding:18px 16px 20px; }
+    .set-sec > h2{ font-size:19px; }
+    .set-foot{
+      padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+      flex-wrap:nowrap; gap:8px;
+    }
+    .set-foot .status{ display:none; }
+    .set-foot button{ flex:1; min-height:46px; }
+    .group{ padding:14px; }
+    .group .grid{ grid-template-columns:1fr; }
+    .group .row{ gap:10px; }
+    .group .row .field{ flex:1 1 100%; }
+    .shift-rule-card .src-windows .field,
+    .shift-rule-card .src-shifts .field{ flex:1 1 46%; min-width:0; }
+    .device-card .dev-grid{ grid-template-columns:1fr; }
+
+    /* ── Update pill clears the home indicator ── */
+    .sw-pill{ bottom:calc(14px + env(safe-area-inset-bottom)); left:12px; right:12px; transform:translateY(160%); }
+    .sw-pill.show{ transform:translateY(0); }
+  }
+
+  /* Small phones */
+  @media (max-width: 380px){
+    .summary{ grid-template-columns:1fr; }
+    .tab{ font-size:13px; padding:11px 8px; }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     App shell — fixed left navigation, scrolling content
+     ══════════════════════════════════════════════════════════ */
+  .app{ display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
+
+  .side{
+    position:sticky; top:0; align-self:start; height:100vh;
+    display:flex; flex-direction:column; gap:2px;
+    padding:18px 12px calc(14px + env(safe-area-inset-bottom));
+    background:var(--paper); border-right:1px solid var(--border);
+  }
+  .side-brand{ display:flex; align-items:center; gap:10px; padding:2px 8px 16px; }
+  .side-brand .brand-mark{ width:34px; height:34px; border-radius:50%; }
+  .side-brand-text strong{ display:block; font-size:15px; font-weight:700; letter-spacing:-.01em; }
+  .side-brand-text span{
+    display:block; font-size:10.5px; color:var(--ink-soft); margin-top:1px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px;
+  }
+  .side-label{
+    margin:14px 10px 5px; font-size:9.5px; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-soft); opacity:.8;
+  }
+  .side-nav{
+    all:unset; box-sizing:border-box; cursor:pointer;
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:10px 11px; border-radius:9px; font-size:14px; color:var(--ink);
+    min-height:42px; transition:background .15s, color .15s;
+  }
+  .side-nav svg{ width:17px; height:17px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; opacity:.6; }
+  .side-nav:hover{ background:var(--row-alt); }
+  .side-nav.active, .side-nav.on{
+    background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+  }
+  .side-nav.active svg, .side-nav.on svg{ opacity:1; }
+  .side-foot{ margin-top:auto; display:flex; gap:8px; padding:12px 8px 0; border-top:1px solid var(--paper-line); }
+
+  .main{ min-width:0; padding:18px 22px 60px; }
+
+  .topbar{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    flex-wrap:wrap; margin-bottom:16px;
+  }
+  .topbar-title h1{ margin:0; font-size:24px; letter-spacing:-.02em; }
+  .topbar-title .sub{ margin:3px 0 0; font-size:13px; color:var(--ink-soft); }
+  .topbar-actions{ display:flex; gap:10px; align-items:flex-end; }
+
+  /* ── Mobile: the sidebar becomes a bottom bar ── */
+  @media (max-width: 860px){
+    .app{ grid-template-columns:1fr; }
+    .side{
+      position:fixed; bottom:0; left:0; right:0; top:auto; height:auto; z-index:60;
+      flex-direction:row; align-items:center; gap:4px;
+      padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+      border-right:none; border-top:1px solid var(--border);
+      box-shadow:0 -2px 20px rgba(0,0,0,.06);
+    }
+    .side-brand, .side-label{ display:none; }
+    #mode-switch{ display:flex; gap:4px; flex:1; }
+    .side-nav{
+      flex-direction:column; gap:3px; padding:6px 4px; font-size:10.5px;
+      min-height:50px; justify-content:center; text-align:center; border-radius:11px;
+    }
+    .side-nav svg{ width:20px; height:20px; }
+    .side-foot{ margin:0; padding:0; border:none; gap:4px; }
+    .main{ padding:14px 12px 86px; }
+    .topbar-title h1{ font-size:20px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="book">
+<div class="app">
 
-  <header class="page-head">
-    <div class="head-top">
-      <div class="brand-row">
-        <img class="brand-mark" src="Logo.png" alt="Lotus International School" width="52" height="52"
-             onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://raw.githubusercontent.com/lamahajan/attendance/main/Logo.png';}else{this.src='icon-192.png';}">
-        <div>
-        <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
-        <h1>Attendance Register</h1>
-        <p class="sub" id="date-label">Loading&hellip;</p>
-        </div>
+  <!-- ── Left navigation ── -->
+  <aside class="side" id="side">
+    <div class="side-brand">
+      <img class="brand-mark" src="Logo.png" alt="" width="34" height="34"
+           onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://raw.githubusercontent.com/lamahajan/attendance/main/Logo.png';}else{this.src='icon-192.png';}">
+      <div class="side-brand-text">
+        <strong>L-Haazri</strong>
+        <span id="school-eyebrow">Lotus International School</span>
       </div>
-      <div class="head-actions">
+    </div>
+
+    <p class="side-label">Register</p>
+    <button class="side-nav tab active" data-type="student" type="button">
+      <svg viewBox="0 0 24 24"><path d="M12 4 3 8l9 4 9-4-9-4z"/><path d="M6 11v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/></svg>
+      <span>Students</span>
+    </button>
+    <button class="side-nav tab" data-type="staff" type="button">
+      <svg viewBox="0 0 24 24"><path d="M17 20a5 5 0 0 0-10 0"/><circle cx="12" cy="9" r="3.5"/></svg>
+      <span>Staff</span>
+    </button>
+
+    <p class="side-label" id="period-label">Period</p>
+    <div id="mode-switch">
+      <button class="side-nav on" id="view-daily" type="button">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <span>Daily</span>
+      </button>
+      <button class="side-nav" id="view-monthly" type="button">
+        <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+        <span>Monthly</span>
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <button class="gear-btn" id="theme-btn" type="button" title="Switch theme" aria-label="Switch theme">
+        <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button class="gear-btn" id="settings-btn" type="button" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Content ── -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <h1 id="view-title">Students</h1>
+        <p class="sub" id="date-label">Loading&hellip;</p>
+      </div>
+      <div class="topbar-actions">
         <div class="field" id="date-field">
           <label for="date-input">Date</label>
           <input type="date" id="date-input">
@@ -546,37 +794,12 @@
           <label for="month-input">Month</label>
           <input type="month" id="month-input">
         </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="gear-btn" id="theme-btn" type="button" title="Switch theme" aria-label="Switch theme">
-            <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-          </button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="gear-btn" id="settings-btn" type="button" title="Settings" aria-label="Settings">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
-    <div class="tabs">
-      <div class="tab active" data-type="student">Students</div>
-      <div class="tab" data-type="staff">Staff</div>
-    </div>
-    <div class="category-pills" id="category-pills" style="display:none;"></div>
-  </header>
 
-  <div class="controls">
-    <div class="view-switch" id="mode-switch">
-      <button id="view-daily" class="on">Daily</button>
-      <button id="view-monthly">Monthly</button>
-    </div>
+    <div class="category-pills" id="category-pills" style="display:none;"></div>
+
+<div class="controls">
     <div class="view-switch" id="display-switch">
       <button id="display-both" class="on">Both</button>
       <button id="display-summary">Summary</button>
@@ -609,6 +832,8 @@
   </div>
 
   <div class="empty" id="empty-msg" style="display:none;"></div>
+
+  </main>
 </div>
 
 <div class="modal-overlay" id="settings-modal">
@@ -892,8 +1117,7 @@
 
     <div class="set-foot">
       <div class="status" id="status-msg"></div>
-      <button class="ghost" id="pull-btn">Pull from cloud</button>
-      <button id="save-btn">Save &amp; sync</button>
+      <button id="save-btn">Save</button>
     </div>
   </div>
 </div>
@@ -1322,7 +1546,11 @@ document.querySelectorAll('.tab').forEach(tab => {
 
 
 function updateModeSwitchVisibility(){
-  document.getElementById('mode-switch').style.display = VIEW === 'student' ? 'none' : 'flex';
+  // monthly is a staff view only, so the whole Period group hides for students
+  const show = VIEW !== 'student';
+  document.getElementById('mode-switch').style.display = show ? 'block' : 'none';
+  const lbl = document.getElementById('period-label');
+  if(lbl) lbl.style.display = show ? 'block' : 'none';
   if(VIEW === 'student' && MODE !== 'daily'){
     MODE = 'daily';
     document.getElementById('view-daily').classList.add('on');
@@ -1748,6 +1976,7 @@ async function loadMonthly(){
     MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent };
   });
 
+  updateViewTitle();
   buildMonthlyHead();
   if(VIEW === 'student') populateClassFilter();
   renderMonthlyTable();
@@ -1781,6 +2010,11 @@ function buildCategoryPills(visibleStaff){
   });
 }
 
+function updateViewTitle(){
+  const t = document.getElementById('view-title');
+  if(t) t.textContent = VIEW === 'student' ? 'Students' : 'Staff';
+}
+
 function buildDailyHead(){
   const head = document.getElementById('register-head');
   if(VIEW === 'student'){
@@ -1794,7 +2028,7 @@ function buildMonthlyHead(){
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Late</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Paid off</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }
 }
 
@@ -1866,7 +2100,7 @@ function renderDailyTable(){
       const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
         : status === 'gatepass' ? '<span class="badge gatepass">Exited</span>'
         : '<span class="badge present">In</span>';
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField || '\u2014')}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${morningLabel}</td><td class="mono">${eveningLabel}</td><td>${badge}</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
     }else{
       const category = normalizedRole(s.role || '');
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
@@ -1888,7 +2122,7 @@ function renderDailyTable(){
         : status === 'half' ? '<span class="badge half">Half day</span>'
         : status === 'off' ? '<span class="badge off">Off</span>'
         : '<span class="badge absent">Absent</span>';
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField || '\u2014')}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${stack([s1in, s2in])}</td><td class="mono">${stack([s1out, s2out])}</td><td>${badge}</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${stack([s1in, s2in])}</td><td class="mono" data-l="Out">${stack([s1out, s2out])}</td><td data-l="Status">${badge}</td>`;
     }
     enriched.push({ s, status });
     body.appendChild(tr);
@@ -1937,23 +2171,29 @@ function renderMonthlyTable(){
     enriched.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct });
     const tr = document.createElement('tr');
     if(VIEW === 'student'){
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.class||'\u2014')}</td><td>${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono">${m.absent}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }else{
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
-      tr.innerHTML = `<td class="mono">${i+1}</td><td class="mono">${escapeHtml(idField)}</td><td>${escapeHtml(nameField)}</td><td>${escapeHtml(s.role||'\u2014')}</td><td class="mono">${m.present}</td><td class="mono" style="color:${m.late?'#B5560E':'inherit'}">${m.late||0}</td><td class="mono">${m.half||0}</td><td class="mono">${m.absent}${absorbNote}</td><td class="mono">${m.paidOff||0}</td><td class="pct" style="color:${pctColor}">${pct}%</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }
     body.appendChild(tr);
   });
 
-  const cards = [
-    {value: rows.length, label: VIEW==='student'?'Total students':'Total staff'},
-    {value: totalDays, label: 'School days'},
-    {value: sumPresent, label: VIEW==='student'?'Present (sum)':'Full days (sum)', color:'var(--present)'}
-  ];
-  if(VIEW === 'staff') cards.push({value: sumHalf, label:'Half days (sum)', color:'var(--half)'});
-  if(VIEW === 'staff') cards.push({value: rows.reduce((n, r) => n + ((MONTHLY[personId(r)]||{}).paidOff || 0), 0), label:'Paid off (sum)'});
-  cards.push({value: sumAbsent, label:'Absent (sum)', color:'var(--absent)'});
-  setSummary(cards);
+  // Staff monthly is a table, not a dashboard — the sums repeated what the
+  // columns already say, and two of them were figures we shouldn't compute.
+  if(VIEW === 'staff'){
+    const el = document.getElementById('summary');
+    el.innerHTML = '';
+    el.style.display = 'none';
+    el.dataset.has = '';
+  }else{
+    setSummary([
+      {value: rows.length, label:'Total students'},
+      {value: totalDays, label:'School days'},
+      {value: sumPresent, label:'Present (sum)', color:'var(--present)'},
+      {value: sumAbsent, label:'Absent (sum)', color:'var(--absent)'}
+    ]);
+  }
   renderBreakdown(enriched, 'monthly');
   finishRender(rows.length);
 }
@@ -1962,9 +2202,10 @@ function renderBreakdown(enriched, mode){
   const wrap = document.getElementById('breakdown-wrap');
   wrap.innerHTML = '';
   if(!enriched.length) return;
-  const groupFields = VIEW === 'student'
-    ? [{key:'class', label:'Class'}, {key:'busNumber', label:'Bus'}]
-    : [{key:'role', label:'Category'}];
+  // Students only. The staff breakdown was a single row repeating the
+  // summary above it, so it earned no space.
+  if(VIEW !== 'student') return;
+  const groupFields = [{key:'class', label:'Class'}, {key:'busNumber', label:'Bus'}];
 
   groupFields.forEach(gf => {
     const map = {};
@@ -1988,14 +2229,10 @@ function renderBreakdown(enriched, mode){
     card.className = 'breakdown-card';
     let headCols, bodyRows;
     if(mode === 'daily'){
-      headCols = VIEW === 'student'
-        ? '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Exit</th><th class="mono-col">Absent</th>'
-        : '<th class="mono-col">Total</th><th class="mono-col">Present</th><th class="mono-col">Half</th><th class="mono-col">Absent</th>';
+      headCols = '<th class="mono-col">In campus</th><th class="mono-col">Exited</th>';
       bodyRows = groups.map(k => {
         const g = map[k];
-        return VIEW === 'student'
-          ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`
-          : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--half)">${g.half}</td><td class="mono" style="color:var(--absent)">${g.absent}</td></tr>`;
+        return `<tr><td>${escapeHtml(k)}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--pending)">${g.exit}</td></tr>`;
       }).join('');
     }else{
       headCols = VIEW === 'student'
@@ -2680,21 +2917,22 @@ document.getElementById('r-test-btn').addEventListener('click', async () => {
   }
 });
 
-document.getElementById('pull-btn').addEventListener('click', async () => {
-  const rUrl = document.getElementById('r-url').value.trim().replace(/\/+$/, '');
-  const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
-  if(!rUrl){ showStatus('Enter the attendance database URL first.', 'err'); return; }
-  const base = rCode ? `${rUrl}/${rCode}` : rUrl;
+/* Reads the shared settings into local storage. Called automatically when the
+   panel opens, so the form always shows what the gate machine is really using
+   rather than whatever this device last typed. */
+async function pullSettingsFromCloud(){
+  const base = attBase();
+  if(!base) return false;
   const remote = await fetchJson(`${base}/app_settings.json`);
-  if(!remote || typeof remote !== 'object'){ showStatus('Nothing saved there yet.', 'err'); return; }
+  if(!remote || typeof remote !== 'object') return false;
   SYNCED_KEYS.forEach(key => {
     if(remote[key] === undefined) return;
     const val = typeof remote[key] === 'string' ? remote[key] : JSON.stringify(remote[key]);
     localStorage.setItem(LS[key], val);
   });
-  loadSettingsFormFromLocal();
-  showStatus('Pulled the saved settings into this form.', 'ok');
-});
+  return true;
+}
+
 
 // ── Export / import the whole configuration ──
 function settingsFileName(){
@@ -2885,11 +3123,13 @@ document.querySelectorAll('.set-nav').forEach(btn => {
     document.querySelector('.set-body').scrollTop = 0;
   });
 });
-function openSettingsModal(){
+async function openSettingsModal(){
   document.getElementById('settings-modal').classList.add('open');
   if(passIsSet() && !SETTINGS_UNLOCKED){ showLock(true); return; }
   showLock(false);
   loadSettingsFormFromLocal();
+  // fetch what's shared before the person starts editing
+  pullSettingsFromCloud().then(ok => { if(ok) loadSettingsFormFromLocal(); });
   document.getElementById('status-msg').className = 'status';
   document.getElementById('status-msg').textContent = '';
   document.getElementById('r-test-status').style.display = 'none';
