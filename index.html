@@ -1170,6 +1170,30 @@
     /* Page setup: the sheet, not the screen */
     @page{ size:A4 portrait; margin:12mm 10mm; }
 
+    /* The sidebar is hidden on paper, but the gutter it reserved was not,
+       so every sheet came out shoved a third of the way across and the last
+       column fell off the right edge. */
+    html, body{ width:auto !important; margin:0 !important; padding:0 !important; }
+    .app{ display:block !important; }
+    .main{ margin-left:0 !important; padding:0 !important; width:auto !important; max-width:none !important; }
+    .book{ max-width:none !important; width:auto !important; }
+
+    /* The phone keeps the register on a 620px rail it can scroll sideways.
+       Paper cannot scroll, so the rail has to be let go or the right-hand
+       columns print past the edge of the page. */
+    .table-scroll{ overflow:visible !important; max-width:none !important; }
+    .table-scroll table, #register-table{
+      min-width:0 !important; width:100% !important; table-layout:fixed !important;
+    }
+    #register-table th, #register-table td{
+      white-space:normal !important; overflow-wrap:anywhere; word-break:break-word;
+    }
+    #register-table td[data-l="Morning in"], #register-table td[data-l="Evening out"],
+    #register-table td[data-l="In"], #register-table td[data-l="Out"],
+    #register-table td[data-l="Adm. No."], #register-table td[data-l="Staff ID"]{
+      white-space:nowrap !important;
+    }
+
     /* A register runs past one page, so the column head has to come with it,
        and no row may be split down the middle by a page break. */
     #register-table thead{ display:table-header-group !important; }
@@ -1489,6 +1513,9 @@
       </button>
 
       <p class="set-group-label">School</p>
+      <button class="set-nav" data-sec="seasons" aria-selected="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg> Season
+      </button>
       <button class="set-nav" data-sec="calendar" aria-selected="false">
         <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Calendar
       </button>
@@ -1587,6 +1614,42 @@
             <button type="button" id="add-cutoff-date-btn" class="ghost small" style="height:36px;">Add</button>
           </div>
           <div id="cutoff-date-list" class="chip-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ── Season ── -->
+      <section class="set-sec" data-sec="seasons">
+        <h2>Season</h2>
+        <p class="lede">The whole school slides when the weather turns. A season carries one offset in minutes, and every time you have already set moves with it — each staff punch window and the student cutoff — so nothing has to be retyped twice a year.</p>
+        <div class="note"><div><b>The offset moves the timetable, not the scan.</b> A window of 08:00 to 11:00 reads as 08:30 to 11:30 once winter starts. A child punching at 08:40 is still recorded at 08:40. The gate machine reads this from the same settings, so there is nothing to change on the Worker.</div></div>
+
+        <div class="group">
+          <h3>Follow the calendar</h3>
+          <p class="hint">Auto picks the season from today's date. Holding one season is for checking what it will look like — remember to put it back.</p>
+          <div class="grid">
+            <div class="field"><label for="season-mode-input">Mode</label>
+              <select id="season-mode-input"><option value="auto">Auto — by date</option><option value="off">Off — no shift ever</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Seasons</h3>
+          <p class="hint">Give the range without a year, so it repeats. A range may run past December — 1 Nov to 15 Feb is one winter. Minus shifts everything earlier, plus shifts it later.</p>
+          <div class="row">
+            <div class="field" style="min-width:120px;"><label for="season-name-input">Name</label><input type="text" id="season-name-input" placeholder="Winter"></div>
+            <div class="field" style="min-width:140px;"><label for="season-from-input">From</label><input type="date" id="season-from-input"></div>
+            <div class="field" style="min-width:140px;"><label for="season-to-input">To</label><input type="date" id="season-to-input"></div>
+            <div class="field" style="min-width:110px;"><label for="season-shift-input">Shift (min)</label><input type="number" id="season-shift-input" step="5" placeholder="30"></div>
+            <button type="button" id="add-season-btn" class="ghost small" style="height:36px;">Add season</button>
+          </div>
+          <div id="season-list" class="chip-wrap"></div>
+          <p class="hint" id="season-now" style="margin-top:10px;"></p>
+        </div>
+
+        <div class="group">
+          <h3>A category that keeps its own hours</h3>
+          <p class="hint">Security works the same clock all year. Put its own offset in the <b>Season shift</b> box on that category's card under <b>Staff</b> — 0 means the season never touches it. Left blank, the category follows the season.</p>
         </div>
       </section>
 
@@ -1771,6 +1834,7 @@ const LS = {
   cutoffOverrides:'reg_cutoff_overrides',
   cutoffDateOverrides:'reg_cutoff_date_overrides',
   sandwichMode:'reg_sandwich_mode',
+  seasons:'reg_seasons',
   settingsPassHash:'reg_settings_pass_hash',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
@@ -1914,9 +1978,106 @@ const DEFAULT_WINDOWS = {
   Gardner:  { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' }
 };
 
+/* =========================================================
+   Seasons \u2014 winter and summer timing
+
+   The whole school slides by half an hour when the cold sets in. Rather
+   than retyping every window twice a year, a season carries one offset in
+   minutes and every configured time moves with it: the punch windows and
+   the student cutoff alike.
+
+   A season is a date range without a year, so 1 Nov to 15 Feb repeats every
+   winter and is allowed to cross into January. A category can opt out with
+   its own offset \u2014 security keeps the same hours all year.
+
+   The offset lands on the configured times, never on the scan. A window of
+   08:00 to 11:00 becomes 08:30 to 11:30 in winter; the child's 08:40 punch
+   is still recorded as 08:40.
+   ========================================================= */
+const DEFAULT_SEASONS = {
+  mode: 'auto',
+  list: [
+    { name:'Winter', from:'11-01', to:'02-15', shift:30 },
+    { name:'Summer', from:'04-01', to:'09-30', shift:-30 }
+  ]
+};
+function getSeasons(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.seasons) || 'null');
+    if(stored && typeof stored === 'object'){
+      return {
+        mode: typeof stored.mode === 'string' && stored.mode ? stored.mode : 'auto',
+        list: Array.isArray(stored.list) ? stored.list : []
+      };
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_SEASONS));
+}
+function saveSeasons(s){ localStorage.setItem(LS.seasons, JSON.stringify(s)); }
+function mmddNum(v){
+  const m = String(v || '').match(/(\d{1,2})\D+(\d{1,2})/);
+  return m ? parseInt(m[1],10) * 100 + parseInt(m[2],10) : null;
+}
+// Which season covers this date? Ranges may wrap past December.
+function seasonFor(dateStr){
+  const cfg = getSeasons();
+  if(!cfg.list.length || cfg.mode === 'off') return null;
+  if(cfg.mode && cfg.mode !== 'auto'){
+    return cfg.list.find(x => String(x.name).toLowerCase() === String(cfg.mode).toLowerCase()) || null;
+  }
+  const d = mmddNum(String(dateStr).slice(5));
+  if(d == null) return null;
+  for(const sea of cfg.list){
+    const a = mmddNum(sea.from), b = mmddNum(sea.to);
+    if(a == null || b == null) continue;
+    if(a <= b ? (d >= a && d <= b) : (d >= a || d <= b)) return sea;
+  }
+  return null;
+}
+// Minutes to add on this date for this category. A category may override.
+function seasonShiftFor(dateStr, category){
+  const sea = seasonFor(dateStr);
+  if(!sea) return 0;
+  let mins = Number(sea.shift);
+  if(isNaN(mins)) mins = 0;
+  if(category){
+    const rule = getShiftRulesMap()[category];
+    if(rule && rule.seasonShift !== '' && rule.seasonShift != null){
+      const own = Number(rule.seasonShift);
+      if(!isNaN(own)) mins = own;
+    }
+  }
+  return mins;
+}
+function shiftTimeStr(hhmm, mins){
+  const base = timeStrToMinutes(hhmm);
+  if(base == null || !mins) return hhmm;
+  let t = (base + mins) % 1440;
+  if(t < 0) t += 1440;
+  return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
+}
+// The category's windows with the season already applied.
+function shiftedRuleFor(category, dateStr){
+  const rule = getShiftRulesMap()[category];
+  if(!rule) return null;
+  const mins = seasonShiftFor(dateStr, category);
+  if(!mins) return { ...rule, _shift:0 };
+  return {
+    ...rule,
+    mFrom: shiftTimeStr(rule.mFrom, mins), mTo: shiftTimeStr(rule.mTo, mins),
+    eFrom: shiftTimeStr(rule.eFrom, mins), eTo: shiftTimeStr(rule.eTo, mins),
+    _shift: mins
+  };
+}
+// The student cutoff for a date, season included.
+function shiftedCutoffFor(dateStr){
+  const base = localStorage.getItem(LS.cutoffDefault) || '11:00';
+  return shiftTimeStr(base, seasonShiftFor(dateStr, ''));
+}
+
 // 'morning' | 'evening' | null, from the category's configured windows
 function windowForScan(category, timeStr){
-  const rule = getShiftRulesMap()[category];
+  const rule = shiftedRuleFor(category, dateOnly(timeStr));
   if(!rule) return null;
   const t = timeStrToMinutes(timeOnly(timeStr));
   if(t == null) return null;
@@ -1928,6 +2089,13 @@ function windowForScan(category, timeStr){
   if(inRange(rule.mFrom, rule.mTo)) return 'morning';
   if(inRange(rule.eFrom, rule.eTo)) return 'evening';
   return null;
+}
+// "2026-12-05 08:30:00" -> "2026-12-05"; falls back to the day on screen
+function dateOnly(timeStr){
+  const m = String(timeStr || '').match(/\d{4}-\d{2}-\d{2}/);
+  if(m) return m[0];
+  const el = document.getElementById('date-input');
+  return (el && el.value) || todayKolkata();
 }
 
 /* There is no separate "shift" any more. A category carries two punch
@@ -1990,7 +2158,9 @@ function getHolidays(){
 /* Sorts a day's scans into the two windows and throws away the rest.
    Returns { morning:[recs], evening:[recs], ignored:[recs], hasM, hasE }. */
 function splitScansByWindow(recs, category){
-  const rule = getShiftRulesMap()[category] || {};
+  // shifted, so a winter morning is judged against the winter window
+  const sample = dateOnly(recs.length ? recs[0].time : '');
+  const rule = shiftedRuleFor(category, sample) || {};
   const hasM = !!(rule.mFrom && rule.mTo);
   const hasE = !!(rule.eFrom && rule.eTo);
   const morning = [], evening = [], ignored = [];
@@ -2185,7 +2355,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','settingsPassHash','studentDefaultView','devices'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','seasons','settingsPassHash','studentDefaultView','devices'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -2471,7 +2641,17 @@ document.addEventListener('visibilitychange', () => {
 
 window.addEventListener('beforeunload', stopLive);
 setInterval(freshnessLabel, 20000);
-document.getElementById('print-btn').addEventListener('click', () => window.print());
+/* The browser stamps the document title into its own page header. Left alone
+   that came out as whatever the tab was called; this makes the corner of the
+   sheet say what the sheet is. */
+document.getElementById('print-btn').addEventListener('click', () => {
+  const keep = document.title;
+  const what = document.getElementById('ph-title');
+  const when = document.getElementById('ph-date');
+  document.title = [what && what.textContent, when && when.textContent].filter(Boolean).join(' \u2014 ') || keep;
+  window.print();
+  setTimeout(() => { document.title = keep; }, 800);
+});
 document.getElementById('date-input').addEventListener('change', () => { stopLive(); loadRegister(); });
 document.getElementById('month-input').addEventListener('change', () => { stopLive(); loadRegister(); });
 document.getElementById('category-filter').addEventListener('change', (e) => {
@@ -2765,7 +2945,7 @@ function buildMonthlyHead(){
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Days off</th><th>Attendance</th></tr>`;
   }
 }
 
@@ -2918,12 +3098,14 @@ function renderDailyTable(){
   let dailyCards;
   if(VIEW === 'student'){
     dailyCards = [
+      {value: rows.length, label: 'Total'},
       {value: present, label: 'In school', color:'var(--present-ink)'},
       {value: exit, label: 'Went home', color:'var(--pending-ink)'}
     ];
     if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent-ink)'});
   }else{
     dailyCards = [
+      {value: rows.length, label: 'Total'},
       {value: present, label: 'Full day', color:'var(--present-ink)'},
       {value: half, label: 'Half day', color:'var(--half)'},
       {value: absent, label: 'Absent', color:'var(--absent-ink)'}
@@ -2958,7 +3140,10 @@ function renderMonthlyTable(){
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }else{
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
+      // What payroll deducts: a whole day for every absence, half for every
+      // half day. 5 absent and 3 half days is 6.5.
+      const daysOff = m.absent + (m.half || 0) * 0.5;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }
     // the left stripe reads as a pass/watch/fail band in the monthly view
     tr.dataset.status = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
@@ -2968,10 +3153,13 @@ function renderMonthlyTable(){
   // Staff monthly is a table, not a dashboard — the sums repeated what the
   // columns already say, and two of them were figures we shouldn't compute.
   if(VIEW === 'staff'){
-    const el = document.getElementById('summary');
-    el.innerHTML = '';
-    el.style.display = 'none';
-    el.dataset.has = '';
+    const sumDaysOff = enriched.reduce((a, e) => a + e.absent + (e.half || 0) * 0.5, 0);
+    setSummary([
+      {value: rows.length, label:'Total staff'},
+      {value: totalDays, label:'Working days'},
+      {value: sumHalf, label:'Half days', color:'var(--half)'},
+      {value: sumDaysOff % 1 ? sumDaysOff.toFixed(1) : sumDaysOff, label:'Days off', color:'var(--absent-ink)'}
+    ]);
   }else{
     setSummary([
       {value: rows.length, label:'Total students'},
@@ -3066,7 +3254,7 @@ function updateReportMeta(count){
   const pick = filter ? filter.value : '';
   if(VIEW === 'student') bits.push('Class: ' + (pick || 'All'));
   else bits.push('Category: ' + (STAFF_CATEGORY || 'All'));
-  bits.push((VIEW === 'student' ? 'Students' : 'Staff') + ': ' + count);
+  bits.push('Total ' + (VIEW === 'student' ? 'students' : 'staff') + ': ' + count);
 
   const tally = {};
   document.querySelectorAll('#register-body tr[data-status]').forEach(tr => {
@@ -3174,6 +3362,8 @@ function showStatus(msg, kind){
   el.className = 'status ' + kind;
 }
 function loadSettingsFormFromLocal(){
+  seasonModeOptions();
+  renderSeasonList();
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
@@ -3217,6 +3407,13 @@ function buildShiftRulesGrid(){
           <input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}">
         </div>
         <span>Only paints the status red. The day still counts in full. Blank for no arrival time.</span>
+      </div>
+      <div class="src-arrive">
+        <div class="field">
+          <label>Season shift (min)</label>
+          <input type="number" step="5" class="src-season-shift" placeholder="follows season" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}">
+        </div>
+        <span>Blank means this category moves with the season. Put 0 here to hold it still all year, or another number to move it by a different amount.</span>
       </div>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 nothing ticked, so this category follows the school working days'}</span>
@@ -3347,6 +3544,76 @@ document.getElementById('add-rule-btn').addEventListener('click', () => {
     clearPickedCategories('rule');
     renderRuleList();
   }
+});
+
+/* =========================================================
+   Season list \u2014 add, remove, and a line saying what is in force
+   ========================================================= */
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mmddLabel(v){
+  const m = String(v || '').match(/(\d{1,2})\D+(\d{1,2})/);
+  if(!m) return String(v || '');
+  return parseInt(m[2],10) + ' ' + (MONTH_SHORT[parseInt(m[1],10)-1] || '');
+}
+function renderSeasonList(){
+  const cfg = getSeasons();
+  const wrap = document.getElementById('season-list');
+  if(!wrap) return;
+  if(!cfg.list.length){
+    wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No seasons set &mdash; every day runs on the times as typed.</span>';
+  }else{
+    wrap.innerHTML = cfg.list.map((sea, idx) => {
+      const n = Number(sea.shift) || 0;
+      const move = n === 0 ? 'no change' : (n > 0 ? n + ' min later' : Math.abs(n) + ' min earlier');
+      return `<span class="chip">${escapeHtml(sea.name || 'Season')}: ${escapeHtml(mmddLabel(sea.from))} &ndash; ${escapeHtml(mmddLabel(sea.to))} &middot; ${move}
+        <button type="button" data-sidx="${idx}" title="Remove">&times;</button></span>`;
+    }).join('');
+    wrap.querySelectorAll('button[data-sidx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const c = getSeasons();
+        c.list.splice(parseInt(btn.dataset.sidx, 10), 1);
+        saveSeasons(c); renderSeasonList(); buildShiftRulesGrid();
+      });
+    });
+  }
+  const now = document.getElementById('season-now');
+  if(now){
+    const today = todayKolkata();
+    const sea = seasonFor(today);
+    now.innerHTML = sea
+      ? `In force today: <b>${escapeHtml(sea.name || 'Season')}</b> &middot; student cutoff reads as <b>${escapeHtml(shiftedCutoffFor(today))}</b>.`
+      : 'No season covers today &mdash; the times run exactly as typed.';
+  }
+}
+function seasonModeOptions(){
+  const sel = document.getElementById('season-mode-input');
+  if(!sel) return;
+  const cfg = getSeasons();
+  const held = cfg.list.map(s => `<option value="${escapeHtml(s.name)}">Hold ${escapeHtml(s.name)}</option>`).join('');
+  sel.innerHTML = '<option value="auto">Auto &mdash; by date</option><option value="off">Off &mdash; no shift ever</option>' + held;
+  sel.value = cfg.mode || 'auto';
+}
+const addSeasonBtn = document.getElementById('add-season-btn');
+if(addSeasonBtn) addSeasonBtn.addEventListener('click', () => {
+  const name = (document.getElementById('season-name-input').value || '').trim();
+  const from = document.getElementById('season-from-input').value;
+  const to = document.getElementById('season-to-input').value;
+  const shift = parseInt(document.getElementById('season-shift-input').value, 10);
+  if(!name || !from || !to || isNaN(shift)) return;
+  const cfg = getSeasons();
+  // one entry per name \u2014 adding the same name again replaces it
+  cfg.list = cfg.list.filter(x => String(x.name).toLowerCase() !== name.toLowerCase());
+  cfg.list.push({ name, from: from.slice(5), to: to.slice(5), shift });
+  saveSeasons(cfg);
+  document.getElementById('season-name-input').value = '';
+  document.getElementById('season-shift-input').value = '';
+  renderSeasonList(); seasonModeOptions(); buildShiftRulesGrid();
+});
+const seasonModeInput = document.getElementById('season-mode-input');
+if(seasonModeInput) seasonModeInput.addEventListener('change', () => {
+  const cfg = getSeasons();
+  cfg.mode = seasonModeInput.value || 'auto';
+  saveSeasons(cfg); renderSeasonList(); renderTable();
 });
 
 document.getElementById('cutoff-weekday-input').innerHTML = WEEKDAY_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('');
@@ -3608,6 +3875,8 @@ function collectSettingsObject(){
     shiftRulesObj[cat].mTo   = g('.scw-m-to');
     shiftRulesObj[cat].eFrom = g('.scw-e-from');
     shiftRulesObj[cat].eTo   = g('.scw-e-to');
+    const ss = g('.src-season-shift');
+    shiftRulesObj[cat].seasonShift = ss === '' ? '' : Number(ss);
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
@@ -3619,6 +3888,7 @@ function collectSettingsObject(){
     cutoffOverrides: getCutoffOverrides(),
     cutoffDateOverrides: getCutoffDateOverrides(),
     sandwichMode: (document.querySelector('input[name="sandwich"]:checked') || {}).value || 'lead',
+    seasons: getSeasons(),
     settingsPassHash: storedPassHash(),
     studentDefaultView: document.getElementById('default-view-input').value,
     devices: getDevices()
@@ -3638,6 +3908,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
   localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
   localStorage.setItem(LS.sandwichMode, settings.sandwichMode);
+  saveSeasons(settings.seasons);
   if(settings.settingsPassHash !== undefined) localStorage.setItem(LS.settingsPassHash, settings.settingsPassHash);
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
   const devsNow = getDevices();
