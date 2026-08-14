@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Attendance Register</title>
 <meta name="description" content="Daily and monthly attendance register for students and staff."/>
-<meta name="theme-color" content="#7A3FD3"/>
+<meta name="theme-color" content="#241C33"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
@@ -110,6 +110,12 @@
     background:linear-gradient(90deg, var(--rule-red) 0%, var(--accent) 42%, var(--teal) 100%);
   }
   .head-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
+  .brand-row{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    width:46px; height:46px; border-radius:12px; flex:none;
+    box-shadow:0 2px 8px rgba(46,28,74,.22);
+  }
+  @media (max-width:600px){ .brand-mark{ width:38px; height:38px; border-radius:10px; } }
   .eyebrow{
     font-size:11px; letter-spacing:.1em; text-transform:uppercase;
     color:var(--accent); margin:0 0 5px; font-weight:600;
@@ -497,7 +503,8 @@
   @media print{
     body{background:#fff; padding:0;}
     :root, [data-theme="dark"]{ --paper:#fff; --card:#fff; --card-tint:#fff; --ink:#000; --ink-soft:#444; --border:#bbb; --paper-line:#ddd; --row-alt:#fff; }
-    .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs{display:none !important;}
+    .controls, .settings-panel, .modal-overlay, .demo-note, .gear-btn, .view-switch, .tabs, .sw-pill{display:none !important;}
+    .brand-mark{ box-shadow:none; }
     .page-head, .table-card, .stat, .breakdown-card{ box-shadow:none; border-color:#D5D9E4; }
     .book{max-width:100%;}
     thead th{ background:#fff; }
@@ -520,10 +527,13 @@
 
   <header class="page-head">
     <div class="head-top">
-      <div>
+      <div class="brand-row">
+        <img class="brand-mark" src="icon-192.png" alt="" width="46" height="46">
+        <div>
         <p class="eyebrow" id="school-eyebrow">Lotus International School</p>
         <h1>Attendance Register</h1>
         <p class="sub" id="date-label">Loading&hellip;</p>
+        </div>
       </div>
       <div class="head-actions">
         <div class="field" id="date-field">
@@ -920,7 +930,7 @@ function applyTheme(mode){
   const icon = document.getElementById('theme-icon');
   if(icon) icon.innerHTML = mode === 'dark' ? SUN_ICON : MOON_ICON;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if(meta) meta.setAttribute('content', mode === 'dark' ? '#120F1A' : '#F1ECFA');
+  if(meta) meta.setAttribute('content', mode === 'dark' ? '#120F1A' : '#241C33');
 }
 applyTheme(currentTheme());
 document.getElementById('theme-btn').addEventListener('click', () => {
