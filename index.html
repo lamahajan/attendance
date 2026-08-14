@@ -21,7 +21,7 @@
   :root{
     color-scheme:light;
     --paper:#FFFFFF;
-    --paper-line:#EDEDF0;
+    --paper-line:#F0F0F3;
     --ink:#1D1D1F;
     --ink-soft:#6E6E73;
     --rule-red:#6E6600;
@@ -33,11 +33,11 @@
     --pending-bg:#E0F2F6;
     --half:#5757CD;
     --half-bg:#E8E8FB;
-    --row-alt:#F7F7F9;
+    --row-alt:#FAFAFA;
     --card:#FFFFFF;
-    --border:#E3E3E8;
-    --wash:#F2F2F7;
-    --wash-2:#EBEBF0;
+    --border:#E6E6EB;
+    --wash:#FFFFFF;
+    --wash-2:#FAFAFA;
     --card-tint:#FDFDFE;
     --head-tint:#FCF7C9;
     --head-edge:#F0E79A;
@@ -724,6 +724,178 @@
     .main{ padding:14px 12px 86px; }
     .topbar-title h1{ font-size:20px; }
   }
+
+  /* ══════════════════════════════════════════════════════════
+     Density pass — StaffFlow-style compactness
+
+     The register was laid out like a document: full-bleed width, generous
+     row padding, columns free to sprawl. On a wide screen a name ended up
+     an inch from its admission number. This tightens the type scale, pins
+     column widths, and caps the content width so a row reads as one line.
+     ══════════════════════════════════════════════════════════ */
+  @media (min-width: 861px){
+    .main{ padding:20px 26px 60px; }
+    .main > *{ max-width:1160px; }
+    .topbar{ max-width:1160px; }
+  }
+
+  /* ── Sidebar: tighter, with an active marker ── */
+  .side{ padding-top:16px; }
+  .side-nav{ position:relative; font-size:13.5px; padding:9px 11px; min-height:38px; border-radius:8px; }
+  .side-nav svg{ width:16px; height:16px; }
+  .side-nav.active::before, .side-nav.on::before{
+    content:''; position:absolute; left:-12px; top:9px; bottom:9px; width:3px;
+    border-radius:0 3px 3px 0; background:var(--accent);
+  }
+  .side-label{ margin:16px 10px 4px; }
+
+  /* ── Controls: one tidy strip ── */
+  .controls{
+    padding:10px 14px; gap:10px; border-radius:12px; align-items:center;
+    box-shadow:var(--shadow-1); border:1px solid var(--border);
+  }
+  .controls .field{ min-width:0; }
+  .controls .field label{ font-size:9px; margin-bottom:3px; }
+  .controls .field input, .controls .field select{ padding:7px 10px; font-size:13px; border-radius:8px; }
+  .controls #search-input{ min-width:190px; }
+  .controls button{ padding:8px 14px; font-size:13px; border-radius:8px; }
+  .view-switch{ border-radius:9px; padding:2px; }
+  .view-switch button{ padding:7px 13px; font-size:12.5px; border-radius:7px; }
+
+  /* ── Stat cards: smaller, quieter ── */
+  .summary{ gap:10px; }
+  .stat{ padding:13px 14px 13px 16px; border-radius:12px; }
+  .stat .n{ font-size:24px; }
+  .stat .l{ font-size:9.5px; }
+
+  /* ── Tables: denser rows, sticky head, fixed column rhythm ── */
+  .table-card, .breakdown-card{ border-radius:12px; box-shadow:var(--shadow-1); border:1px solid var(--border); }
+  .table-card table{ table-layout:auto; }
+  thead th{
+    position:sticky; top:0; z-index:2;
+    font-size:9.5px; padding:9px 14px; letter-spacing:.08em;
+    background:var(--row-alt); border-bottom:1px solid var(--border);
+  }
+  tbody td{ padding:9px 14px; font-size:13.5px; }
+  tbody tr{ border-bottom:1px solid var(--paper-line); }
+  tbody tr:last-child{ border-bottom:none; }
+  td.mono{ font-size:12.5px; }
+
+  /* Numeric and short columns shouldn't take a fair share of the width —
+     the name column absorbs the slack instead. */
+  @media (min-width: 861px){
+    .table-card th:nth-child(1), .table-card td:nth-child(1){ width:52px; }
+    .table-card th:nth-child(2), .table-card td:nth-child(2){ width:104px; }
+    .table-card th:nth-child(3), .table-card td:nth-child(3){ width:auto; min-width:180px; }
+    .table-card th:nth-child(4), .table-card td:nth-child(4){ width:88px; }
+    .table-card th:nth-child(5), .table-card td:nth-child(5){ width:88px; }
+    .table-card th:nth-child(6), .table-card td:nth-child(6){ width:110px; }
+    .table-card th:nth-child(7), .table-card td:nth-child(7){ width:110px; }
+    .table-card th:nth-child(8), .table-card td:nth-child(8){ width:96px; }
+  }
+
+  /* ── Badges: compact pills ── */
+  .badge{ padding:2px 9px; font-size:10.5px; border-radius:999px; font-weight:600; letter-spacing:.01em; }
+
+  /* ── Breakdown pair sits side by side without stretching ── */
+  .breakdown-wrap{ gap:12px; }
+  .breakdown-card thead th{ padding:9px 14px; }
+  .breakdown-card tbody td{ padding:8px 14px; }
+
+  /* ══════════════════════════════════════════════════════════
+     StaffFlow-shaped shell — wide sidebar, hero banner, KPI cards
+     ══════════════════════════════════════════════════════════ */
+  @media (min-width: 861px){
+    .app{ grid-template-columns:288px 1fr; }
+    .main{ padding:26px 30px 70px; }
+    .main > *, .hero{ max-width:1220px; }
+  }
+
+  /* ── Sidebar ── */
+  .side{ padding:22px 18px calc(18px + env(safe-area-inset-bottom)); gap:4px; }
+  .side-brand{ gap:12px; padding:2px 6px 22px; }
+  .side-brand .brand-mark{
+    width:46px; height:46px; border-radius:13px; padding:5px;
+    background:var(--accent); box-shadow:0 2px 8px rgba(233,164,0,.28);
+  }
+  .side-brand-text strong{ font-size:18px; letter-spacing:-.02em; }
+  .side-brand-text span{ font-size:11.5px; max-width:170px; }
+
+  .side-label{ margin:18px 12px 6px; font-size:10px; }
+  .side-nav{
+    font-size:15px; font-weight:500; padding:12px 14px;
+    border-radius:12px; min-height:46px; gap:13px;
+  }
+  .side-nav svg{ width:20px; height:20px; stroke-width:2; opacity:.55; }
+  .side-nav.active, .side-nav.on{
+    background:var(--accent-soft); color:var(--rule-red); font-weight:600;
+  }
+  .side-nav.active svg, .side-nav.on svg{ opacity:1; color:var(--rule-red); }
+  .side-nav.active::before, .side-nav.on::before{ content:none; }
+
+  .side-foot{
+    margin-top:auto; display:flex; align-items:center; justify-content:space-between;
+    gap:10px; padding:14px 6px 0; border-top:1px solid var(--paper-line);
+  }
+  .side-status{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); }
+
+  /* ── Hero banner ── */
+  .hero{
+    position:relative; overflow:hidden;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    padding:22px 26px; margin-bottom:16px; border-radius:16px;
+    background:linear-gradient(105deg, var(--accent-soft) 0%, var(--head-tint) 55%, var(--card) 100%);
+    border:1px solid var(--head-edge);
+  }
+  .hero::after{
+    content:''; position:absolute; top:-58px; right:-30px; width:190px; height:190px;
+    border-radius:50%; background:var(--accent); opacity:.16; pointer-events:none;
+  }
+  .hero-copy{ position:relative; z-index:1; }
+  .hero-eyebrow{
+    margin:0 0 6px; font-size:11px; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--rule-red);
+  }
+  .hero h1{ margin:0; font-size:32px; font-weight:700; letter-spacing:-.025em; }
+  .hero-sub{ margin:6px 0 0; font-size:14px; color:var(--ink-soft); }
+  .hero-actions{ position:relative; z-index:1; display:flex; gap:10px; align-items:flex-end; }
+  .hero-actions .field input{ background:var(--paper); }
+
+  /* ── KPI cards ── */
+  .summary{ grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:16px; }
+  .stat{
+    padding:16px 18px; border-radius:14px; border:1px solid var(--border);
+    border-left:1px solid var(--border);       /* the coloured spine goes */
+    background:var(--card); box-shadow:var(--shadow-1);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .stat::before{ content:none; }
+  .stat .l{
+    order:-1; font-size:10.5px; font-weight:700; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-soft);
+  }
+  .stat .n{ font-size:28px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
+
+  /* ── Section cards ── */
+  .table-card, .breakdown-card{ border-radius:14px; }
+
+  @media (max-width: 860px){
+    .hero{ padding:18px 18px; border-radius:14px; }
+    .hero h1{ font-size:24px; }
+    .hero::after{ width:130px; height:130px; top:-46px; right:-24px; }
+    .side-foot{ display:none; }
+    .side-brand .brand-mark{ box-shadow:none; }
+  }
+
+  /* ── White page: separation now comes from hairlines, not a grey field ── */
+  .side{ border-right:1px solid var(--border); }
+  .controls, .table-card, .breakdown-card, .stat{
+    border:1px solid var(--border);
+    box-shadow:0 1px 2px rgba(0,0,0,.03);
+  }
+  thead th{ background:var(--row-alt); }
+  tbody tr:hover{ background:var(--row-alt); }
+  [data-theme="dark"] .side{ border-right:1px solid var(--border); }
 </style>
 </head>
 <body>
@@ -763,16 +935,16 @@
       </button>
     </div>
 
+    <button class="side-nav" id="settings-btn" type="button">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <span>Settings</span>
+    </button>
+
     <div class="side-foot">
+      <span class="side-status"><span class="live-dot" id="live-dot"></span><span id="live-label">Live</span></span>
       <button class="gear-btn" id="theme-btn" type="button" title="Switch theme" aria-label="Switch theme">
         <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-      </button>
-      <button class="gear-btn" id="settings-btn" type="button" title="Settings" aria-label="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       </button>
     </div>
@@ -780,12 +952,13 @@
 
   <!-- ── Content ── -->
   <main class="main">
-    <div class="topbar">
-      <div class="topbar-title">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="hero-eyebrow" id="hero-eyebrow">Register &middot; Today</p>
         <h1 id="view-title">Students</h1>
-        <p class="sub" id="date-label">Loading&hellip;</p>
+        <p class="hero-sub" id="date-label">Loading&hellip;</p>
       </div>
-      <div class="topbar-actions">
+      <div class="hero-actions">
         <div class="field" id="date-field">
           <label for="date-input">Date</label>
           <input type="date" id="date-input">
@@ -813,9 +986,7 @@
       <label for="search-input">Search</label>
       <input type="text" id="search-input" placeholder="Name or ID">
     </div>
-    <button class="ghost live-chip" id="refresh-btn" title="Updates on its own. Click to refresh now.">
-      <span class="live-dot" id="live-dot"></span><span id="live-label">Live</span>
-    </button>
+    <button class="ghost" id="refresh-btn" title="Updates on its own. Click to refresh now.">Refresh</button>
     <button class="ghost" id="print-btn">Print</button>
   </div>
 
@@ -2013,6 +2184,11 @@ function buildCategoryPills(visibleStaff){
 function updateViewTitle(){
   const t = document.getElementById('view-title');
   if(t) t.textContent = VIEW === 'student' ? 'Students' : 'Staff';
+  const eb = document.getElementById('hero-eyebrow');
+  if(eb){
+    const when = MODE === 'monthly' ? 'Monthly' : (viewingToday() ? 'Today' : 'Past day');
+    eb.textContent = 'Register \u00b7 ' + when;
+  }
 }
 
 function buildDailyHead(){
