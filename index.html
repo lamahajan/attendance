@@ -26,14 +26,22 @@
     --ink:#1D1D1F;
     --ink-soft:#6E6E73;
     --rule-red:#6E6600;
-    --present:#0C7853;
-    --present-bg:#DFF4EB;
-    --present-line:#9FDCC3;
-    --absent:#C43129;
-    --absent-bg:#FBE7E5;
-    --pending:#B45309;
-    --pending-bg:#FDF0DA;
-    --pending-line:#EFC98A;
+    /* StaffFlow's own green, blue and red. Each keeps a darker twin for
+       badge text — the source colours are tuned for solid fills and large
+       figures, and at 11px on a pale tint they fall under the contrast a
+       register has to hold up to. */
+    --present:#34C759;
+    --present-ink:#1B8A3C;
+    --present-bg:#E7F8ED;
+    --present-line:#A6E5BB;
+    --absent:#FF3B30;
+    --absent-ink:#C4271E;
+    --absent-bg:#FDEAE8;
+    --absent-line:#F7B7B1;
+    --pending:#0071E3;
+    --pending-ink:#0060C0;
+    --pending-bg:#E6F1FD;
+    --pending-line:#A9CDF5;
     --half:#5B3FD6;
     --half-bg:#EDE9FE;
     --half-line:#C7BAFA;
@@ -63,14 +71,18 @@
     --ink:#F1F2F6;
     --ink-soft:#9DA3B4;
     --rule-red:#E5D95C;
-    --present:#30D6A0;
-    --present-bg:rgba(48,214,160,.14);
-    --present-line:rgba(48,214,160,.45);
-    --absent:#FF6B60;
-    --absent-bg:rgba(255,107,96,.14);
-    --pending:#F0A642;
-    --pending-bg:rgba(240,166,66,.16);
-    --pending-line:rgba(240,166,66,.45);
+    --present:#10B981;
+    --present-ink:#34D399;
+    --present-bg:rgba(16,185,129,.15);
+    --present-line:rgba(16,185,129,.45);
+    --absent:#EF4444;
+    --absent-ink:#FF8A80;
+    --absent-bg:rgba(239,68,68,.16);
+    --absent-line:rgba(239,68,68,.45);
+    --pending:#3B82F6;
+    --pending-ink:#7FB0FF;
+    --pending-bg:rgba(59,130,246,.16);
+    --pending-line:rgba(59,130,246,.45);
     --half:#A594FA;
     --half-bg:rgba(165,148,250,.16);
     --half-line:rgba(165,148,250,.45);
@@ -490,10 +502,10 @@
     content:''; width:5px; height:5px; border-radius:50%;
     background:currentColor; flex:none;
   }
-  .badge.present{ background:var(--present-bg); color:var(--present); border-color:var(--present-line); }
-  .badge.gatepass{ background:var(--pending-bg); color:var(--pending); border-color:var(--pending-line); }
+  .badge.present{ background:var(--present-bg); color:var(--present-ink); border-color:var(--present-line); }
+  .badge.gatepass{ background:var(--pending-bg); color:var(--pending-ink); border-color:var(--pending-line); }
   .badge.half{ background:var(--half-bg); color:var(--half); border-color:var(--half-line); }
-  .badge.late{ background:var(--absent-bg); color:var(--absent); border-color:var(--absent); font-weight:700; }
+  .badge.late{ background:var(--absent-bg); color:var(--absent-ink); border-color:var(--absent); font-weight:700; }
   /* Absent is the one that has to jump out of a long list, so it is filled */
   .badge.absent{ background:var(--absent); color:#fff; border-color:var(--absent); }
   .badge.absent::before{ background:rgba(255,255,255,.85); }
@@ -795,19 +807,19 @@
     }
     /* An arrival chip and a departure chip shouldn't look identical */
     #register-table td[data-l="Morning in"], #register-table td[data-l="In"]{
-      background:var(--present-bg); border-color:var(--present-line); color:var(--present);
+      background:var(--present-bg); border-color:var(--present-line); color:var(--present-ink);
     }
     #register-table td[data-l="Evening out"], #register-table td[data-l="Out"]{
-      background:var(--pending-bg); border-color:var(--pending-line); color:var(--pending);
+      background:var(--pending-bg); border-color:var(--pending-line); color:var(--pending-ink);
     }
     #register-table td[data-l="Present"], #register-table td[data-l="Full days"]{
-      background:var(--present-bg); border-color:var(--present-line); color:var(--present);
+      background:var(--present-bg); border-color:var(--present-line); color:var(--present-ink);
     }
     #register-table td[data-l="Half days"]{
       background:var(--half-bg); border-color:var(--half-line); color:var(--half);
     }
     #register-table td[data-l="Absent"]{
-      background:var(--absent-bg); border-color:var(--absent); color:var(--absent);
+      background:var(--absent-bg); border-color:var(--absent-line); color:var(--absent-ink);
     }
 
     /* A row wears its own status down the left edge, so a screenful of the
@@ -2797,7 +2809,8 @@ function statBg(colorVar){
   const map = {
     'var(--present)':'var(--present-bg)', 'var(--absent)':'var(--absent-bg)',
     'var(--pending)':'var(--pending-bg)', 'var(--half)':'var(--half-bg)',
-    '#B5560E':'var(--half-bg)'
+    'var(--present-ink)':'var(--present-bg)', 'var(--absent-ink)':'var(--absent-bg)',
+    'var(--pending-ink)':'var(--pending-bg)'
   };
   return map[colorVar] || 'var(--accent-soft)';
 }
@@ -2892,18 +2905,18 @@ function renderDailyTable(){
   if(VIEW === 'student'){
     dailyCards = [
       {value: rows.length, label: unlisted ? 'Students scanned' : 'On the register'},
-      {value: present, label: 'In school', color:'var(--present)'},
-      {value: exit, label: 'Went home', color:'var(--pending)'}
+      {value: present, label: 'In school', color:'var(--present-ink)'},
+      {value: exit, label: 'Went home', color:'var(--pending-ink)'}
     ];
-    if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent)'});
+    if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent-ink)'});
   }else{
     dailyCards = [
       {value: rows.length, label: unlisted ? 'Staff scanned' : 'Total staff'},
-      {value: present, label: 'Full day', color:'var(--present)'},
+      {value: present, label: 'Full day', color:'var(--present-ink)'},
       {value: half, label: 'Half day', color:'var(--half)'},
-      {value: absent, label: 'Absent', color:'var(--absent)'}
+      {value: absent, label: 'Absent', color:'var(--absent-ink)'}
     ];
-    if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent)'});
+    if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent-ink)'});
     if(offDay) dailyCards.push({value: offDay, label:'Week off'});
   }
   setSummary(dailyCards);
@@ -2926,7 +2939,7 @@ function renderMonthlyTable(){
     sumPresent += m.present; sumHalf += m.half || 0; sumAbsent += m.absent;
     const effectivePresent = m.present + (m.half || 0) * 0.5;
     const pct = m.totalDays ? Math.round((effectivePresent / m.totalDays) * 100) : 0;
-    const pctColor = pct >= 90 ? 'var(--present)' : pct >= 75 ? 'var(--half)' : 'var(--absent)';
+    const pctColor = pct >= 90 ? 'var(--present-ink)' : pct >= 75 ? 'var(--half)' : 'var(--absent-ink)';
     enriched.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct });
     const tr = document.createElement('tr');
     if(VIEW === 'student'){
@@ -2951,8 +2964,8 @@ function renderMonthlyTable(){
     setSummary([
       {value: rows.length, label:'Total students'},
       {value: totalDays, label:'School days'},
-      {value: sumPresent, label:'Present (sum)', color:'var(--present)'},
-      {value: sumAbsent, label:'Absent (sum)', color:'var(--absent)'}
+      {value: sumPresent, label:'Present (sum)', color:'var(--present-ink)'},
+      {value: sumAbsent, label:'Absent (sum)', color:'var(--absent-ink)'}
     ]);
   }
   renderBreakdown(enriched, 'monthly');
@@ -3002,7 +3015,7 @@ function renderBreakdown(enriched, mode){
       bodyRows = groups.map(k => {
         const g = map[k];
         const avg = g.total ? Math.round(g.pctSum / g.total) : 0;
-        const avgColor = avg >= 90 ? 'var(--present)' : avg >= 75 ? 'var(--half)' : 'var(--absent)';
+        const avgColor = avg >= 90 ? 'var(--present-ink)' : avg >= 75 ? 'var(--half)' : 'var(--absent-ink)';
         return VIEW === 'student'
           ? `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--absent)">${g.absent}</td><td class="mono" style="color:${avgColor}">${avg}%</td></tr>`
           : `<tr><td>${escapeHtml(k)}</td><td class="mono">${g.total}</td><td class="mono" style="color:var(--present)">${g.present}</td><td class="mono" style="color:var(--half)">${g.half}</td><td class="mono" style="color:var(--absent)">${g.absent}</td><td class="mono" style="color:${avgColor}">${avg}%</td></tr>`;
