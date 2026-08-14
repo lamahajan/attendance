@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Admission Register — service worker
+   Markd — service worker
 
    Do kaam karta hai:
      1) App ka shell (index.html, icons, manifest) cache me rakhta hai,
@@ -16,7 +16,7 @@
    file badlo to CACHE ka number bhi badha dena.
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE = 'presenz-v11';
+const CACHE = 'markd-v12';
 
 const SHELL = [
   './',
