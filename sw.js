@@ -16,7 +16,7 @@
    file badlo to CACHE ka number bhi badha dena.
    ═══════════════════════════════════════════════════════════════ */
 
-const CACHE = 'l-haazri-v2';
+const CACHE = 'l-haazri-v3';
 
 const SHELL = [
   './',
