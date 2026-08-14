@@ -943,8 +943,10 @@ function groupKey(){ return VIEW === 'student' ? 'students' : 'staff'; }
 // raw_attendance/… node — so records written before the rename still appear.
 async function attFetch(base, path){
   const first = await fetchJson(`${base}/${path}`);
-  if(first !== null && first !== undefined) return first;
-  return fetchJson(`${base}/${path.replace(/^attendance\//, 'raw_attendance/')}`);
+  if(first !== null && first !== undefined){ SCAN_PREFIX = 'attendance'; return first; }
+  const legacy = await fetchJson(`${base}/${path.replace(/^attendance\//, 'raw_attendance/')}`);
+  if(legacy !== null && legacy !== undefined) SCAN_PREFIX = 'raw_attendance';
+  return legacy;
 }
 
 // Scan record -> roster shape
@@ -1335,60 +1337,194 @@ function setMode(m){
 document.getElementById('date-input').value = TODAY;
 document.getElementById('month-input').value = TODAY.slice(0,7);
 /* ═══════════════════════════════════════════════════════════
-   Auto refresh
+   Live updates
 
-   Today's register reloads on its own every 30 seconds. Older dates
-   never poll — they can't change. Polling also stops while the tab is
-   hidden or the Settings popup is open, and fires once immediately on
-   coming back, so a phone left in a pocket shows fresh numbers the
-   moment you look at it rather than 30 seconds later.
+   Firebase's REST API can stream a node instead of being asked for it:
+   request it as an event stream and it pushes every change down an open
+   connection. Same thing the SDK does underneath, minus the SDK.
+
+   So a scan on the gate machine reaches the Worker, the Worker writes it,
+   and this table updates in roughly the time that takes — no 30-second
+   wait, and no repeated requests for a day where nothing happened.
+
+   Watched: that day's scans (both the new and the old node name, since
+   push keys are unique the two merge safely) and that day's absentee list.
+   Old dates are never watched; they can't change.
+
+   If the browser has no EventSource, or the stream keeps failing, it
+   quietly falls back to reloading every 30 seconds.
    ═══════════════════════════════════════════════════════════ */
-const REFRESH_MS = 30000;
+const POLL_MS = 30000;
+let SCAN_PREFIX = 'raw_attendance';
+let LIVE = { scans:null, abs:null, streams:[], key:'', open:0, failed:0, poll:null, applyTimer:null };
 let lastLoadAt = 0;
-let refreshTimer = null;
 
 function viewingToday(){
   if(MODE === 'monthly') return document.getElementById('month-input').value === TODAY.slice(0,7);
   return (document.getElementById('date-input').value || TODAY) === TODAY;
 }
-function autoRefreshAllowed(){
-  return viewingToday()
-    && document.visibilityState !== 'hidden'
-    && !document.getElementById('settings-modal').classList.contains('open');
-}
-function markLive(state){
+function setLiveState(state, label){
   const chip = document.getElementById('refresh-btn');
-  chip.classList.toggle('loading', state === 'loading');
+  chip.classList.toggle('loading', state === 'connecting');
   chip.classList.toggle('paused', state === 'paused');
+  document.getElementById('live-label').textContent = label;
 }
 function freshnessLabel(){
-  const label = document.getElementById('live-label');
-  if(!viewingToday()){ label.textContent = 'Refresh'; markLive('paused'); return; }
-  if(!lastLoadAt){ label.textContent = 'Live'; return; }
-  const secs = Math.round((Date.now() - lastLoadAt) / 1000);
-  label.textContent = secs < 45 ? 'Live' : secs < 90 ? '1 min ago' : Math.round(secs/60) + ' min ago';
-  markLive(autoRefreshAllowed() ? '' : 'paused');
+  if(!viewingToday()){ setLiveState('paused', 'Refresh'); return; }
+  if(LIVE.open > 0){ setLiveState('', 'Live'); return; }
+  if(LIVE.poll){
+    const secs = lastLoadAt ? Math.round((Date.now() - lastLoadAt)/1000) : 0;
+    setLiveState('paused', secs < 45 ? 'Updating' : Math.max(1, Math.round(secs/60)) + ' min ago');
+    return;
+  }
+  setLiveState('connecting', 'Connecting');
 }
+
+/* ── Applying a stream event ──────────────────────────────────
+   Firebase sends { path, data }. path '/' is the whole node; a deeper
+   path is one record. null data means the record was deleted. */
+function applyPut(store, msg){
+  if(!msg) return store;
+  const path = String(msg.path || '/');
+  if(path === '/') return msg.data;
+  const parts = path.replace(/^\//, '').split('/').filter(Boolean);
+  const next = (store && typeof store === 'object') ? { ...store } : {};
+  if(parts.length === 1){
+    if(msg.data === null) delete next[parts[0]];
+    else next[parts[0]] = msg.data;
+    return next;
+  }
+  let cur = next[parts[0]] = { ...(next[parts[0]] || {}) };
+  for(let k = 1; k < parts.length - 1; k++) cur = cur[parts[k]] = { ...(cur[parts[k]] || {}) };
+  const leaf = parts[parts.length - 1];
+  if(msg.data === null) delete cur[leaf]; else cur[leaf] = msg.data;
+  return next;
+}
+function applyPatchMsg(store, msg){
+  if(!msg || !msg.data || typeof msg.data !== 'object') return store;
+  const path = String(msg.path || '/');
+  const next = (store && typeof store === 'object') ? { ...store } : {};
+  if(path === '/'){
+    Object.keys(msg.data).forEach(k => {
+      if(msg.data[k] === null) delete next[k]; else next[k] = msg.data[k];
+    });
+    return next;
+  }
+  const key = path.replace(/^\//, '').split('/')[0];
+  next[key] = { ...(next[key] || {}), ...msg.data };
+  return next;
+}
+
+// Several events can land together; coalesce a frame's worth into one render
+function scheduleApply(){
+  if(LIVE.applyTimer) return;
+  LIVE.applyTimer = setTimeout(() => {
+    LIVE.applyTimer = null;
+    lastLoadAt = Date.now();
+    if(MODE === 'monthly') loadMonthly();
+    else applyDailyData();
+    freshnessLabel();
+  }, 90);
+}
+
+function stopLive(){
+  LIVE.streams.forEach(es => { try{ es.close(); }catch(e){} });
+  LIVE.streams = [];
+  LIVE.open = 0;
+  LIVE.key = '';
+  if(LIVE.poll){ clearInterval(LIVE.poll); LIVE.poll = null; }
+}
+
+function openStream(url, onMessage){
+  let es;
+  try{ es = new EventSource(url); }catch(e){ return null; }
+  const handle = e => {
+    if(!e || !e.data || e.data === 'null') return;
+    let msg; try{ msg = JSON.parse(e.data); }catch(err){ return; }
+    onMessage(msg);
+  };
+  es.addEventListener('put', handle);
+  es.addEventListener('patch', e => handle(Object.assign(e, { patch:true })));
+  es.addEventListener('open', () => { LIVE.open++; LIVE.failed = 0; freshnessLabel(); });
+  es.addEventListener('error', () => {
+    // EventSource retries on its own; only fall back once it keeps failing
+    if(es.readyState === 2){
+      LIVE.failed++;
+      if(LIVE.failed >= 3) startPolling();
+    }
+    freshnessLabel();
+  });
+  return es;
+}
+
+function startLive(date, group){
+  const base = attBase();
+  const key = group + '|' + date + '|' + MODE;
+  if(LIVE.key === key && LIVE.streams.length) return; // already watching this
+  stopLive();
+
+  // Old dates are settled — nothing to watch, nothing to poll
+  if(!base || !viewingToday()){ freshnessLabel(); return; }
+
+  if(typeof EventSource === 'undefined'){ startPolling(); return; }
+
+  LIVE.key = key;
+  const watch = MODE === 'monthly' ? TODAY : date;
+
+  // Both node names, because push keys never collide the merge is safe
+  ['attendance', 'raw_attendance'].forEach(prefix => {
+    const es = openStream(`${base}/${prefix}/${group}/${watch}.json`, msg => {
+      const before = LIVE.scans;
+      LIVE.scans = msg.patch ? applyPatchMsg(before, msg) : applyPut(before, msg);
+      if(LIVE.scans === null && prefix !== SCAN_PREFIX) LIVE.scans = before; // empty legacy node
+      scheduleApply();
+    });
+    if(es) LIVE.streams.push(es);
+  });
+
+  const absEs = openStream(`${base}/absentees/${group}/${watch}.json`, msg => {
+    LIVE.abs = msg.patch ? applyPatchMsg(LIVE.abs, msg) : applyPut(LIVE.abs, msg);
+    scheduleApply();
+  });
+  if(absEs) LIVE.streams.push(absEs);
+
+  if(!LIVE.streams.length) startPolling();
+  freshnessLabel();
+}
+
+// Fallback only — used when streaming isn't available
+function startPolling(){
+  if(LIVE.poll) return;
+  LIVE.streams.forEach(es => { try{ es.close(); }catch(e){} });
+  LIVE.streams = [];
+  LIVE.open = 0;
+  LIVE.poll = setInterval(() => {
+    if(viewingToday() && document.visibilityState !== 'hidden') refreshNow();
+  }, POLL_MS);
+  freshnessLabel();
+}
+
 async function refreshNow(){
-  markLive('loading');
+  setLiveState('connecting', 'Updating');
   await loadRegister();
   lastLoadAt = Date.now();
   freshnessLabel();
 }
-function scheduleRefresh(){
-  if(refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => { if(autoRefreshAllowed()) refreshNow(); }, REFRESH_MS);
-}
+
 document.getElementById('refresh-btn').addEventListener('click', refreshNow);
+
+// Some browsers drop open connections in a backgrounded tab — resync on return
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible' && viewingToday()) refreshNow();
-  else freshnessLabel();
+  if(document.visibilityState !== 'visible') return;
+  if(!viewingToday()) { freshnessLabel(); return; }
+  if(!LIVE.open) refreshNow();
 });
-setInterval(freshnessLabel, 15000);
-scheduleRefresh();
+
+window.addEventListener('beforeunload', stopLive);
+setInterval(freshnessLabel, 20000);
 document.getElementById('print-btn').addEventListener('click', () => window.print());
-document.getElementById('date-input').addEventListener('change', loadRegister);
-document.getElementById('month-input').addEventListener('change', loadRegister);
+document.getElementById('date-input').addEventListener('change', () => { stopLive(); loadRegister(); });
+document.getElementById('month-input').addEventListener('change', () => { stopLive(); loadRegister(); });
 document.getElementById('category-filter').addEventListener('change', renderTable);
 document.getElementById('search-input').addEventListener('input', renderTable);
 
@@ -1415,7 +1551,23 @@ async function loadDaily(){
     ]);
   }
 
+  LIVE.scans = scans;
+  LIVE.abs = absNode;
+  applyDailyData();
+  startLive(date, group);
+}
+
+/* Turns whatever is currently in LIVE into the table. Called after a
+   fetch, and again on every stream event. Rebuilds from scratch each
+   time — RECORDS used to be appended to, so a reload counted the same
+   scan twice and staff shift maths quietly drifted. */
+function applyDailyData(){
+  RECORDS = {};
+  ABSENT_IDS = new Set();
+  ABSENT_READY = false;
+
   const rosterMap = {};
+  const scans = LIVE.scans;
 
   if(scans && typeof scans === 'object'){
     Object.values(scans).forEach(rec => {
@@ -1428,10 +1580,10 @@ async function loadDaily(){
     });
   }
 
-  const absList = absenteeList(absNode);
+  const absNode = LIVE.abs;
   if(absNode){
     ABSENT_READY = true;
-    absList.forEach(a => {
+    absenteeList(absNode).forEach(a => {
       const p = personFromAbsentee(a);
       if(!p) return;
       mergePerson(rosterMap, p);
@@ -1559,6 +1711,7 @@ async function loadMonthly(){
   buildMonthlyHead();
   if(VIEW === 'student') populateClassFilter();
   renderMonthlyTable();
+  startLive(TODAY, groupKey());
 }
 
 // Per-device hidden staff categories + the category pill filter
