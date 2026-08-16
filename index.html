@@ -518,6 +518,8 @@
   .badge.absent{ background:var(--absent); color:#fff; border-color:var(--absent); }
   .badge.absent::before{ background:rgba(255,255,255,.85); }
   .badge.off{ background:var(--row-alt); color:var(--ink-soft); border-color:var(--border); }
+  .plus-day{ font-size:10px; font-weight:700; color:var(--pending-ink); }
+  .src-duration-toggle{ margin-top:0; font-size:11.5px; white-space:nowrap; }
   .badge.bus{ background:var(--teal-bg); color:var(--teal); border-color:var(--teal-bg); }
   .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
   .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
@@ -844,6 +846,7 @@
     #register-table tr[data-status="gatepass"]::before{ background:var(--pending); }
     #register-table tr[data-status="half"]::before{ background:var(--half); }
     #register-table tr[data-status="late"]::before,
+    #register-table tr[data-status="flagged"]::before,
     #register-table tr[data-status="absent"]::before{ background:var(--absent); }
     #register-table tr[data-status="off"]::before{ background:var(--border); }
     #register-table tbody tr:nth-child(even){ background:var(--row-alt); }
@@ -1565,20 +1568,49 @@
       <!-- ── Day timings ── -->
       <section class="set-sec on" data-sec="timings">
         <h2>Students</h2>
-        <p class="lede">A student's day is split by one cutoff time: scan before it and it counts as arriving, at or after it and it counts as leaving. That works because students all arrive together.</p>
-        <div class="note"><div><b>Staff don't use this.</b> Each staff category has its own arrival and departure windows over in <b>Staff</b> &mdash; a driver starting at 4am and a teacher arriving at 8:30 can't share a dividing line. The cutoff below is only a fallback for a category whose windows are left blank.</div></div>
+        <p class="lede">First scan of the day is the arrival, checked against the cutoff below. Any later scan is the exit — flagged if it happens before dismissal without a gatepass.</p>
 
         <div class="group">
-          <h3>Cutoff time</h3>
-          <p class="hint">Applies to every student, on every day, unless one of the overrides below says otherwise.</p>
+          <h3>Arrival window</h3>
           <div class="grid">
-            <div class="field"><label for="cutoff-default-input">All days</label><input type="time" id="cutoff-default-input"></div>
+            <div class="field"><label for="stu-mfrom">Gate opens</label><input type="time" id="stu-mfrom"></div>
+            <div class="field"><label for="stu-mto">On time until</label><input type="time" id="stu-mto"></div>
+            <div class="field"><label for="stu-latecutoff">Late after</label><input type="time" id="stu-latecutoff"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Dismissal</h3>
+          <p class="hint">An exit scan before this, without a gatepass, gets flagged.</p>
+          <div class="grid">
+            <div class="field"><label for="stu-efrom">Dismissal starts</label><input type="time" id="stu-efrom"></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Class-wise dismissal</h3>
+          <p class="hint">Overrides the time above for one class &mdash; Nursery going home earlier, say.</p>
+          <div class="row">
+            <div class="field" style="min-width:120px;"><label for="cls-eve-class">Class</label><input id="cls-eve-class" placeholder="e.g. Nursery"></div>
+            <div class="field" style="min-width:120px;"><label for="cls-eve-time">Dismissal</label><input type="time" id="cls-eve-time"></div>
+            <button type="button" id="add-cls-eve-btn" class="ghost small" style="height:36px;">Add</button>
+          </div>
+          <div id="cls-eve-list" class="chip-wrap"></div>
+        </div>
+
+        <div class="group">
+          <h3>Exam days</h3>
+          <p class="hint">Overrides dismissal for a date range &mdash; beats the class override too.</p>
+          <label class="inline-check"><input type="checkbox" id="exam-active"> Active</label>
+          <div class="grid" style="margin-top:8px;">
+            <div class="field"><label for="exam-from">From</label><input type="date" id="exam-from"></div>
+            <div class="field"><label for="exam-to">To</label><input type="date" id="exam-to"></div>
+            <div class="field"><label for="exam-efrom">Dismissal</label><input type="time" id="exam-efrom"></div>
           </div>
         </div>
 
         <div class="group">
           <h3>How the student view opens</h3>
-          <p class="hint">Summary is the counts at the top, list is the register itself. This sets the device you're holding &mdash; to set another one, use <b>Devices</b>.</p>
           <div class="grid">
             <div class="field"><label for="default-view-input">Show</label>
               <select id="default-view-input">
@@ -1589,33 +1621,8 @@
             </div>
           </div>
         </div>
-
-        <div class="group">
-          <h3>Different on certain weekdays</h3>
-          <p class="hint">Half-day Saturdays, for example. One override per weekday &mdash; adding another replaces it.</p>
-          <div class="row">
-            <div class="field" style="min-width:120px;"><label for="cutoff-weekday-input">Day</label><select id="cutoff-weekday-input"></select></div>
-            <div class="field" style="min-width:120px;"><label for="cutoff-time-input">Cutoff</label><input type="time" id="cutoff-time-input"></div>
-            <button type="button" id="add-cutoff-btn" class="ghost small" style="height:36px;">Add override</button>
-          </div>
-          <div id="cutoff-list" class="chip-wrap"></div>
-        </div>
-
-        <div class="group">
-          <h3>Different on specific dates</h3>
-          <p class="hint">Exam days, function days. Beats the weekday override for that date.</p>
-          <div class="row">
-            <div class="field" style="min-width:140px;"><label for="cutoff-date-input">From</label><input type="date" id="cutoff-date-input"></div>
-            <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; height:36px;">
-              <input type="checkbox" id="cutoff-date-range-toggle" style="min-width:auto; width:auto;"> Range
-            </label>
-            <div class="field" id="cutoff-date-end-field" style="min-width:140px; display:none;"><label for="cutoff-date-end-input">To</label><input type="date" id="cutoff-date-end-input"></div>
-            <div class="field" style="min-width:120px;"><label for="cutoff-date-time-input">Cutoff</label><input type="time" id="cutoff-date-time-input"></div>
-            <button type="button" id="add-cutoff-date-btn" class="ghost small" style="height:36px;">Add</button>
-          </div>
-          <div id="cutoff-date-list" class="chip-wrap"></div>
-        </div>
       </section>
+
 
       <!-- ── Season ── -->
       <section class="set-sec" data-sec="seasons">
@@ -1666,17 +1673,8 @@
 
         <div class="group">
           <h3>Sandwich off</h3>
-          <p class="hint">A holiday or weekly off is paid on its own. It stops being paid when it is joined to an absence &mdash; a day off taken either side of it, or an absence sitting between two holidays.</p>
-          <div class="radioset" id="sandwich-set">
-            <label><input type="radio" name="sandwich" value="lead">
-              <span><b>Up to the last day of leave</b>Offs are unpaid until the leave ends, then pay resumes. A holiday on the 14th, leave on the 15th, a holiday on the 16th and back on the 17th costs two days &mdash; the 14th and the 15th &mdash; and the 16th stays paid. Absent on the 14th and 16th with a holiday between makes all three unpaid. Still away on the 17th and the run stretches to cover it.</span></label>
-            <label><input type="radio" name="sandwich" value="touch">
-              <span><b>The whole run</b>Same, but an off at the end of the run is unpaid too, even when the person returns the next day.</span></label>
-            <label><input type="radio" name="sandwich" value="strict">
-              <span><b>Absent on both sides only</b>A holiday is unpaid only when the day before it and the day after it are both absences.</span></label>
-            <label><input type="radio" name="sandwich" value="off">
-              <span><b>Never</b>Holidays and weekly offs are always paid.</span></label>
-          </div>
+          <p class="hint">A holiday is unpaid only when the working day before it AND the working day after it are both absences.</p>
+          <label class="inline-check"><input type="checkbox" id="sandwich-toggle"> On</label>
         </div>
 
         <div class="group">
@@ -1735,10 +1733,52 @@
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
         <h2>Staff</h2>
-        <p class="lede">Set two punch windows per category and nothing else. Say a teacher may scan in between 7 and 8 in the morning and out between 1 and 2 in the afternoon: both windows scanned is a full day, only one of them is a half day, and a scan that lands anywhere else &mdash; 12:00, say &mdash; is ignored, exactly as if it never happened. No shift timings to fill in.</p>
-        <div class="note"><div><b>Only one punch, or none inside the windows?</b> One window scanned makes it a half day; nothing inside either window makes it an absence, even though the machine saw the person. Leave all four times blank and the category goes back to counting any scan as a full day. Each category can also keep its own working days.</div></div>
+        <p class="lede">Two punch windows per category. Both scanned is a full day, one is a half day, outside both is ignored. Tick "Duration mode" on a card to count by time-worked instead &mdash; useful for a category that doesn't cleanly split into two windows.</p>
         <div id="shift-rules-grid"></div>
+
+        <div class="group">
+          <h3>Duration mode</h3>
+          <p class="hint">Applies to categories with it ticked above &mdash; time between first and last scan.</p>
+          <div class="grid">
+            <div class="field"><label for="dur-absent-min">Absent under (min)</label><input type="number" id="dur-absent-min"></div>
+            <div class="field"><label for="dur-full-min">Full day over (min)</label><input type="number" id="dur-full-min"></div>
+            <div class="field"><label for="single-scan-policy">Only one scan that day</label>
+              <select id="single-scan-policy">
+                <option value="half">Count half</option>
+                <option value="absent">Count absent</option>
+                <option value="needsReview">Half, but flag for review</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Fallback cutoff</h3>
+          <p class="hint">Only used by a category with no windows set above &mdash; before it counts as arriving, at/after counts as leaving.</p>
+          <div class="grid">
+            <div class="field"><label for="cutoff-default-input">All days</label><input type="time" id="cutoff-default-input"></div>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <div class="field" style="min-width:120px;"><label for="cutoff-weekday-input">Day</label><select id="cutoff-weekday-input"></select></div>
+            <div class="field" style="min-width:120px;"><label for="cutoff-time-input">Cutoff</label><input type="time" id="cutoff-time-input"></div>
+            <button type="button" id="add-cutoff-btn" class="ghost small" style="height:36px;">Add override</button>
+          </div>
+          <div id="cutoff-list" class="chip-wrap"></div>
+        </div>
+
+        <div class="group">
+          <h3>Night staff</h3>
+          <p class="hint">Evening window = clock-in, next morning's window = clock-out (shown with "+1"). Tick who's on a night shift.</p>
+          <div class="row">
+            <input id="staff-url" placeholder="Staff database URL (read-only, optional)" style="flex:1; min-width:180px;">
+            <input id="staff-code" placeholder="Code" style="max-width:120px;">
+            <button type="button" id="staff-fetch-btn" class="ghost small" style="height:36px;">Fetch staff</button>
+          </div>
+          <p class="testline" id="staff-fetch-status"></p>
+          <div id="night-staff-list" class="chip-wrap"></div>
+        </div>
       </section>
+
 
       <!-- ── This device ── -->
       <section class="set-sec" data-sec="device">
@@ -1826,6 +1866,7 @@
 <script>
 const LS = {
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
+  staffUrl:'reg_staff_url', staffCode:'reg_staff_code', staffPath:'reg_staff_path',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
@@ -1833,8 +1874,14 @@ const LS = {
   cutoffDefault:'reg_cutoff_default',
   cutoffOverrides:'reg_cutoff_overrides',
   cutoffDateOverrides:'reg_cutoff_date_overrides',
-  sandwichMode:'reg_sandwich_mode',
+  sandwichRule:'reg_sandwich_rule',
   seasons:'reg_seasons',
+  studentShiftHours:'reg_student_shift_hours',
+  studentClassEvening:'reg_student_class_evening',
+  examMode:'reg_exam_mode',
+  staffDurationThresholds:'reg_staff_duration_thresholds',
+  singleScanPolicy:'reg_single_scan_policy',
+  nightStaffIds:'reg_night_staff_ids',
   settingsPassHash:'reg_settings_pass_hash',
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
@@ -1977,6 +2024,110 @@ const DEFAULT_WINDOWS = {
   Security: { mFrom:'04:00', mTo:'11:00', eFrom:'11:00', eTo:'23:00' },
   Gardner:  { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' }
 };
+
+/* =========================================================
+   Students — first-punch/last-punch (worker v9). One cutoff time is gone;
+   the first scan of the day is checked against lateCutoff, any scan after
+   that is the exit, flagged if it lands before dismissal without a
+   gatepass. Class and exam-day overrides only ever touch eFrom.
+   ========================================================= */
+const DEFAULT_STUDENT_SHIFT = { mFrom:'07:30', mTo:'08:30', lateCutoff:'08:45', eFrom:'13:30' };
+function getStudentShiftHours(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.studentShiftHours) || 'null');
+    if(stored && typeof stored === 'object') return { ...DEFAULT_STUDENT_SHIFT, ...stored };
+  }catch(e){}
+  return { ...DEFAULT_STUDENT_SHIFT };
+}
+function saveStudentShiftHours(v){ localStorage.setItem(LS.studentShiftHours, JSON.stringify(v)); }
+function getStudentClassEvening(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.studentClassEvening) || '{}');
+    return (stored && typeof stored === 'object') ? stored : {};
+  }catch(e){ return {}; }
+}
+function saveStudentClassEvening(v){ localStorage.setItem(LS.studentClassEvening, JSON.stringify(v)); }
+function getExamMode(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.examMode) || 'null');
+    if(stored && typeof stored === 'object') return { active:false, from:'', to:'', eFrom:'', ...stored };
+  }catch(e){}
+  return { active:false, from:'', to:'', eFrom:'' };
+}
+function saveExamMode(v){ localStorage.setItem(LS.examMode, JSON.stringify(v)); }
+
+/* Staff duration mode (opt-in per category) + single-scan policy. */
+function getStaffDurationThresholds(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.staffDurationThresholds) || 'null');
+    if(stored && typeof stored === 'object') return { absentBelowMin:60, fullAboveMin:210, ...stored };
+  }catch(e){}
+  return { absentBelowMin:60, fullAboveMin:210 };
+}
+function saveStaffDurationThresholds(v){ localStorage.setItem(LS.staffDurationThresholds, JSON.stringify(v)); }
+function getSingleScanPolicy(){
+  const v = localStorage.getItem(LS.singleScanPolicy);
+  return ['half','absent','needsReview'].includes(v) ? v : 'half';
+}
+function saveSingleScanPolicy(v){ localStorage.setItem(LS.singleScanPolicy, v); }
+
+/* Night staff — ids of staff who punch IN on the evening window and OUT on
+   the following morning's window. Fetched read-only from a staff database
+   (separate from the attendance database) purely to list names for the
+   checkbox picker below; nothing from it is written anywhere. */
+function getNightStaffIds(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.nightStaffIds) || '[]');
+    return Array.isArray(stored) ? stored.map(String) : [];
+  }catch(e){ return []; }
+}
+function saveNightStaffIds(v){ localStorage.setItem(LS.nightStaffIds, JSON.stringify(v)); }
+function staffDbBase(){
+  const url = (localStorage.getItem(LS.staffUrl) || '').trim().replace(/\/+$/, '');
+  if(!url) return null;
+  const code = (localStorage.getItem(LS.staffCode) || '').trim().replace(/^\/+|\/+$/g, '');
+  return code ? `${url}/${code}` : url;
+}
+function flattenStaffPeople(val, depth){
+  depth = depth || 0;
+  if(!val || depth > 3) return [];
+  const idish = ['empid','employeeid','employeenumber','empno','staffid','userid','pin','deviceid','id'];
+  const nameish = ['staffname','name','employeename','empname','fullname'];
+  const looksLikePerson = o => {
+    if(!o || typeof o !== 'object' || Array.isArray(o)) return false;
+    const keys = Object.keys(o).map(k => k.toLowerCase().replace(/[^a-z0-9]/g,''));
+    return keys.some(k => idish.includes(k)) || keys.some(k => nameish.includes(k));
+  };
+  const out = [];
+  const entries = Array.isArray(val) ? val.map((v,i) => [String(i), v]) : Object.entries(val);
+  for(const [k, item] of entries){
+    if(!item || typeof item !== 'object') continue;
+    if(looksLikePerson(item)) out.push({ _key:k, ...item });
+    else out.push(...flattenStaffPeople(item, depth+1));
+  }
+  return out;
+}
+function fieldOf(obj, candidates){
+  const map = {};
+  Object.keys(obj || {}).forEach(k => { map[k.toLowerCase().replace(/[^a-z0-9]/g,'')] = obj[k]; });
+  for(const c of candidates){
+    const v = map[c.toLowerCase().replace(/[^a-z0-9]/g,'')];
+    if(v != null && String(v).trim() !== '') return String(v).trim();
+  }
+  return '';
+}
+async function fetchStaffDirectory(){
+  const base = staffDbBase();
+  if(!base) return null;
+  const path = (localStorage.getItem(LS.staffPath) || 'staff').trim().replace(/^\/+|\/+$/g,'') || 'staff';
+  const data = await fetchJson(`${base}/${path}.json`);
+  if(!data) return [];
+  return flattenStaffPeople(data).map(rec => ({
+    id: fieldOf(rec, ['empId','employeeId','employeeNumber','empNo','staffId','userId','pin','deviceId','id']),
+    name: fieldOf(rec, ['staffName','staff_name','name','employeeName','empName','fullName']),
+    category: fieldOf(rec, ['category','role','designation','post','jobRole','department','staffCategory','empCategory'])
+  })).filter(p => p.id);
+}
 
 /* =========================================================
    Seasons \u2014 winter and summer timing
@@ -2183,7 +2334,23 @@ function splitScansByWindow(recs, category){
    the status red, so a full day that started late still reads as a full day. */
 function computeStaffDayStatus(recs, category){
   if(!recs.length) return 'absent';
-  const { morning, evening, hasM, hasE, rule } = splitScansByWindow(recs, category);
+  const rule = shiftedRuleFor(category, dateOnly(recs[0].time)) || {};
+
+  if(rule.mode === 'duration'){
+    const th = getStaffDurationThresholds();
+    const times = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
+    if(!times.length) return 'absent';
+    if(times.length === 1){
+      const p = getSingleScanPolicy();
+      return p === 'absent' ? 'absent' : 'half'; // 'half' or 'needsReview' both show as half here
+    }
+    const duration = Math.max(...times) - Math.min(...times);
+    if(duration < th.absentBelowMin) return 'absent';
+    if(duration <= th.fullAboveMin) return 'half';
+    return 'present';
+  }
+
+  const { morning, evening, hasM, hasE } = splitScansByWindow(recs, category);
   const by = timeStrToMinutes(rule.arriveBy);
   const lateCheck = (list, fallback) => {
     if(by == null) return false;
@@ -2267,57 +2434,28 @@ function isWorkingDayFor(dateStr, forView, category){
 function isSchoolDay(dateStr, forView){ return isWorkingDayFor(dateStr, forView, ''); }
 
 /* =========================================================
-   Sandwich off
-   A holiday or weekly off is paid on its own. It stops being paid when leave
-   runs into it.
-   'lead'   : the default. Inside an unbroken run of offs and absences, every
-              off up to the last day of leave becomes unpaid; offs after it stay
-              paid because the person came back.
-                holiday 14, leave 15, holiday 16, back 17 -> 14 and 15 unpaid,
-                                                             16 still paid
-                absent 14, holiday 15, absent 16          -> all three unpaid
-                holiday 14, leave 15, holiday 16, away 17 -> 14 to 17 unpaid
-   'touch'  : the whole run becomes unpaid, trailing offs included
-   'strict' : an off is only absorbed when the day either side is an absence
-   'off'    : holidays are always paid
+   Sandwich off — fresh rule (v8 worker). One holiday-run is unpaid only
+   when BOTH the working day right before it and the working day right
+   after it are absences. Either side present, and the run stays paid —
+   only the genuine absence on the other side counts (as a normal absence).
    ========================================================= */
-function getSandwichMode(){
-  const v = localStorage.getItem(LS.sandwichMode);
-  return (v === 'off' || v === 'touch' || v === 'strict' || v === 'lead') ? v : 'lead';
+function getSandwichRule(){
+  const v = localStorage.getItem(LS.sandwichRule);
+  return v === 'off' ? 'off' : 'on';
 }
-// statuses: array of 'present' | 'half' | 'absent' | 'off' | 'none'
-// Returns a copy with absorbed 'off' days rewritten to 'absorbed'.
-function applySandwich(statuses, mode){
+// statuses: array of 'present' | 'half' | 'absent' | 'off' | 'none', oldest first
+function applySandwich(statuses, rule){
   const out = statuses.slice();
-  if(mode === 'off') return out;
-
-  if(mode === 'strict'){
-    let i = 0;
-    while(i < out.length){
-      if(out[i] !== 'off'){ i++; continue; }
-      let j = i;
-      while(j < out.length && out[j] === 'off') j++;       // run of offs: i .. j-1
-      if((i > 0 ? out[i-1] : null) === 'absent' && (j < out.length ? out[j] : null) === 'absent'){
-        for(let k = i; k < j; k++) out[k] = 'absorbed';
-      }
-      i = j;
-    }
-    return out;
-  }
-
-  // 'lead' and 'touch' both work on unbroken runs of off/absent days
+  if(rule === 'off') return out;
   let i = 0;
   while(i < out.length){
-    if(out[i] !== 'off' && out[i] !== 'absent'){ i++; continue; }
-    let j = i, lastAbsent = -1;
-    while(j < out.length && (out[j] === 'off' || out[j] === 'absent')){
-      if(out[j] === 'absent') lastAbsent = j;
-      j++;
-    }
-    if(lastAbsent >= 0){
-      // 'lead' stops at the last day of leave, so an off after it stays paid
-      const end = (mode === 'touch') ? j : lastAbsent;
-      for(let k = i; k < end; k++) if(out[k] === 'off') out[k] = 'absorbed';
+    if(out[i] !== 'off'){ i++; continue; }
+    let j = i;
+    while(j < out.length && out[j] === 'off') j++;
+    const before = i > 0 ? out[i-1] : null;
+    const after  = j < out.length ? out[j] : null;
+    if(before === 'absent' && after === 'absent'){
+      for(let k = i; k < j; k++) out[k] = 'absorbed';
     }
     i = j;
   }
@@ -2355,7 +2493,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichMode','seasons','settingsPassHash','studentDefaultView','devices'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichRule','seasons','settingsPassHash','studentDefaultView','devices','studentShiftHours','studentClassEvening','examMode','staffDurationThresholds','singleScanPolicy','nightStaffIds'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -2814,7 +2952,7 @@ async function loadMonthly(){
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
 
-  const mode = getSandwichMode();
+  const mode = getSandwichRule();
 
   ROSTER.forEach(person => {
     const id = personId(person);
@@ -3042,15 +3180,19 @@ function renderDailyTable(){
     let status, tr = document.createElement('tr');
 
     if(VIEW === 'student'){
-      const inRec = recs.find(r => r.action === 'morning_entry');
-      const outRec = recs.find(r => r.action === 'gatepass_exit' || r.action === 'evening_exit');
-      if(!recs.length){ status = 'absent'; absent++; }
-      else if(outRec){ status = 'gatepass'; exit++; }
-      else { status = 'present'; present++; }
+      const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
+      const inRec = sortedRecs[0];
+      const outRec = sortedRecs.length > 1 ? sortedRecs[sortedRecs.length - 1] : null;
+      const outStatus = outRec ? (outRec.status || '') : '';
+      if(!sortedRecs.length){ status = 'absent'; absent++; }
+      else if(outRec){ status = outStatus === 'NoGatepass_Flagged' ? 'flagged' : 'gatepass'; exit++; }
+      else { status = (inRec.status === 'Late') ? 'late' : 'present'; present++; }
       const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : '\u2014';
       const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
       const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
+        : status === 'flagged' ? '<span class="badge late" title="Left before dismissal, no gatepass">Unauthorised exit</span>'
         : status === 'gatepass' ? '<span class="badge gatepass">Went home</span>'
+        : status === 'late' ? '<span class="badge late">In school &middot; late</span>'
         : '<span class="badge present">In school</span>';
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
     }else{
@@ -3064,18 +3206,17 @@ function renderDailyTable(){
       else if(status === 'half') half++;
       else if(status === 'off') offDay++;
       else absent++;
-      /* In and Out now come from the punch windows themselves, so a scan
-         that fell outside both is shown struck through rather than quietly
-         filed as an arrival. */
-      const split = splitScansByWindow(sortedRecs, category);
-      let inList = split.morning, outList = split.evening, ignored = split.ignored;
-      if(!split.hasM && !split.hasE && sortedRecs.length){
-        inList = [sortedRecs[0]];
-        outList = sortedRecs.length > 1 ? [sortedRecs[sortedRecs.length - 1]] : [];
-        ignored = sortedRecs.slice(1, -1);
-      }
+      /* Worker already decided in vs out per scan (action field) — including
+         night staff, whose "out" is tagged night_out and dated to the
+         previous shift day. Trust that instead of re-deriving it locally. */
+      const inList = [], outList = [], ignored = [];
+      sortedRecs.forEach(r => {
+        if(r.action === 'night_in' || r.action === 'morning_entry') inList.push(r);
+        else if(r.action === 'night_out' || r.action === 'evening_exit' || r.action === 'gatepass_exit') outList.push(r);
+        else ignored.push(r);
+      });
       const stack = list => {
-        const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)));
+        const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)) + (r.nextDayPunch ? ' <span class="plus-day" title="Scanned the next calendar day">(+1)</span>' : ''));
         return lines.length ? lines.join('<br>') : '\u2014';
       };
       const ignoredHtml = ignored.length
@@ -3191,7 +3332,7 @@ function renderBreakdown(enriched, mode){
       g.total++;
       if(mode === 'daily'){
         if(r.status === 'present' || r.status === 'late') g.present++;
-        else if(r.status === 'gatepass') g.exit++;
+        else if(r.status === 'gatepass' || r.status === 'flagged') g.exit++;
         else if(r.status === 'half') g.half++;
         else if(r.status === 'absent') g.absent++;
       }else{
@@ -3368,8 +3509,25 @@ function loadSettingsFormFromLocal(){
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
-  const sMode = getSandwichMode();
-  document.querySelectorAll('input[name="sandwich"]').forEach(r => { r.checked = (r.value === sMode); });
+  document.getElementById('sandwich-toggle').checked = getSandwichRule() === 'on';
+
+  const stu = getStudentShiftHours();
+  document.getElementById('stu-mfrom').value = stu.mFrom || '';
+  document.getElementById('stu-mto').value = stu.mTo || '';
+  document.getElementById('stu-latecutoff').value = stu.lateCutoff || '';
+  document.getElementById('stu-efrom').value = stu.eFrom || '';
+  renderClsEveList();
+
+  const exam = getExamMode();
+  document.getElementById('exam-active').checked = !!exam.active;
+  document.getElementById('exam-from').value = exam.from || '';
+  document.getElementById('exam-to').value = exam.to || '';
+  document.getElementById('exam-efrom').value = exam.eFrom || '';
+
+  document.getElementById('staff-url').value = localStorage.getItem(LS.staffUrl) || '';
+  document.getElementById('staff-code').value = localStorage.getItem(LS.staffCode) || '';
+  renderNightStaffList();
+
   buildCategoryPickers();
   renderPasswordSection();
   buildShiftRulesGrid();
@@ -3377,7 +3535,6 @@ function loadSettingsFormFromLocal(){
   renderHolidayList();
   renderRuleList();
   renderCutoffList();
-  renderCutoffDateList();
   renderDeviceList();
 }
 function buildShiftRulesGrid(){
@@ -3386,13 +3543,14 @@ function buildShiftRulesGrid(){
   grid.innerHTML = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => {
     const rule = map[cat] || {};
     const days = Array.isArray(rule.days) ? rule.days : [];
+    const isDuration = rule.mode === 'duration';
     const dayPills = WEEKDAY_NAMES.map((n, i) =>
       `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
     ).join('');
     return `<div class="shift-rule-card" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
         <strong>${escapeHtml(cat)}</strong>
-        <span class="src-head-note">Punch windows only</span>
+        <label class="inline-check src-duration-toggle"><input type="checkbox" class="src-duration" ${isDuration ? 'checked' : ''}> Duration mode</label>
       </div>
       <div class="src-windows">
         <div class="field"><label>Morning punch from</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
@@ -3400,28 +3558,97 @@ function buildShiftRulesGrid(){
         <div class="field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
         <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
       </div>
-      <p class="src-explain">Both windows scanned is a full day, one of them is a half day. A scan that lands outside both is ignored. Leave all four blank and any scan counts as a full day.</p>
       <div class="src-arrive">
-        <div class="field">
-          <label>Must arrive by</label>
-          <input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}">
-        </div>
-        <span>Only paints the status red. The day still counts in full. Blank for no arrival time.</span>
-      </div>
-      <div class="src-arrive">
-        <div class="field">
-          <label>Season shift (min)</label>
-          <input type="number" step="5" class="src-season-shift" placeholder="follows season" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}">
-        </div>
-        <span>Blank means this category moves with the season. Put 0 here to hold it still all year, or another number to move it by a different amount.</span>
+        <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}"></div>
+        <div class="field"><label>Season shift (min)</label><input type="number" step="5" class="src-season-shift" placeholder="auto" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}"></div>
       </div>
       <div class="src-days">
-        <span>Works on${days.length ? '' : ' \u2014 nothing ticked, so this category follows the school working days'}</span>
+        <span>Works on${days.length ? '' : ' \u2014 school default'}</span>
         <div class="daypick">${dayPills}</div>
       </div>
     </div>`;
   }).join('');
+
+  const th = getStaffDurationThresholds();
+  document.getElementById('dur-absent-min').value = th.absentBelowMin;
+  document.getElementById('dur-full-min').value = th.fullAboveMin;
+  document.getElementById('single-scan-policy').value = getSingleScanPolicy();
 }
+
+/* ── Class-wise evening override ── */
+function renderClsEveList(){
+  const map = getStudentClassEvening();
+  const wrap = document.getElementById('cls-eve-list');
+  const keys = Object.keys(map).sort();
+  if(!keys.length){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = keys.map(cls => `
+    <span class="chip">${escapeHtml(cls)}: ${escapeHtml(map[cls].eFrom || '')}
+      <button type="button" data-cls="${escapeHtml(cls)}" title="Remove">&times;</button></span>`).join('');
+  wrap.querySelectorAll('button[data-cls]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = getStudentClassEvening();
+      delete m[btn.dataset.cls];
+      saveStudentClassEvening(m);
+      renderClsEveList();
+    });
+  });
+}
+document.getElementById('add-cls-eve-btn').addEventListener('click', () => {
+  const cls = document.getElementById('cls-eve-class').value.trim();
+  const time = document.getElementById('cls-eve-time').value;
+  if(!cls || !time) return;
+  const m = getStudentClassEvening();
+  m[cls] = { eFrom: time };
+  saveStudentClassEvening(m);
+  document.getElementById('cls-eve-class').value = '';
+  document.getElementById('cls-eve-time').value = '';
+  renderClsEveList();
+});
+
+/* ── Night staff — fetched read-only from a staff database, ids only kept ── */
+let STAFF_DIRECTORY_CACHE = null;
+function renderNightStaffList(){
+  const picked = new Set(getNightStaffIds());
+  const wrap = document.getElementById('night-staff-list');
+  const list = STAFF_DIRECTORY_CACHE;
+  if(!list){
+    wrap.className = 'chip-wrap';
+    wrap.innerHTML = picked.size
+      ? [...picked].map(id => `<span class="chip">${escapeHtml(id)}
+          <button type="button" data-id="${escapeHtml(id)}" title="Remove">&times;</button></span>`).join('')
+      : '<span style="font-size:12.5px; color:var(--ink-soft);">Fetch the staff list, or no one is set as night staff.</span>';
+  }else{
+    wrap.className = 'grid'; // reuses the responsive 1-per-row-on-mobile layout
+    wrap.innerHTML = list.map(p => `
+      <label class="inline-check" style="margin-top:0;"><input type="checkbox" class="night-staff-cb" value="${escapeHtml(p.id)}" ${picked.has(p.id) ? 'checked' : ''}> ${escapeHtml(p.name || p.id)}${p.category ? ' &middot; ' + escapeHtml(p.category) : ''}</label>`
+    ).join('');
+  }
+  wrap.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ids = getNightStaffIds().filter(id => id !== btn.dataset.id);
+      saveNightStaffIds(ids);
+      renderNightStaffList();
+    });
+  });
+  wrap.querySelectorAll('.night-staff-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const ids = [...wrap.querySelectorAll('.night-staff-cb:checked')].map(c => c.value);
+      saveNightStaffIds(ids);
+    });
+  });
+}
+document.getElementById('staff-fetch-btn').addEventListener('click', async () => {
+  const el = document.getElementById('staff-fetch-status');
+  localStorage.setItem(LS.staffUrl, document.getElementById('staff-url').value.trim().replace(/\/+$/, ''));
+  localStorage.setItem(LS.staffCode, document.getElementById('staff-code').value.trim().replace(/^\/+|\/+$/g, ''));
+  el.style.display = 'block'; el.className = 'testline'; el.textContent = 'Fetching\u2026';
+  const list = await fetchStaffDirectory();
+  if(list === null){ el.textContent = 'Enter the staff database URL first.'; el.classList.add('err'); return; }
+  STAFF_DIRECTORY_CACHE = list;
+  el.textContent = list.length ? `${list.length} staff loaded.` : 'Connected, but no staff records found.';
+  el.classList.add(list.length ? 'ok' : 'err');
+  renderNightStaffList();
+});
 
 // Category tick-boxes shown under Holidays and Repeating holidays when the
 // scope is "Staff only" — leaving them all unticked means every category.
@@ -3645,52 +3872,6 @@ document.getElementById('add-cutoff-btn').addEventListener('click', () => {
   renderCutoffList();
 });
 
-document.getElementById('cutoff-date-range-toggle').addEventListener('change', (e) => {
-  document.getElementById('cutoff-date-end-field').style.display = e.target.checked ? 'flex' : 'none';
-});
-
-function renderCutoffDateList(){
-  const overrides = getCutoffDateOverrides().slice().sort((a,b) => a.date.localeCompare(b.date));
-  const wrap = document.getElementById('cutoff-date-list');
-  if(!overrides.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No date-specific overrides added yet.</span>'; return; }
-  wrap.innerHTML = overrides.map((o, idx) => `
-    <span class="chip">${escapeHtml(o.date)}: ${escapeHtml(o.time)}
-      <button type="button" data-idx="${idx}" title="Remove">&times;</button></span>`).join('');
-  wrap.querySelectorAll('button[data-idx]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const os = getCutoffDateOverrides().slice().sort((a,b) => a.date.localeCompare(b.date));
-      os.splice(parseInt(btn.dataset.idx, 10), 1);
-      localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(os));
-      renderCutoffDateList();
-    });
-  });
-}
-document.getElementById('add-cutoff-date-btn').addEventListener('click', () => {
-  const date = document.getElementById('cutoff-date-input').value;
-  const isRange = document.getElementById('cutoff-date-range-toggle').checked;
-  const endDate = document.getElementById('cutoff-date-end-input').value;
-  const time = document.getElementById('cutoff-date-time-input').value;
-  if(!date || !time) return;
-  const dates = [];
-  if(isRange && endDate && endDate >= date){
-    const cur = new Date(date + 'T00:00:00');
-    const end = new Date(endDate + 'T00:00:00');
-    while(cur <= end){ dates.push(cur.toLocaleDateString('en-CA')); cur.setDate(cur.getDate() + 1); }
-  }else{ dates.push(date); }
-  let overrides = getCutoffDateOverrides();
-  dates.forEach(d => {
-    overrides = overrides.filter(o => o.date !== d); // one override per date — newest wins
-    overrides.push({ date: d, time });
-  });
-  localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(overrides));
-  document.getElementById('cutoff-date-input').value = '';
-  document.getElementById('cutoff-date-end-input').value = '';
-  document.getElementById('cutoff-date-time-input').value = '';
-  document.getElementById('cutoff-date-range-toggle').checked = false;
-  document.getElementById('cutoff-date-end-field').style.display = 'none';
-  renderCutoffDateList();
-});
-
 function renderDeviceList(){
   const devices = getDevices();
   const thisName = getDeviceName();
@@ -3870,6 +4051,7 @@ function collectSettingsObject(){
     // would leave the old time sitting in the saved object
     shiftRulesObj[cat].days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
     shiftRulesObj[cat].arriveBy = card.querySelector('.src-arrive-by').value || '';
+    shiftRulesObj[cat].mode = card.querySelector('.src-duration').checked ? 'duration' : 'window';
     const g = sel => { const el = card.querySelector(sel); return el ? el.value : ''; };
     shiftRulesObj[cat].mFrom = g('.scw-m-from');
     shiftRulesObj[cat].mTo   = g('.scw-m-to');
@@ -3887,11 +4069,30 @@ function collectSettingsObject(){
     cutoffDefault: document.getElementById('cutoff-default-input').value || '11:00',
     cutoffOverrides: getCutoffOverrides(),
     cutoffDateOverrides: getCutoffDateOverrides(),
-    sandwichMode: (document.querySelector('input[name="sandwich"]:checked') || {}).value || 'lead',
+    sandwichRule: document.getElementById('sandwich-toggle').checked ? 'on' : 'off',
     seasons: getSeasons(),
     settingsPassHash: storedPassHash(),
     studentDefaultView: document.getElementById('default-view-input').value,
-    devices: getDevices()
+    devices: getDevices(),
+    studentShiftHours: {
+      mFrom: document.getElementById('stu-mfrom').value || '',
+      mTo: document.getElementById('stu-mto').value || '',
+      lateCutoff: document.getElementById('stu-latecutoff').value || '',
+      eFrom: document.getElementById('stu-efrom').value || ''
+    },
+    studentClassEvening: getStudentClassEvening(),
+    examMode: {
+      active: document.getElementById('exam-active').checked,
+      from: document.getElementById('exam-from').value || '',
+      to: document.getElementById('exam-to').value || '',
+      eFrom: document.getElementById('exam-efrom').value || ''
+    },
+    staffDurationThresholds: {
+      absentBelowMin: Number(document.getElementById('dur-absent-min').value) || 60,
+      fullAboveMin: Number(document.getElementById('dur-full-min').value) || 210
+    },
+    singleScanPolicy: document.getElementById('single-scan-policy').value,
+    nightStaffIds: getNightStaffIds()
   };
 }
 document.getElementById('save-btn').addEventListener('click', async () => {
@@ -3907,10 +4108,16 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.cutoffDefault, settings.cutoffDefault);
   localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
   localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
-  localStorage.setItem(LS.sandwichMode, settings.sandwichMode);
+  localStorage.setItem(LS.sandwichRule, settings.sandwichRule);
   saveSeasons(settings.seasons);
   if(settings.settingsPassHash !== undefined) localStorage.setItem(LS.settingsPassHash, settings.settingsPassHash);
   localStorage.setItem(LS.studentDefaultView, settings.studentDefaultView);
+  saveStudentShiftHours(settings.studentShiftHours);
+  saveStudentClassEvening(settings.studentClassEvening);
+  saveExamMode(settings.examMode);
+  saveStaffDurationThresholds(settings.staffDurationThresholds);
+  saveSingleScanPolicy(settings.singleScanPolicy);
+  saveNightStaffIds(settings.nightStaffIds);
   const devsNow = getDevices();
   const me = getDeviceName();
   if(devsNow[me]){
