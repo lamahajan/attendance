@@ -1798,7 +1798,7 @@
       <!-- ── This device ── -->
       <section class="set-sec" data-sec="device">
         <h2>Devices</h2>
-        <p class="lede">Every phone, tablet and desk PC that opens the register lists itself here, the one you're holding first. Rename any of them, choose what each opens on, and hide staff categories a particular device shouldn't show &mdash; all of it from whichever device you happen to have in hand.</p>
+        <p class="lede">Every phone, tablet and desk PC that opens the register lists itself here, the one you're holding first. Rename any of them, choose what each opens on, hide staff categories a particular device shouldn't show, and turn off "Can edit" for a device that should only view attendance, not set anyone's day as Full/Half/Absent &mdash; all of it from whichever device you happen to have in hand.</p>
 
         <div class="group">
           <h3>All devices</h3>
@@ -3269,22 +3269,20 @@ function renderDailyTable(){
       const ignoredHtml = ignored.length
         ? `<span class="off-window" title="Outside the allowed punch windows, so it was not counted">${ignored.map(r => escapeHtml(timeOnly(r.time))).join('<br>')}</span>`
         : '';
-      let badge;
-      if(status === 'needsReview'){
-        badge = `<span class="badge half">One scan &mdash; needs review</span>
+      let statusLabel = status === 'needsReview' ? '<span class="badge half">One scan &mdash; needs review</span>'
+        : status === 'present' ? '<span class="badge present">Full day</span>'
+        : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
+        : status === 'half' ? '<span class="badge half">Half day</span>'
+        : status === 'off' ? '<span class="badge off">Week off</span>'
+        : '<span class="badge absent">Absent</span>';
+      if(override) statusLabel += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
+      const reviewButtons = isThisDeviceEditor() ? `
           <div class="review-actions">
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="present">Full</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="half">Half</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="absent">Absent</button>
-          </div>`;
-      }else{
-        badge = status === 'present' ? '<span class="badge present">Full day</span>'
-          : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
-          : status === 'half' ? '<span class="badge half">Half day</span>'
-          : status === 'off' ? '<span class="badge off">Week off</span>'
-          : '<span class="badge absent">Absent</span>';
-        if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
-      }
+          </div>` : '';
+      const badge = statusLabel + reviewButtons;
       const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
     }
@@ -3942,11 +3940,13 @@ function renderDeviceList(){
       <label><input type="checkbox" class="device-cat-cb" data-device="${escapeHtml(name)}" data-cat="${escapeHtml(cat)}" ${hidden.includes(cat) ? 'checked' : ''}> Hide ${escapeHtml(cat)}</label>
     `).join('');
     const seen = dev.lastSeen ? `<span class="dev-seen">Last opened ${escapeHtml(dev.lastSeen)}</span>` : '';
+    const canEdit = dev.canEdit !== false;
 
     return `<div class="device-card${isThis ? ' is-this' : ''}">
       <div class="device-head">
         <strong>${escapeHtml(name)}</strong>
         ${seen}
+        <label class="inline-check" style="margin:0;"><input type="checkbox" class="dev-can-edit" data-device="${escapeHtml(name)}" ${canEdit ? 'checked' : ''}> Can edit</label>
         <button type="button" class="ghost small" data-remove-device="${escapeHtml(name)}">Remove</button>
       </div>
       <div class="dev-grid">
@@ -3978,6 +3978,19 @@ function renderDeviceList(){
       devs[name].hiddenStaffCategories = [...set];
       saveDevices(devs, name);
       if(name === getDeviceName()) loadRegister();
+    });
+  });
+
+  // Can edit — controls whether the Full/Half/Absent review buttons show
+  // in the Daily table. Settings itself always stays open to everyone.
+  wrap.querySelectorAll('.dev-can-edit').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const devs = getDevices();
+      const name = cb.dataset.device;
+      if(!devs[name]) devs[name] = { hiddenStaffCategories: [] };
+      devs[name].canEdit = cb.checked;
+      saveDevices(devs, name);
+      if(name === getDeviceName()) loadRegister(); // re-render so review buttons vanish/return
     });
   });
 
@@ -4457,6 +4470,13 @@ document.getElementById('settings-modal').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && document.getElementById('settings-modal').classList.contains('open')) closeSettingsModal();
 });
+
+/* Can-edit only controls whether the Full/Half/Absent review buttons show
+   in the Daily table — Settings itself always stays reachable. */
+function isThisDeviceEditor(){
+  const dev = getDevices()[getDeviceName()];
+  return !dev || dev.canEdit !== false;   // never explicitly restricted = can edit
+}
 
 updateModeSwitchVisibility();
 updateDisplaySwitchVisibility();
