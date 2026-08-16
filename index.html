@@ -339,6 +339,12 @@
     display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px;
     border-top:1px solid var(--paper-line);
   }
+  .shift-rule-card.duration-on .src-windows{ display:none; }
+  .shift-rule-card .src-duration-note{ display:none; }
+  .shift-rule-card.duration-on .src-duration-note{
+    display:block; font-size:11.5px; color:var(--ink-soft); margin-top:12px; padding-top:12px;
+    border-top:1px solid var(--paper-line);
+  }
   .shift-rule-card .src-windows .field{ min-width:112px; }
   .shift-rule-card .src-windows .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; }
   .shift-rule-card .src-windows .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
@@ -520,6 +526,18 @@
   .badge.off{ background:var(--row-alt); color:var(--ink-soft); border-color:var(--border); }
   .plus-day{ font-size:10px; font-weight:700; color:var(--pending-ink); }
   .src-duration-toggle{ margin-top:0; font-size:11.5px; white-space:nowrap; }
+  .review-actions{ display:flex; gap:6px; margin-top:6px; }
+  .review-actions .override-btn{
+    font-size:11px; font-weight:700; padding:0 10px; height:26px;
+    border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--ink); cursor:pointer;
+  }
+  .review-actions .override-btn:hover{ border-color:var(--ink); }
+  .review-actions .override-btn:disabled{ opacity:.5; cursor:default; }
+  .review-badge{
+    font-size:11px; font-weight:700; padding:0 10px; height:26px;
+    border-radius:6px; border:1px solid var(--half); background:var(--half-soft, transparent); color:var(--half); cursor:pointer;
+  }
+  .review-badge:hover{ opacity:.8; }
   .badge.bus{ background:var(--teal-bg); color:var(--teal); border-color:var(--teal-bg); }
   .pct{ font-weight:600; font-variant-numeric:tabular-nums; }
   .sandwich-tag{ font-size:10px; font-weight:600; color:var(--half); background:var(--half-bg); padding:1px 6px; border-radius:10px; }
@@ -844,7 +862,8 @@
     }
     #register-table tr[data-status="present"]::before{ background:var(--present); }
     #register-table tr[data-status="gatepass"]::before{ background:var(--pending); }
-    #register-table tr[data-status="half"]::before{ background:var(--half); }
+    #register-table tr[data-status="half"]::before,
+    #register-table tr[data-status="needsReview"]::before{ background:var(--half); }
     #register-table tr[data-status="late"]::before,
     #register-table tr[data-status="flagged"]::before,
     #register-table tr[data-status="absent"]::before{ background:var(--absent); }
@@ -1571,10 +1590,8 @@
         <p class="lede">First scan of the day is the arrival, checked against the cutoff below. Any later scan is the exit — flagged if it happens before dismissal without a gatepass.</p>
 
         <div class="group">
-          <h3>Arrival window</h3>
+          <h3>Arrival</h3>
           <div class="grid">
-            <div class="field"><label for="stu-mfrom">Gate opens</label><input type="time" id="stu-mfrom"></div>
-            <div class="field"><label for="stu-mto">On time until</label><input type="time" id="stu-mto"></div>
             <div class="field"><label for="stu-latecutoff">Late after</label><input type="time" id="stu-latecutoff"></div>
           </div>
         </div>
@@ -1768,13 +1785,11 @@
 
         <div class="group">
           <h3>Night staff</h3>
-          <p class="hint">Evening window = clock-in, next morning's window = clock-out (shown with "+1"). Tick who's on a night shift.</p>
+          <p class="hint">Evening window = clock-in, next morning's window = clock-out (shown with "+1"). Add the employee IDs on a night shift — matched against whatever ID the device punches.</p>
           <div class="row">
-            <input id="staff-url" placeholder="Staff database URL (read-only, optional)" style="flex:1; min-width:180px;">
-            <input id="staff-code" placeholder="Code" style="max-width:120px;">
-            <button type="button" id="staff-fetch-btn" class="ghost small" style="height:36px;">Fetch staff</button>
+            <div class="field" style="min-width:160px;"><label for="night-staff-id">Employee ID</label><input id="night-staff-id" placeholder="e.g. SEC01"></div>
+            <button type="button" id="add-night-staff-btn" class="ghost small" style="height:36px;">Add</button>
           </div>
-          <p class="testline" id="staff-fetch-status"></p>
           <div id="night-staff-list" class="chip-wrap"></div>
         </div>
       </section>
@@ -1866,7 +1881,6 @@
 <script>
 const LS = {
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
-  staffUrl:'reg_staff_url', staffCode:'reg_staff_code', staffPath:'reg_staff_path',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
@@ -1952,6 +1966,40 @@ function attBase(){
   return rCode ? `${rUrl}/${rCode}` : rUrl;
 }
 function groupKey(){ return VIEW === 'student' ? 'students' : 'staff'; }
+// Same rule the worker uses for Firebase keys — must match exactly, or a
+// saved override won't be found under the id it was written for.
+function safeFbKey(v){ return String(v == null ? '' : v).trim().replace(/[.$#[\]/\s]/g, '_'); }
+
+/* ── Manual day-status overrides (staff only) ──
+   attendance_overrides/staff/{YYYY-MM}/{safeKey}/{date} = 'present'|'half'|'absent'
+   The worker's monthly rollup reads this same node and uses it ahead of the
+   computed status, so a resolved day also corrects payroll, not just what
+   this page shows. */
+let OVERRIDES = {};
+async function fetchOverrides(month){
+  const base = attBase();
+  if(!base) return {};
+  const data = await fetchJson(`${base}/attendance_overrides/staff/${month}.json`);
+  return (data && typeof data === 'object') ? data : {};
+}
+function getOverride(key, date){
+  const forKey = OVERRIDES[safeFbKey(key)];
+  return forKey && forKey[date] ? forKey[date] : null;
+}
+async function saveStaffOverride(date, key, status){
+  const base = attBase();
+  if(!base) return false;
+  const month = date.slice(0,7);
+  const ok = await fetchJson(`${base}/attendance_overrides/staff/${month}/${safeFbKey(key)}/${date}.json`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(status)
+  });
+  if(ok !== null){
+    OVERRIDES[safeFbKey(key)] = OVERRIDES[safeFbKey(key)] || {};
+    OVERRIDES[safeFbKey(key)][date] = status;
+    return true;
+  }
+  return false;
+}
 
 // Reads from attendance/… and, if that comes back empty, retries the old
 // raw_attendance/… node — so records written before the rename still appear.
@@ -2031,7 +2079,7 @@ const DEFAULT_WINDOWS = {
    that is the exit, flagged if it lands before dismissal without a
    gatepass. Class and exam-day overrides only ever touch eFrom.
    ========================================================= */
-const DEFAULT_STUDENT_SHIFT = { mFrom:'07:30', mTo:'08:30', lateCutoff:'08:45', eFrom:'13:30' };
+const DEFAULT_STUDENT_SHIFT = { lateCutoff:'08:45', eFrom:'13:30' };
 function getStudentShiftHours(){
   try{
     const stored = JSON.parse(localStorage.getItem(LS.studentShiftHours) || 'null');
@@ -2072,9 +2120,8 @@ function getSingleScanPolicy(){
 function saveSingleScanPolicy(v){ localStorage.setItem(LS.singleScanPolicy, v); }
 
 /* Night staff — ids of staff who punch IN on the evening window and OUT on
-   the following morning's window. Fetched read-only from a staff database
-   (separate from the attendance database) purely to list names for the
-   checkbox picker below; nothing from it is written anywhere. */
+   the following morning's window, matched against whatever ID the device
+   sends (same rule the worker uses — case/space-insensitive). */
 function getNightStaffIds(){
   try{
     const stored = JSON.parse(localStorage.getItem(LS.nightStaffIds) || '[]');
@@ -2082,52 +2129,6 @@ function getNightStaffIds(){
   }catch(e){ return []; }
 }
 function saveNightStaffIds(v){ localStorage.setItem(LS.nightStaffIds, JSON.stringify(v)); }
-function staffDbBase(){
-  const url = (localStorage.getItem(LS.staffUrl) || '').trim().replace(/\/+$/, '');
-  if(!url) return null;
-  const code = (localStorage.getItem(LS.staffCode) || '').trim().replace(/^\/+|\/+$/g, '');
-  return code ? `${url}/${code}` : url;
-}
-function flattenStaffPeople(val, depth){
-  depth = depth || 0;
-  if(!val || depth > 3) return [];
-  const idish = ['empid','employeeid','employeenumber','empno','staffid','userid','pin','deviceid','id'];
-  const nameish = ['staffname','name','employeename','empname','fullname'];
-  const looksLikePerson = o => {
-    if(!o || typeof o !== 'object' || Array.isArray(o)) return false;
-    const keys = Object.keys(o).map(k => k.toLowerCase().replace(/[^a-z0-9]/g,''));
-    return keys.some(k => idish.includes(k)) || keys.some(k => nameish.includes(k));
-  };
-  const out = [];
-  const entries = Array.isArray(val) ? val.map((v,i) => [String(i), v]) : Object.entries(val);
-  for(const [k, item] of entries){
-    if(!item || typeof item !== 'object') continue;
-    if(looksLikePerson(item)) out.push({ _key:k, ...item });
-    else out.push(...flattenStaffPeople(item, depth+1));
-  }
-  return out;
-}
-function fieldOf(obj, candidates){
-  const map = {};
-  Object.keys(obj || {}).forEach(k => { map[k.toLowerCase().replace(/[^a-z0-9]/g,'')] = obj[k]; });
-  for(const c of candidates){
-    const v = map[c.toLowerCase().replace(/[^a-z0-9]/g,'')];
-    if(v != null && String(v).trim() !== '') return String(v).trim();
-  }
-  return '';
-}
-async function fetchStaffDirectory(){
-  const base = staffDbBase();
-  if(!base) return null;
-  const path = (localStorage.getItem(LS.staffPath) || 'staff').trim().replace(/^\/+|\/+$/g,'') || 'staff';
-  const data = await fetchJson(`${base}/${path}.json`);
-  if(!data) return [];
-  return flattenStaffPeople(data).map(rec => ({
-    id: fieldOf(rec, ['empId','employeeId','employeeNumber','empNo','staffId','userId','pin','deviceId','id']),
-    name: fieldOf(rec, ['staffName','staff_name','name','employeeName','empName','fullName']),
-    category: fieldOf(rec, ['category','role','designation','post','jobRole','department','staffCategory','empCategory'])
-  })).filter(p => p.id);
-}
 
 /* =========================================================
    Seasons \u2014 winter and summer timing
@@ -2340,14 +2341,22 @@ function computeStaffDayStatus(recs, category){
     const th = getStaffDurationThresholds();
     const times = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
     if(!times.length) return 'absent';
+    const by = timeStrToMinutes(rule.arriveBy);
+    const arrivedLate = by != null && Math.min(...times) > by;
+
     if(times.length === 1){
       const p = getSingleScanPolicy();
-      return p === 'absent' ? 'absent' : 'half'; // 'half' or 'needsReview' both show as half here
+      if(p === 'absent') return 'absent';
+      if(p === 'needsReview') return 'needsReview'; // only one scan — counts as half until someone resolves it
+      return 'half';
     }
     const duration = Math.max(...times) - Math.min(...times);
-    if(duration < th.absentBelowMin) return 'absent';
-    if(duration <= th.fullAboveMin) return 'half';
-    return 'present';
+    let status;
+    if(duration < th.absentBelowMin) status = 'absent';
+    else if(duration <= th.fullAboveMin) status = 'half';
+    else status = 'present';
+    if(status === 'present' && arrivedLate) status = 'late';
+    return status;
   }
 
   const { morning, evening, hasM, hasE } = splitScansByWindow(recs, category);
@@ -2483,6 +2492,12 @@ function getHiddenStaffCategoriesForThisDevice(){
   const mine = devices[getDeviceName()];
   return (mine && Array.isArray(mine.hiddenStaffCategories)) ? mine.hiddenStaffCategories : [];
 }
+// Off by default — has to be explicitly granted per device from Settings > Devices,
+// so a review flag can only be resolved (Full/Half/Absent) from an authorised device.
+function getCanEditReviewsForThisDevice(){
+  const dev = getDevices()[getDeviceName()];
+  return !!(dev && dev.canEditReviews);
+}
 function getStudentDefaultView(){
   // per device, and shared — so it can be set for a gate iPad from the office
   const dev = getDevices()[getDeviceName()];
@@ -2558,6 +2573,31 @@ document.getElementById('display-both').addEventListener('click', () => setDispl
 document.getElementById('display-summary').addEventListener('click', () => setDisplay('summary'));
 document.getElementById('display-list').addEventListener('click', () => setDisplay('list'));
 document.getElementById('display-select').addEventListener('change', (e) => setDisplay(e.target.value));
+
+// One delegated listener — table body is replaced each render, but the
+// #register-body element itself never is, so this only needs binding once.
+document.getElementById('register-body').addEventListener('click', async (e) => {
+  const reviewBtn = e.target.closest('.review-badge');
+  if(reviewBtn){
+    VIEW = 'staff'; MODE = 'daily';
+    document.getElementById('date-input').value = reviewBtn.dataset.date;
+    document.getElementById('view-daily').classList.add('on');
+    document.getElementById('view-monthly').classList.remove('on');
+    document.getElementById('date-field').style.display = 'flex';
+    document.getElementById('month-field').style.display = 'none';
+    loadRegister();
+    return;
+  }
+  const overrideBtn = e.target.closest('.override-btn');
+  if(overrideBtn){
+    if(!getCanEditReviewsForThisDevice()) return; // not authorised on this device
+    overrideBtn.closest('.review-actions').querySelectorAll('button').forEach(b => b.disabled = true);
+    const ok = await saveStaffOverride(overrideBtn.dataset.date, overrideBtn.dataset.id, overrideBtn.dataset.set);
+    if(ok) applyDailyData(); // re-render with the override now in effect
+    else overrideBtn.closest('.review-actions').querySelectorAll('button').forEach(b => b.disabled = false);
+  }
+});
+
 
 function applyDisplayMode(){
   const insightsOn = DISPLAY !== 'list';
@@ -2823,10 +2863,14 @@ async function loadDaily(){
   const group = groupKey();
   let scans = null, absNode = null;
   if(base){
-    [scans, absNode] = await Promise.all([
+    const jobs = [
       attFetch(base, `attendance/${group}/${date}.json`),
       fetchJson(`${base}/absentees/${group}/${date}.json`)
-    ]);
+    ];
+    if(VIEW === 'staff') jobs.push(fetchOverrides(date.slice(0,7)));
+    const results = await Promise.all(jobs);
+    scans = results[0]; absNode = results[1];
+    OVERRIDES = VIEW === 'staff' ? (results[2] || {}) : {};
   }
 
   LIVE.scans = scans;
@@ -2895,10 +2939,14 @@ async function loadMonthly(){
   let scanRange = null, absRange = null;
   if(base){
     const range = `orderBy="$key"&startAt="${startDate}"&endAt="${endDate}"`;
-    [scanRange, absRange] = await Promise.all([
+    const jobs = [
       attFetch(base, `attendance/${group}.json?${range}`),
       fetchJson(`${base}/absentees/${group}.json?${range}`)
-    ]);
+    ];
+    if(VIEW === 'staff') jobs.push(fetchOverrides(monthVal));
+    const results = await Promise.all(jobs);
+    scanRange = results[0]; absRange = results[1];
+    OVERRIDES = VIEW === 'staff' ? (results[2] || {}) : {};
   }
 
   const rosterMap = {};
@@ -2958,12 +3006,17 @@ async function loadMonthly(){
     const id = personId(person);
     const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
 
-    // 1. One status per calendar day
+    // 1. One status per calendar day — a saved override always wins
+    const flaggedDates = [];
     const statuses = allDates.map(day => {
+      const override = VIEW === 'staff' ? getOverride(id, day) : null;
+      if(override) return override;
       const recs = (dayScans[day] || {})[id] || [];
       if(recs.length){
         if(VIEW === 'student') return 'present';
-        return computeStaffDayStatus(recs, category);   // present | late | half | absent
+        const st = computeStaffDayStatus(recs, category);   // present | late | half | absent | needsReview
+        if(st === 'needsReview') flaggedDates.push(day);
+        return st;
       }
       if(!isWorkingDayFor(day, VIEW, category)) return 'off';   // holiday or weekly off
       if(!hasData[day]) return 'none';                          // machine had nothing that day
@@ -2977,13 +3030,13 @@ async function loadMonthly(){
     settled.forEach(st => {
       if(st === 'present') present++;
       else if(st === 'late'){ present++; late++; }
-      else if(st === 'half') half++;
+      else if(st === 'half' || st === 'needsReview') half++;
       else if(st === 'absent') absent++;
       else if(st === 'absorbed'){ absorbed++; absent++; }
       else if(st === 'off') paidOff++;
     });
 
-    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent };
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates };
   });
 
   updateViewTitle();
@@ -3083,7 +3136,7 @@ function buildMonthlyHead(){
   if(VIEW === 'student'){
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Days off</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Days off</th><th>Attendance</th><th>Review</th></tr>`;
   }
 }
 
@@ -3200,10 +3253,11 @@ function renderDailyTable(){
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
       const dayDate = document.getElementById('date-input').value || TODAY;
       const working = isWorkingDayFor(dayDate, 'staff', category);
-      status = recs.length ? computeStaffDayStatus(recs, category) : (working ? 'absent' : 'off');
+      const override = getOverride(idField, dayDate);
+      status = override ? override : recs.length ? computeStaffDayStatus(recs, category) : (working ? 'absent' : 'off');
       if(status === 'present') present++;
       else if(status === 'late'){ present++; lateDay++; }
-      else if(status === 'half') half++;
+      else if(status === 'half' || status === 'needsReview') half++;
       else if(status === 'off') offDay++;
       else absent++;
       /* Worker already decided in vs out per scan (action field) — including
@@ -3222,11 +3276,25 @@ function renderDailyTable(){
       const ignoredHtml = ignored.length
         ? `<span class="off-window" title="Outside the allowed punch windows, so it was not counted">${ignored.map(r => escapeHtml(timeOnly(r.time))).join('<br>')}</span>`
         : '';
-      const badge = status === 'present' ? '<span class="badge present">Full day</span>'
-        : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
-        : status === 'half' ? '<span class="badge half">Half day</span>'
-        : status === 'off' ? '<span class="badge off">Week off</span>'
-        : '<span class="badge absent">Absent</span>';
+      let badge;
+      if(status === 'needsReview'){
+        badge = `<span class="badge half">One scan &mdash; needs review</span>`;
+        if(getCanEditReviewsForThisDevice()){
+          badge += `
+          <div class="review-actions">
+            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="present">Full</button>
+            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="half">Half</button>
+            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="absent">Absent</button>
+          </div>`;
+        }
+      }else{
+        badge = status === 'present' ? '<span class="badge present">Full day</span>'
+          : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
+          : status === 'half' ? '<span class="badge half">Half day</span>'
+          : status === 'off' ? '<span class="badge off">Week off</span>'
+          : '<span class="badge absent">Absent</span>';
+        if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
+      }
       const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
     }
@@ -3284,7 +3352,11 @@ function renderMonthlyTable(){
       // What payroll deducts: a whole day for every absence, half for every
       // half day. 5 absent and 3 half days is 6.5.
       const daysOff = m.absent + (m.half || 0) * 0.5;
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
+      const flagged = m.flaggedDates || [];
+      const reviewBadge = flagged.length
+        ? `<button type="button" class="review-badge" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(flagged[flagged.length-1])}" title="Single scan, no window match — needs a manual full/half/absent">${flagged.length} to review</button>`
+        : '';
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td><td data-l="Review">${reviewBadge}</td>`;
     }
     // the left stripe reads as a pass/watch/fail band in the monthly view
     tr.dataset.status = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
@@ -3512,8 +3584,6 @@ function loadSettingsFormFromLocal(){
   document.getElementById('sandwich-toggle').checked = getSandwichRule() === 'on';
 
   const stu = getStudentShiftHours();
-  document.getElementById('stu-mfrom').value = stu.mFrom || '';
-  document.getElementById('stu-mto').value = stu.mTo || '';
   document.getElementById('stu-latecutoff').value = stu.lateCutoff || '';
   document.getElementById('stu-efrom').value = stu.eFrom || '';
   renderClsEveList();
@@ -3524,8 +3594,6 @@ function loadSettingsFormFromLocal(){
   document.getElementById('exam-to').value = exam.to || '';
   document.getElementById('exam-efrom').value = exam.eFrom || '';
 
-  document.getElementById('staff-url').value = localStorage.getItem(LS.staffUrl) || '';
-  document.getElementById('staff-code').value = localStorage.getItem(LS.staffCode) || '';
   renderNightStaffList();
 
   buildCategoryPickers();
@@ -3547,7 +3615,7 @@ function buildShiftRulesGrid(){
     const dayPills = WEEKDAY_NAMES.map((n, i) =>
       `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
     ).join('');
-    return `<div class="shift-rule-card" data-cat="${escapeHtml(cat)}">
+    return `<div class="shift-rule-card${isDuration ? ' duration-on' : ''}" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
         <strong>${escapeHtml(cat)}</strong>
         <label class="inline-check src-duration-toggle"><input type="checkbox" class="src-duration" ${isDuration ? 'checked' : ''}> Duration mode</label>
@@ -3558,6 +3626,7 @@ function buildShiftRulesGrid(){
         <div class="field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
         <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
       </div>
+      <p class="src-duration-note">Punch whenever &mdash; only the gap between first and last scan matters.</p>
       <div class="src-arrive">
         <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}"></div>
         <div class="field"><label>Season shift (min)</label><input type="number" step="5" class="src-season-shift" placeholder="auto" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}"></div>
@@ -3568,6 +3637,12 @@ function buildShiftRulesGrid(){
       </div>
     </div>`;
   }).join('');
+
+  grid.querySelectorAll('.src-duration').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.shift-rule-card').classList.toggle('duration-on', cb.checked);
+    });
+  });
 
   const th = getStaffDurationThresholds();
   document.getElementById('dur-absent-min').value = th.absentBelowMin;
@@ -3606,48 +3681,32 @@ document.getElementById('add-cls-eve-btn').addEventListener('click', () => {
 });
 
 /* ── Night staff — fetched read-only from a staff database, ids only kept ── */
-let STAFF_DIRECTORY_CACHE = null;
 function renderNightStaffList(){
-  const picked = new Set(getNightStaffIds());
+  const ids = getNightStaffIds();
   const wrap = document.getElementById('night-staff-list');
-  const list = STAFF_DIRECTORY_CACHE;
-  if(!list){
-    wrap.className = 'chip-wrap';
-    wrap.innerHTML = picked.size
-      ? [...picked].map(id => `<span class="chip">${escapeHtml(id)}
-          <button type="button" data-id="${escapeHtml(id)}" title="Remove">&times;</button></span>`).join('')
-      : '<span style="font-size:12.5px; color:var(--ink-soft);">Fetch the staff list, or no one is set as night staff.</span>';
-  }else{
-    wrap.className = 'grid'; // reuses the responsive 1-per-row-on-mobile layout
-    wrap.innerHTML = list.map(p => `
-      <label class="inline-check" style="margin-top:0;"><input type="checkbox" class="night-staff-cb" value="${escapeHtml(p.id)}" ${picked.has(p.id) ? 'checked' : ''}> ${escapeHtml(p.name || p.id)}${p.category ? ' &middot; ' + escapeHtml(p.category) : ''}</label>`
-    ).join('');
-  }
+  wrap.innerHTML = ids.length
+    ? ids.map(id => `<span class="chip">${escapeHtml(id)}
+        <button type="button" data-id="${escapeHtml(id)}" title="Remove">&times;</button></span>`).join('')
+    : '<span style="font-size:12.5px; color:var(--ink-soft);">No one is set as night staff yet.</span>';
   wrap.querySelectorAll('button[data-id]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const ids = getNightStaffIds().filter(id => id !== btn.dataset.id);
-      saveNightStaffIds(ids);
+      saveNightStaffIds(getNightStaffIds().filter(id => id !== btn.dataset.id));
       renderNightStaffList();
     });
   });
-  wrap.querySelectorAll('.night-staff-cb').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const ids = [...wrap.querySelectorAll('.night-staff-cb:checked')].map(c => c.value);
-      saveNightStaffIds(ids);
-    });
-  });
 }
-document.getElementById('staff-fetch-btn').addEventListener('click', async () => {
-  const el = document.getElementById('staff-fetch-status');
-  localStorage.setItem(LS.staffUrl, document.getElementById('staff-url').value.trim().replace(/\/+$/, ''));
-  localStorage.setItem(LS.staffCode, document.getElementById('staff-code').value.trim().replace(/^\/+|\/+$/g, ''));
-  el.style.display = 'block'; el.className = 'testline'; el.textContent = 'Fetching\u2026';
-  const list = await fetchStaffDirectory();
-  if(list === null){ el.textContent = 'Enter the staff database URL first.'; el.classList.add('err'); return; }
-  STAFF_DIRECTORY_CACHE = list;
-  el.textContent = list.length ? `${list.length} staff loaded.` : 'Connected, but no staff records found.';
-  el.classList.add(list.length ? 'ok' : 'err');
+document.getElementById('add-night-staff-btn').addEventListener('click', () => {
+  const input = document.getElementById('night-staff-id');
+  const id = input.value.trim();
+  if(!id) return;
+  const ids = getNightStaffIds();
+  if(!ids.includes(id)) ids.push(id);
+  saveNightStaffIds(ids);
+  input.value = '';
   renderNightStaffList();
+});
+document.getElementById('night-staff-id').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('add-night-staff-btn').click(); }
 });
 
 // Category tick-boxes shown under Holidays and Repeating holidays when the
@@ -3914,7 +3973,9 @@ function renderDeviceList(){
           </select>
         </div>
       </div>
-      <div class="cat-checks">${checks}</div>
+      <div class="cat-checks">${checks}
+        <label><input type="checkbox" class="device-review-cb" data-device="${escapeHtml(name)}" ${dev.canEditReviews ? 'checked' : ''}> Can resolve flagged reviews (Full/Half/Absent)</label>
+      </div>
     </div>`;
   }).join('');
 
@@ -3941,6 +4002,18 @@ function renderDeviceList(){
       devs[name].defaultView = sel.value;
       saveDevices(devs, name);
       if(name === getDeviceName()) setDisplay(sel.value);
+    });
+  });
+
+  // Review-edit permission — off by default per device
+  wrap.querySelectorAll('.device-review-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const devs = getDevices();
+      const name = cb.dataset.device;
+      if(!devs[name]) devs[name] = { hiddenStaffCategories: [] };
+      devs[name].canEditReviews = cb.checked;
+      saveDevices(devs, name);
+      if(name === getDeviceName()) loadRegister(); // redraw buttons on/off immediately
     });
   });
 
@@ -4075,8 +4148,6 @@ function collectSettingsObject(){
     studentDefaultView: document.getElementById('default-view-input').value,
     devices: getDevices(),
     studentShiftHours: {
-      mFrom: document.getElementById('stu-mfrom').value || '',
-      mTo: document.getElementById('stu-mto').value || '',
       lateCutoff: document.getElementById('stu-latecutoff').value || '',
       eFrom: document.getElementById('stu-efrom').value || ''
     },
