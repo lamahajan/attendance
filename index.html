@@ -2492,12 +2492,6 @@ function getHiddenStaffCategoriesForThisDevice(){
   const mine = devices[getDeviceName()];
   return (mine && Array.isArray(mine.hiddenStaffCategories)) ? mine.hiddenStaffCategories : [];
 }
-// Off by default — has to be explicitly granted per device from Settings > Devices,
-// so a review flag can only be resolved (Full/Half/Absent) from an authorised device.
-function getCanEditReviewsForThisDevice(){
-  const dev = getDevices()[getDeviceName()];
-  return !!(dev && dev.canEditReviews);
-}
 function getStudentDefaultView(){
   // per device, and shared — so it can be set for a gate iPad from the office
   const dev = getDevices()[getDeviceName()];
@@ -2590,7 +2584,6 @@ document.getElementById('register-body').addEventListener('click', async (e) => 
   }
   const overrideBtn = e.target.closest('.override-btn');
   if(overrideBtn){
-    if(!getCanEditReviewsForThisDevice()) return; // not authorised on this device
     overrideBtn.closest('.review-actions').querySelectorAll('button').forEach(b => b.disabled = true);
     const ok = await saveStaffOverride(overrideBtn.dataset.date, overrideBtn.dataset.id, overrideBtn.dataset.set);
     if(ok) applyDailyData(); // re-render with the override now in effect
@@ -3278,15 +3271,12 @@ function renderDailyTable(){
         : '';
       let badge;
       if(status === 'needsReview'){
-        badge = `<span class="badge half">One scan &mdash; needs review</span>`;
-        if(getCanEditReviewsForThisDevice()){
-          badge += `
+        badge = `<span class="badge half">One scan &mdash; needs review</span>
           <div class="review-actions">
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="present">Full</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="half">Half</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="absent">Absent</button>
           </div>`;
-        }
       }else{
         badge = status === 'present' ? '<span class="badge present">Full day</span>'
           : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
@@ -3973,9 +3963,7 @@ function renderDeviceList(){
           </select>
         </div>
       </div>
-      <div class="cat-checks">${checks}
-        <label><input type="checkbox" class="device-review-cb" data-device="${escapeHtml(name)}" ${dev.canEditReviews ? 'checked' : ''}> Can resolve flagged reviews (Full/Half/Absent)</label>
-      </div>
+      <div class="cat-checks">${checks}</div>
     </div>`;
   }).join('');
 
@@ -4002,18 +3990,6 @@ function renderDeviceList(){
       devs[name].defaultView = sel.value;
       saveDevices(devs, name);
       if(name === getDeviceName()) setDisplay(sel.value);
-    });
-  });
-
-  // Review-edit permission — off by default per device
-  wrap.querySelectorAll('.device-review-cb').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const devs = getDevices();
-      const name = cb.dataset.device;
-      if(!devs[name]) devs[name] = { hiddenStaffCategories: [] };
-      devs[name].canEditReviews = cb.checked;
-      saveDevices(devs, name);
-      if(name === getDeviceName()) loadRegister(); // redraw buttons on/off immediately
     });
   });
 
