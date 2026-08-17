@@ -1585,11 +1585,7 @@
 
         <div class="group">
           <h3>Staff roster refresh</h3>
-          <p class="hint">The staff list shown here (even staff who haven't punched yet) is a mirror the Worker writes once a day. A new or changed staff member won't appear until that mirror refreshes. Enter the Worker's URL and its <code>DEBUG_KEY</code> below to refresh it on demand instead of waiting for tonight's cron.</p>
-          <div class="grid">
-            <div class="field"><label for="w-url">Worker URL</label><input id="w-url" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
-            <div class="field"><label for="w-key">Debug key</label><input id="w-key" type="password"></div>
-          </div>
+          <p class="hint">The staff list shown here (even staff who haven't punched yet) is a mirror the Worker writes once a day. A new or changed staff member won't appear until that mirror refreshes.</p>
           <div class="row">
             <button type="button" id="w-refresh-btn" class="ghost small" style="height:36px;">Refresh staff roster now</button>
           </div>
@@ -1894,9 +1890,13 @@
 
 
 <script>
+// Baked-in default — pre-fills the Worker URL/key so it doesn't have to be
+// typed on every device. Still editable and overridable from Settings.
+const DEFAULT_WORKER_URL = 'https://attendance.attendance-661.workers.dev';
+const DEFAULT_WORKER_KEY = 'staff';
+
 const LS = {
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
-  workerUrl:'reg_worker_url', workerKey:'reg_worker_debug_key',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
@@ -3643,8 +3643,6 @@ function loadSettingsFormFromLocal(){
   renderSeasonList();
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
-  document.getElementById('w-url').value  = localStorage.getItem(LS.workerUrl) || '';
-  document.getElementById('w-key').value  = localStorage.getItem(LS.workerKey) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
   document.getElementById('sandwich-toggle').checked = getSandwichRule() === 'on';
@@ -4240,8 +4238,6 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
-  localStorage.setItem(LS.workerUrl, document.getElementById('w-url').value.trim().replace(/\/+$/, ''));
-  localStorage.setItem(LS.workerKey, document.getElementById('w-key').value.trim());
   // device names are edited inline in the Devices section
 
   const settings = collectSettingsObject();
@@ -4319,23 +4315,17 @@ document.getElementById('r-test-btn').addEventListener('click', async () => {
   }
 });
 
-// Hits the Worker's /debug/absent, which re-runs markAbsentees for today —
-// that's what rewrites roster/staff.json, so this is the manual escape
-// hatch instead of waiting for tonight's cron.
+// Hits the Worker's /debug/absent with group=staff, which re-runs just the
+// staff half of markAbsentees — that's what rewrites roster/staff.json —
+// without touching the (slower, irrelevant) student absentee computation.
 document.getElementById('w-refresh-btn').addEventListener('click', async () => {
   const el = document.getElementById('w-refresh-status');
-  const wUrl = document.getElementById('w-url').value.trim().replace(/\/+$/, '');
-  const wKey = document.getElementById('w-key').value.trim();
   el.style.display = 'block';
   el.className = 'testline';
-  if(!wUrl || !wKey){ el.textContent = 'Enter the Worker URL and debug key first.'; el.classList.add('err'); return; }
   el.textContent = 'Refreshing\u2026';
 
-  localStorage.setItem(LS.workerUrl, wUrl);
-  localStorage.setItem(LS.workerKey, wKey);
-
   const today = todayKolkata();
-  const result = await fetchJson(`${wUrl}/debug/absent?date=${today}&key=${encodeURIComponent(wKey)}`);
+  const result = await fetchJson(`${DEFAULT_WORKER_URL}/debug/absent?date=${today}&group=staff&key=${encodeURIComponent(DEFAULT_WORKER_KEY)}`);
 
   if(result && !result.error && !result.skipped){
     el.classList.add('ok');
@@ -4345,7 +4335,7 @@ document.getElementById('w-refresh-btn').addEventListener('click', async () => {
     el.classList.add('err');
     el.textContent = result && result.skipped ? `Skipped: ${result.skipped}`
       : result && result.error ? `Failed: ${result.error}`
-      : 'Could not reach the Worker. Check the URL and debug key.';
+      : 'Could not reach the Worker.';
   }
 });
 
