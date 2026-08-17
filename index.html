@@ -1582,6 +1582,19 @@
           <label class="inline-check"><input type="checkbox" id="r-wipe-local"> Also clear every setting saved on this device</label>
           <p class="testline" id="r-test-status"></p>
         </div>
+
+        <div class="group">
+          <h3>Staff roster refresh</h3>
+          <p class="hint">The staff list shown here (even staff who haven't punched yet) is a mirror the Worker writes once a day. A new or changed staff member won't appear until that mirror refreshes. Enter the Worker's URL and its <code>DEBUG_KEY</code> below to refresh it on demand instead of waiting for tonight's cron.</p>
+          <div class="grid">
+            <div class="field"><label for="w-url">Worker URL</label><input id="w-url" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
+            <div class="field"><label for="w-key">Debug key</label><input id="w-key" type="password"></div>
+          </div>
+          <div class="row">
+            <button type="button" id="w-refresh-btn" class="ghost small" style="height:36px;">Refresh staff roster now</button>
+          </div>
+          <p class="testline" id="w-refresh-status"></p>
+        </div>
       </section>
 
       <!-- ── Day timings ── -->
@@ -1883,6 +1896,7 @@
 <script>
 const LS = {
   rUrl:'reg_raw_url',      rCode:'reg_raw_code',
+  workerUrl:'reg_worker_url', workerKey:'reg_worker_debug_key',
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
@@ -2031,6 +2045,13 @@ function personFromAbsentee(a){
   return VIEW === 'student'
     ? { admissionNumber:String(id), studentName: a.studentName || '', class: a.className || '', busNumber: a.busNumber || '' }
     : { id:String(id), name: a.staffName || '', role: a.category || '' };
+}
+// Roster mirror entry -> roster shape (staff only — poori list, punch ho ya na ho)
+function personFromRoster(r){
+  if(!r) return null;
+  const id = r.employeeId;
+  if(id == null || id === '') return null;
+  return { id:String(id), name: r.staffName || '', role: r.category || '' };
 }
 function personId(p){ return VIEW === 'student' ? String(p.admissionNumber) : String(p.id); }
 function mergePerson(map, p){
@@ -2654,7 +2675,7 @@ document.getElementById('month-input').value = TODAY.slice(0,7);
    ═══════════════════════════════════════════════════════════ */
 const POLL_MS = 30000;
 let SCAN_PREFIX = 'raw_attendance';
-let LIVE = { scans:null, abs:null, streams:[], key:'', open:0, failed:0, poll:null, applyTimer:null };
+let LIVE = { scans:null, abs:null, roster:null, streams:[], key:'', open:0, failed:0, poll:null, applyTimer:null };
 let lastLoadAt = 0;
 
 function viewingToday(){
@@ -2875,10 +2896,11 @@ async function loadDaily(){
       attFetch(base, `attendance/${group}/${date}.json`),
       fetchJson(`${base}/absentees/${group}/${date}.json`)
     ];
-    if(VIEW === 'staff') jobs.push(fetchOverrides(date.slice(0,7)));
+    if(VIEW === 'staff') jobs.push(fetchOverrides(date.slice(0,7)), fetchJson(`${base}/roster/staff.json`));
     const results = await Promise.all(jobs);
     scans = results[0]; absNode = results[1];
     OVERRIDES = VIEW === 'staff' ? (results[2] || {}) : {};
+    LIVE.roster = VIEW === 'staff' ? (results[3] || null) : null;
   }
 
   LIVE.scans = scans;
@@ -2921,6 +2943,18 @@ function applyDailyData(){
     });
   }
 
+  // Staff — poori list dikhani hai, chahe aaj punch kiya ho ya na ho.
+  // Roster mirror se jo bhi bacha (na scan, na absentee record), unhe bhi
+  // roster me daal do — renderDailyTable already 'absent'/'off' compute
+  // kar leta hai jab RECORDS[id] khali ho.
+  if(VIEW === 'staff' && LIVE.roster && typeof LIVE.roster === 'object'){
+    Object.values(LIVE.roster).forEach(r => {
+      const p = personFromRoster(r);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+    });
+  }
+
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
 
@@ -2951,10 +2985,11 @@ async function loadMonthly(){
       attFetch(base, `attendance/${group}.json?${range}`),
       fetchJson(`${base}/absentees/${group}.json?${range}`)
     ];
-    if(VIEW === 'staff') jobs.push(fetchOverrides(monthVal));
+    if(VIEW === 'staff') jobs.push(fetchOverrides(monthVal), fetchJson(`${base}/roster/staff.json`));
     const results = await Promise.all(jobs);
     scanRange = results[0]; absRange = results[1];
     OVERRIDES = VIEW === 'staff' ? (results[2] || {}) : {};
+    LIVE.roster = VIEW === 'staff' ? (results[3] || null) : null;
   }
 
   const rosterMap = {};
@@ -2963,8 +2998,9 @@ async function loadMonthly(){
   const scanDays = scanRange && typeof scanRange === 'object' ? scanRange : {};
   const absDays  = absRange  && typeof absRange  === 'object' ? absRange  : {};
   const seenDays = [...new Set([...Object.keys(scanDays), ...Object.keys(absDays)])].sort();
+  const hasRoster = VIEW === 'staff' && LIVE.roster && typeof LIVE.roster === 'object' && Object.keys(LIVE.roster).length;
 
-  if(!base || !seenDays.length){
+  if(!base || (!seenDays.length && !hasRoster)){
     ROSTER = [];
     MONTHLY = {};
     buildMonthlyHead();
@@ -3004,6 +3040,16 @@ async function loadMonthly(){
     });
     dayAbsent[day] = set;
   });
+
+  // Staff — poori list dikhani hai, chahe mahine me kabhi punch kiya ho ya
+  // na ho. Missing days apne aap 'none'/'off' compute ho jate hain neeche.
+  if(hasRoster){
+    Object.values(LIVE.roster).forEach(r => {
+      const p = personFromRoster(r);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+    });
+  }
 
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
@@ -3228,7 +3274,7 @@ function setSummary(cards){
 
 function renderDailyTable(){
   const rows = filteredRows();
-  let present = 0, exit = 0, absent = 0, half = 0, offDay = 0, lateDay = 0;
+  let present = 0, exit = 0, absent = 0, half = 0, offDay = 0, lateDay = 0, pendingDay = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
@@ -3262,11 +3308,21 @@ function renderDailyTable(){
       const dayDate = document.getElementById('date-input').value || TODAY;
       const working = isWorkingDayFor(dayDate, 'staff', category);
       const override = getOverride(idField, dayDate);
-      status = override ? override : recs.length ? computeStaffDayStatus(recs, category) : (working ? 'absent' : 'off');
+      // Zero scans on TODAY, before "Don't flag it until" — day's still on,
+      // so this is a pending arrival, not an absence yet. Past days (and
+      // today once that time passes) fall through to the real 'absent'.
+      let pending = false;
+      if(!override && !recs.length && working && dayDate === TODAY){
+        const cutoff = timeStrToMinutes(getReviewAfterTime());
+        const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+        pending = cutoff == null || nowMin < cutoff;
+      }
+      status = override ? override : recs.length ? computeStaffDayStatus(recs, category) : (pending ? 'pending' : (working ? 'absent' : 'off'));
       if(status === 'present') present++;
       else if(status === 'late'){ present++; lateDay++; }
       else if(status === 'half' || status === 'needsReview') half++;
       else if(status === 'off') offDay++;
+      else if(status === 'pending') pendingDay++;
       else absent++;
       /* Worker already decided in vs out per scan (action field) — including
          night staff, whose "out" is tagged night_out and dated to the
@@ -3298,6 +3354,7 @@ function renderDailyTable(){
           : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
           : status === 'half' ? '<span class="badge half">Half day</span>'
           : status === 'off' ? '<span class="badge off">Week off</span>'
+          : status === 'pending' ? '<span class="badge off" title="Day still on — not marked absent yet">Not in yet</span>'
           : '<span class="badge absent">Absent</span>';
         if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
       }
@@ -3327,6 +3384,7 @@ function renderDailyTable(){
     ];
     if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent-ink)'});
     if(offDay) dailyCards.push({value: offDay, label:'Week off'});
+    if(pendingDay) dailyCards.push({value: pendingDay, label:'Not in yet'});
   }
   setSummary(dailyCards);
   renderBreakdown(enriched, 'daily');
@@ -3585,6 +3643,8 @@ function loadSettingsFormFromLocal(){
   renderSeasonList();
   document.getElementById('r-url').value  = localStorage.getItem(LS.rUrl)  || '';
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
+  document.getElementById('w-url').value  = localStorage.getItem(LS.workerUrl) || '';
+  document.getElementById('w-key').value  = localStorage.getItem(LS.workerKey) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
   document.getElementById('sandwich-toggle').checked = getSandwichRule() === 'on';
@@ -4180,6 +4240,8 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   const rCode = document.getElementById('r-code').value.trim().replace(/^\/+|\/+$/g, '');
   localStorage.setItem(LS.rUrl, rUrl);
   localStorage.setItem(LS.rCode, rCode);
+  localStorage.setItem(LS.workerUrl, document.getElementById('w-url').value.trim().replace(/\/+$/, ''));
+  localStorage.setItem(LS.workerKey, document.getElementById('w-key').value.trim());
   // device names are edited inline in the Devices section
 
   const settings = collectSettingsObject();
@@ -4254,6 +4316,36 @@ document.getElementById('r-test-btn').addEventListener('click', async () => {
   }else{
     el.classList.add('err');
     el.textContent = 'Could read' + (settingsRead || todayScans ? '' : ' nothing') + ', but the write test failed. Check the code segment and the database rules.';
+  }
+});
+
+// Hits the Worker's /debug/absent, which re-runs markAbsentees for today —
+// that's what rewrites roster/staff.json, so this is the manual escape
+// hatch instead of waiting for tonight's cron.
+document.getElementById('w-refresh-btn').addEventListener('click', async () => {
+  const el = document.getElementById('w-refresh-status');
+  const wUrl = document.getElementById('w-url').value.trim().replace(/\/+$/, '');
+  const wKey = document.getElementById('w-key').value.trim();
+  el.style.display = 'block';
+  el.className = 'testline';
+  if(!wUrl || !wKey){ el.textContent = 'Enter the Worker URL and debug key first.'; el.classList.add('err'); return; }
+  el.textContent = 'Refreshing\u2026';
+
+  localStorage.setItem(LS.workerUrl, wUrl);
+  localStorage.setItem(LS.workerKey, wKey);
+
+  const today = todayKolkata();
+  const result = await fetchJson(`${wUrl}/debug/absent?date=${today}&key=${encodeURIComponent(wKey)}`);
+
+  if(result && !result.error && !result.skipped){
+    el.classList.add('ok');
+    el.textContent = `Roster refreshed. ${result.staff || 0} staff marked absent today` + (result.errors && result.errors.length ? ` \u2014 ${result.errors.join(', ')}` : '') + '.';
+    if(VIEW === 'staff') loadRegister();
+  }else{
+    el.classList.add('err');
+    el.textContent = result && result.skipped ? `Skipped: ${result.skipped}`
+      : result && result.error ? `Failed: ${result.error}`
+      : 'Could not reach the Worker. Check the URL and debug key.';
   }
 });
 
