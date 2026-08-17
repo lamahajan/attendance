@@ -1766,7 +1766,9 @@
                 <option value="needsReview">Half, but flag for review</option>
               </select>
             </div>
+            <div class="field"><label for="review-after-time">Don't flag it until</label><input type="time" id="review-after-time"></div>
           </div>
+          <p class="hint" style="margin-top:8px;">Before that time, one scan just means the day's still on &mdash; not yet a problem.</p>
         </div>
 
         <div class="group">
@@ -1895,6 +1897,7 @@ const LS = {
   examMode:'reg_exam_mode',
   staffDurationThresholds:'reg_staff_duration_thresholds',
   singleScanPolicy:'reg_single_scan_policy',
+  reviewAfterTime:'reg_review_after_time',
   nightStaffIds:'reg_night_staff_ids',
   settingsPassHash:'reg_settings_pass_hash',
   studentDefaultView:'reg_student_default_view',
@@ -2118,6 +2121,12 @@ function getSingleScanPolicy(){
   return ['half','absent','needsReview'].includes(v) ? v : 'half';
 }
 function saveSingleScanPolicy(v){ localStorage.setItem(LS.singleScanPolicy, v); }
+// Before this time, a single scan (duration-mode) is just "day in progress" —
+// no review badge, no half/absent penalty. Only past it does the single-scan
+// policy above actually kick in. Only matters for today; a past day always
+// applies the policy straight away since it's already over.
+function getReviewAfterTime(){ return localStorage.getItem(LS.reviewAfterTime) || '19:00'; }
+function saveReviewAfterTime(v){ localStorage.setItem(LS.reviewAfterTime, v || '19:00'); }
 
 /* Night staff — ids of staff who punch IN on the evening window and OUT on
    the following morning's window, matched against whatever ID the device
@@ -2345,6 +2354,12 @@ function computeStaffDayStatus(recs, category){
     const arrivedLate = by != null && Math.min(...times) > by;
 
     if(times.length === 1){
+      const dayStr = dateOnly(recs[0].time);
+      if(dayStr === TODAY){
+        const cutoff = timeStrToMinutes(getReviewAfterTime());
+        const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+        if(cutoff != null && nowMin < cutoff) return 'present'; // day's still on — too early to call it a problem
+      }
       const p = getSingleScanPolicy();
       if(p === 'absent') return 'absent';
       if(p === 'needsReview') return 'needsReview'; // only one scan — counts as half until someone resolves it
@@ -2502,7 +2517,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichRule','seasons','settingsPassHash','studentDefaultView','devices','studentShiftHours','studentClassEvening','examMode','staffDurationThresholds','singleScanPolicy','nightStaffIds'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichRule','seasons','settingsPassHash','studentDefaultView','devices','studentShiftHours','studentClassEvening','examMode','staffDurationThresholds','singleScanPolicy','reviewAfterTime','nightStaffIds'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -3269,20 +3284,23 @@ function renderDailyTable(){
       const ignoredHtml = ignored.length
         ? `<span class="off-window" title="Outside the allowed punch windows, so it was not counted">${ignored.map(r => escapeHtml(timeOnly(r.time))).join('<br>')}</span>`
         : '';
-      let statusLabel = status === 'needsReview' ? '<span class="badge half">One scan &mdash; needs review</span>'
-        : status === 'present' ? '<span class="badge present">Full day</span>'
-        : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
-        : status === 'half' ? '<span class="badge half">Half day</span>'
-        : status === 'off' ? '<span class="badge off">Week off</span>'
-        : '<span class="badge absent">Absent</span>';
-      if(override) statusLabel += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
-      const reviewButtons = isThisDeviceEditor() ? `
+      let badge;
+      if(status === 'needsReview'){
+        badge = '<span class="badge half">One scan &mdash; needs review</span>'
+          + (isThisDeviceEditor() ? `
           <div class="review-actions">
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="present">Full</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="half">Half</button>
             <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="absent">Absent</button>
-          </div>` : '';
-      const badge = statusLabel + reviewButtons;
+          </div>` : '');
+      }else{
+        badge = status === 'present' ? '<span class="badge present">Full day</span>'
+          : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
+          : status === 'half' ? '<span class="badge half">Half day</span>'
+          : status === 'off' ? '<span class="badge off">Week off</span>'
+          : '<span class="badge absent">Absent</span>';
+        if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
+      }
       const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
       tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
     }
@@ -3636,6 +3654,7 @@ function buildShiftRulesGrid(){
   document.getElementById('dur-absent-min').value = th.absentBelowMin;
   document.getElementById('dur-full-min').value = th.fullAboveMin;
   document.getElementById('single-scan-policy').value = getSingleScanPolicy();
+  document.getElementById('review-after-time').value = getReviewAfterTime();
 }
 
 /* ── Class-wise evening override ── */
@@ -4152,6 +4171,7 @@ function collectSettingsObject(){
       fullAboveMin: Number(document.getElementById('dur-full-min').value) || 210
     },
     singleScanPolicy: document.getElementById('single-scan-policy').value,
+    reviewAfterTime: document.getElementById('review-after-time').value || '19:00',
     nightStaffIds: getNightStaffIds()
   };
 }
@@ -4177,6 +4197,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   saveExamMode(settings.examMode);
   saveStaffDurationThresholds(settings.staffDurationThresholds);
   saveSingleScanPolicy(settings.singleScanPolicy);
+  saveReviewAfterTime(settings.reviewAfterTime);
   saveNightStaffIds(settings.nightStaffIds);
   const devsNow = getDevices();
   const me = getDeviceName();
