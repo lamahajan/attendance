@@ -345,6 +345,13 @@
     display:block; font-size:11.5px; color:var(--ink-soft); margin-top:12px; padding-top:12px;
     border-top:1px solid var(--paper-line);
   }
+  .shift-rule-card .src-duration-fields{ display:none; }
+  .shift-rule-card.duration-on .src-duration-fields{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;
+  }
+  .shift-rule-card .src-duration-fields .field{ min-width:128px; }
+  .shift-rule-card .src-duration-fields .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
+  .shift-rule-card .src-duration-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
   .shift-rule-card .src-windows .field{ min-width:112px; }
   .shift-rule-card .src-windows .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; }
   .shift-rule-card .src-windows .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
@@ -1763,8 +1770,8 @@
         <div id="shift-rules-grid"></div>
 
         <div class="group">
-          <h3>Duration mode</h3>
-          <p class="hint">Applies to categories with it ticked above &mdash; time between first and last scan.</p>
+          <h3>Duration mode &mdash; defaults</h3>
+          <p class="hint">Applies to categories with Duration mode ticked above, and only where that category hasn't set its own Absent under / Full day over (those two fields now live on each category's card, right below its Duration mode checkbox).</p>
           <div class="grid">
             <div class="field"><label for="dur-absent-min">Absent under (min)</label><input type="number" id="dur-absent-min"></div>
             <div class="field"><label for="dur-full-min">Full day over (min)</label><input type="number" id="dur-full-min"></div>
@@ -1777,7 +1784,7 @@
             </div>
             <div class="field"><label for="review-after-time">Don't flag it until</label><input type="time" id="review-after-time"></div>
           </div>
-          <p class="hint" style="margin-top:8px;">Before that time, one scan just means the day's still on &mdash; not yet a problem.</p>
+          <p class="hint" style="margin-top:8px;">Before that time, one scan just means the day's still on &mdash; not yet a problem. (Single-scan policy and the review time stay shared across every duration-mode category.)</p>
         </div>
 
         <div class="group">
@@ -2368,7 +2375,11 @@ function computeStaffDayStatus(recs, category){
   const rule = shiftedRuleFor(category, dateOnly(recs[0].time)) || {};
 
   if(rule.mode === 'duration'){
-    const th = getStaffDurationThresholds();
+    const def = getStaffDurationThresholds();
+    const th = {
+      absentBelowMin: (rule.absentBelowMin === 0 || rule.absentBelowMin) ? rule.absentBelowMin : def.absentBelowMin,
+      fullAboveMin: (rule.fullAboveMin === 0 || rule.fullAboveMin) ? rule.fullAboveMin : def.fullAboveMin
+    };
     const times = recs.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
     if(!times.length) return 'absent';
     const by = timeStrToMinutes(rule.arriveBy);
@@ -2919,8 +2930,21 @@ function applyDailyData(){
   ABSENT_READY = false;
 
   const rosterMap = {};
-  const scans = LIVE.scans;
 
+  // Staff — poori list ROSTER MAP ki base banti hai, chahe aaj punch kiya ho
+  // ya nahi. Scans/absentees baad me isi map ko UPDATE karte hain (naya data
+  // fill karte hain, kabhi kisi ko hataate nahi) — is order me likhne ka
+  // matlab hai ki agar scans/absentees fetch fail/empty ho jaye kisi wajah
+  // se, roster wali poori list phir bhi dikhti rahegi.
+  if(VIEW === 'staff' && LIVE.roster && typeof LIVE.roster === 'object'){
+    Object.values(LIVE.roster).forEach(r => {
+      const p = personFromRoster(r);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+    });
+  }
+
+  const scans = LIVE.scans;
   if(scans && typeof scans === 'object'){
     Object.values(scans).forEach(rec => {
       const p = personFromRecord(rec);
@@ -2940,18 +2964,6 @@ function applyDailyData(){
       if(!p) return;
       mergePerson(rosterMap, p);
       ABSENT_IDS.add(personId(p));
-    });
-  }
-
-  // Staff — poori list dikhani hai, chahe aaj punch kiya ho ya na ho.
-  // Roster mirror se jo bhi bacha (na scan, na absentee record), unhe bhi
-  // roster me daal do — renderDailyTable already 'absent'/'off' compute
-  // kar leta hai jab RECORDS[id] khali ho.
-  if(VIEW === 'staff' && LIVE.roster && typeof LIVE.roster === 'object'){
-    Object.values(LIVE.roster).forEach(r => {
-      const p = personFromRoster(r);
-      if(!p) return;
-      mergePerson(rosterMap, p);
     });
   }
 
@@ -2994,6 +3006,17 @@ async function loadMonthly(){
 
   const rosterMap = {};
   MONTHLY = {};
+
+  // Staff — poori list ROSTER MAP ki base banti hai, chahe mahine me kabhi
+  // punch kiya ho ya na ho. Baad me scans/absentees isi map ko update karte
+  // hain. Missing days apne aap 'none'/'off' compute ho jate hain neeche.
+  if(VIEW === 'staff' && LIVE.roster && typeof LIVE.roster === 'object'){
+    Object.values(LIVE.roster).forEach(r => {
+      const p = personFromRoster(r);
+      if(!p) return;
+      mergePerson(rosterMap, p);
+    });
+  }
 
   const scanDays = scanRange && typeof scanRange === 'object' ? scanRange : {};
   const absDays  = absRange  && typeof absRange  === 'object' ? absRange  : {};
@@ -3040,16 +3063,6 @@ async function loadMonthly(){
     });
     dayAbsent[day] = set;
   });
-
-  // Staff — poori list dikhani hai, chahe mahine me kabhi punch kiya ho ya
-  // na ho. Missing days apne aap 'none'/'off' compute ho jate hain neeche.
-  if(hasRoster){
-    Object.values(LIVE.roster).forEach(r => {
-      const p = personFromRoster(r);
-      if(!p) return;
-      mergePerson(rosterMap, p);
-    });
-  }
 
   ROSTER = applyStaffVisibility(Object.values(rosterMap));
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
@@ -3325,16 +3338,29 @@ function renderDailyTable(){
       else if(status === 'pending') pendingDay++;
       else absent++;
       /* Worker already decided in vs out per scan (action field) — including
-         night staff, whose "out" is tagged night_out and dated to the
-         previous shift day. Trust that instead of re-deriving it locally. */
+         night staff (night_in/night_out, dated to the previous shift day)
+         and split-shift categories, where the SAME window can carry both an
+         entry and an exit (morning_entry + morning_exit if someone punches
+         twice inside the morning window, e.g. a driver in at 4am, out at
+         9am, then back in at noon for the evening leg). Trust the tags
+         instead of re-deriving in/out locally from the raw window name. */
       const inList = [], outList = [], ignored = [];
       sortedRecs.forEach(r => {
-        if(r.action === 'night_in' || r.action === 'morning_entry') inList.push(r);
-        else if(r.action === 'night_out' || r.action === 'evening_exit' || r.action === 'gatepass_exit') outList.push(r);
+        if(r.action === 'night_in' || r.action === 'morning_entry' || r.action === 'evening_entry') inList.push(r);
+        else if(r.action === 'night_out' || r.action === 'morning_exit' || r.action === 'evening_exit' || r.action === 'gatepass_exit') outList.push(r);
         else ignored.push(r);
       });
-      const stack = list => {
-        const lines = list.filter(Boolean).map(r => escapeHtml(timeOnly(r.time)) + (r.nextDayPunch ? ' <span class="plus-day" title="Scanned the next calendar day">(+1)</span>' : ''));
+      // Multiple scans can share the same action (e.g. two accidental taps
+      // both landing as "morning_exit") — those collapse to just the latest.
+      // But two DIFFERENT actions (morning_exit AND evening_exit — the two
+      // separate shifts' departures) are both real and both shown, one line
+      // each. sortedRecs is chronological, so the last write per action-key
+      // is automatically the latest scan for that action.
+      const latestPerAction = list => {
+        const byAction = {};
+        list.forEach(r => { byAction[r.action] = r; });
+        const kept = Object.values(byAction).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
+        const lines = kept.map(r => escapeHtml(timeOnly(r.time)) + (r.nextDayPunch ? ' <span class="plus-day" title="Scanned the next calendar day">(+1)</span>' : ''));
         return lines.length ? lines.join('<br>') : '\u2014';
       };
       const ignoredHtml = ignored.length
@@ -3358,8 +3384,8 @@ function renderDailyTable(){
           : '<span class="badge absent">Absent</span>';
         if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
       }
-      const inCell = [stack(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || stack(inList);
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${stack(outList)}</td><td data-l="Status">${badge}</td>`;
+      const inCell = [latestPerAction(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || latestPerAction(inList);
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${latestPerAction(outList)}</td><td data-l="Status">${badge}</td>`;
     }
     tr.dataset.status = status;
     enriched.push({ s, status });
@@ -3672,6 +3698,7 @@ function loadSettingsFormFromLocal(){
 function buildShiftRulesGrid(){
   const map = getShiftRulesMap();
   const grid = document.getElementById('shift-rules-grid');
+  const defaultTh = getStaffDurationThresholds();
   grid.innerHTML = PREFERRED_STAFF_CATEGORY_ORDER.map(cat => {
     const rule = map[cat] || {};
     const days = Array.isArray(rule.days) ? rule.days : [];
@@ -3691,6 +3718,10 @@ function buildShiftRulesGrid(){
         <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
       </div>
       <p class="src-duration-note">Punch whenever &mdash; only the gap between first and last scan matters.</p>
+      <div class="src-duration-fields">
+        <div class="field"><label>Absent under (min)</label><input type="number" class="src-dur-absent" placeholder="${escapeHtml(String(defaultTh.absentBelowMin))}" value="${rule.absentBelowMin === 0 || rule.absentBelowMin ? escapeHtml(String(rule.absentBelowMin)) : ''}"></div>
+        <div class="field"><label>Full day over (min)</label><input type="number" class="src-dur-full" placeholder="${escapeHtml(String(defaultTh.fullAboveMin))}" value="${rule.fullAboveMin === 0 || rule.fullAboveMin ? escapeHtml(String(rule.fullAboveMin)) : ''}"></div>
+      </div>
       <div class="src-arrive">
         <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}"></div>
         <div class="field"><label>Season shift (min)</label><input type="number" step="5" class="src-season-shift" placeholder="auto" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}"></div>
@@ -4198,6 +4229,9 @@ function collectSettingsObject(){
     shiftRulesObj[cat].eTo   = g('.scw-e-to');
     const ss = g('.src-season-shift');
     shiftRulesObj[cat].seasonShift = ss === '' ? '' : Number(ss);
+    const da = g('.src-dur-absent'), df = g('.src-dur-full');
+    shiftRulesObj[cat].absentBelowMin = da === '' ? '' : Number(da);
+    shiftRulesObj[cat].fullAboveMin   = df === '' ? '' : Number(df);
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
