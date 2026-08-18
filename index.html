@@ -340,6 +340,8 @@
     border-top:1px solid var(--paper-line);
   }
   .shift-rule-card.duration-on .src-windows{ display:none; }
+  .shift-rule-card .src-min-shift-hint{ font-size:11px; color:var(--ink-soft); margin-top:8px; }
+  .shift-rule-card.duration-on .src-min-shift-hint{ display:none; }
   .shift-rule-card .src-duration-note{ display:none; }
   .shift-rule-card.duration-on .src-duration-note{
     display:block; font-size:11.5px; color:var(--ink-soft); margin-top:12px; padding-top:12px;
@@ -2406,7 +2408,7 @@ function computeStaffDayStatus(recs, category){
     return status;
   }
 
-  const { morning, evening, hasM, hasE } = splitScansByWindow(recs, category);
+  const { morning, evening, hasM, hasE, rule: winRule } = splitScansByWindow(recs, category);
   const by = timeStrToMinutes(rule.arriveBy);
   const lateCheck = (list, fallback) => {
     if(by == null) return false;
@@ -2420,9 +2422,26 @@ function computeStaffDayStatus(recs, category){
     return lateCheck([], recs) ? 'late' : 'present';
   }
 
+  // Hours-based per-shift check (opt-in via "Min hours per shift" on the
+  // category card). Blank/0 keeps the old rule — any scan inside a window
+  // is enough. Set a number and a shift only "counts" once its own
+  // first-to-last-scan gap reaches that many minutes; short of that (or a
+  // window with zero matching scans) leaves that shift unsatisfied, which
+  // makes the day Half even though the OTHER shift was a clean in/out.
+  const minShift = (winRule.minShiftMin === 0 || winRule.minShiftMin) ? winRule.minShiftMin : 0;
+  const shiftSatisfied = list => {
+    if(!list.length) return false;
+    if(!minShift) return true;
+    const times = list.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
+    if(times.length < 2) return false; // only a punch-in so far, no gap to measure yet
+    return (Math.max(...times) - Math.min(...times)) >= minShift;
+  };
+
   const need = (hasM ? 1 : 0) + (hasE ? 1 : 0);
-  const hit  = (hasM && morning.length ? 1 : 0) + (hasE && evening.length ? 1 : 0);
-  if(!hit) return 'absent';                 // every scan fell outside the windows
+  const morningOk = hasM && shiftSatisfied(morning);
+  const eveningOk = hasE && shiftSatisfied(evening);
+  const hit = (morningOk ? 1 : 0) + (eveningOk ? 1 : 0);
+  if(!hit) return 'absent';                 // every scan fell outside the windows (or fell short of the hours)
   if(hit < need) return 'half';
   return lateCheck(morning, recs) ? 'late' : 'present';
 }
@@ -3321,12 +3340,19 @@ function renderDailyTable(){
       const dayDate = document.getElementById('date-input').value || TODAY;
       const working = isWorkingDayFor(dayDate, 'staff', category);
       const override = getOverride(idField, dayDate);
-      // Zero scans on TODAY, before "Don't flag it until" — day's still on,
-      // so this is a pending arrival, not an absence yet. Past days (and
-      // today once that time passes) fall through to the real 'absent'.
+      // Zero scans on TODAY, before the cutoff — day's still on, so this is
+      // a pending arrival, not an absence yet. "Must arrive by" (per
+      // category) is the natural cutoff here — once that time passes with
+      // no punch, mark it Absent right away instead of waiting for the
+      // generic "Don't flag it until" review time. Categories with no
+      // arriveBy set keep using that review time, same as before. Once a
+      // scan does land (whenever it happens), the usual computeStaffDayStatus
+      // path takes over and judges it normally (Late if it's after arriveBy).
       let pending = false;
       if(!override && !recs.length && working && dayDate === TODAY){
-        const cutoff = timeStrToMinutes(getReviewAfterTime());
+        const catRule = shiftedRuleFor(category, dayDate) || {};
+        const arriveByMin = timeStrToMinutes(catRule.arriveBy);
+        const cutoff = arriveByMin != null ? arriveByMin : timeStrToMinutes(getReviewAfterTime());
         const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
         pending = cutoff == null || nowMin < cutoff;
       }
@@ -3716,7 +3742,9 @@ function buildShiftRulesGrid(){
         <div class="field"><label>Morning punch to</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
         <div class="field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
         <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
+        <div class="field"><label>Min hours per shift (min)</label><input type="number" class="scw-min-shift" placeholder="off &mdash; any punch counts" value="${rule.minShiftMin === 0 || rule.minShiftMin ? escapeHtml(String(rule.minShiftMin)) : ''}"></div>
       </div>
+      <p class="hint src-min-shift-hint">Leave blank and any punch inside a window counts as that shift done, like before. Set a number and a shift only counts if the gap between its first and last scan in that window reaches it &mdash; a shift that falls short (or never got a matching scan) makes the day Half, even if the other shift was a full punch-in/punch-out.</p>
       <p class="src-duration-note">Punch whenever &mdash; only the gap between first and last scan matters.</p>
       <div class="src-duration-fields">
         <div class="field"><label>Absent under (min)</label><input type="number" class="src-dur-absent" placeholder="${escapeHtml(String(defaultTh.absentBelowMin))}" value="${rule.absentBelowMin === 0 || rule.absentBelowMin ? escapeHtml(String(rule.absentBelowMin)) : ''}"></div>
@@ -4227,6 +4255,8 @@ function collectSettingsObject(){
     shiftRulesObj[cat].mTo   = g('.scw-m-to');
     shiftRulesObj[cat].eFrom = g('.scw-e-from');
     shiftRulesObj[cat].eTo   = g('.scw-e-to');
+    const ms = g('.scw-min-shift');
+    shiftRulesObj[cat].minShiftMin = ms === '' ? '' : Number(ms);
     const ss = g('.src-season-shift');
     shiftRulesObj[cat].seasonShift = ss === '' ? '' : Number(ss);
     const da = g('.src-dur-absent'), df = g('.src-dur-full');
