@@ -438,6 +438,57 @@
   }
   .modal-close:hover{ background:var(--row-alt); color:var(--ink); }
 
+  /* ── Review-pending modal ── */
+  .review-panel{
+    background:var(--paper); width:100%; max-width:560px; max-height:min(640px, calc(100vh - 48px));
+    border-radius:14px; box-shadow:0 24px 70px rgba(20,24,42,.34);
+    display:flex; flex-direction:column; overflow:hidden; position:relative;
+  }
+  .review-head{ padding:20px 46px 14px 24px; border-bottom:1px solid var(--paper-line); }
+  .review-head h3{ margin:0; font-size:17px; font-weight:700; }
+  .review-head p{ margin:4px 0 0; font-size:12.5px; color:var(--ink-soft); }
+  .review-selectall{
+    display:flex; align-items:center; gap:8px; padding:11px 24px; border-bottom:1px solid var(--paper-line);
+    font-size:13px; font-weight:600; background:var(--row-alt);
+  }
+  .review-selectall input{ width:16px; height:16px; }
+  .review-list{ overflow-y:auto; flex:1; }
+  .review-row{
+    display:flex; align-items:center; gap:12px; padding:10px 24px; border-bottom:1px solid var(--paper-line);
+  }
+  .review-row:last-child{ border-bottom:none; }
+  .review-row input[type="checkbox"]{ width:16px; height:16px; flex:none; }
+  .review-row .who{ flex:1; min-width:0; }
+  .review-row .who .name{ font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .review-row .who .meta{ font-size:11.5px; color:var(--ink-soft); margin-top:1px; }
+  .review-row .quick{ display:flex; gap:5px; flex:none; }
+  .review-row .quick button{
+    font-size:11px; font-weight:700; padding:5px 9px; height:26px;
+    border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--ink); cursor:pointer;
+  }
+  .review-row .quick button:hover{ border-color:var(--ink); }
+  .review-row.done{ opacity:.45; }
+  .review-row.done .quick{ pointer-events:none; }
+  .review-empty{ padding:40px 24px; text-align:center; color:var(--ink-soft); font-size:13.5px; }
+  .review-foot{
+    display:flex; align-items:center; gap:10px; padding:14px 24px; border-top:1px solid var(--paper-line);
+    flex-wrap:wrap;
+  }
+  .review-foot .count{ font-size:12.5px; color:var(--ink-soft); margin-right:auto; }
+  .review-foot button{
+    font-size:12.5px; font-weight:700; padding:8px 13px; border-radius:8px; cursor:pointer;
+    border:1px solid var(--border); background:var(--card); color:var(--ink);
+  }
+  .review-foot button:hover{ border-color:var(--ink); }
+  .review-foot button:disabled{ opacity:.45; cursor:default; }
+  .review-foot .rf-close{ margin-left:0; }
+  #review-pending-btn{ position:relative; }
+  #review-pending-btn .count-pill{
+    display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px;
+    padding:0 5px; border-radius:9px; background:var(--absent); color:#fff; font-size:11px; font-weight:700;
+    margin-left:6px;
+  }
+
   @media (max-width: 760px){
     .settings-panel{ grid-template-columns:1fr; grid-template-rows:auto 1fr auto; height:calc(100vh - 32px); }
     .set-side{ grid-row:auto; flex-direction:row; overflow-x:auto; padding:12px; gap:6px; border-right:none; border-bottom:1px solid var(--paper-line); }
@@ -447,6 +498,12 @@
     .set-nav svg{ display:none; }
     .set-body{ padding:20px 18px 24px; }
     .set-foot{ grid-column:1; padding:12px 18px; }
+    .review-panel{ max-height:calc(100vh - 32px); }
+    .review-row{ flex-wrap:wrap; padding:10px 16px; }
+    .review-row .quick{ width:100%; padding-left:28px; margin-top:2px; }
+    .review-foot{ padding:12px 16px; }
+    .review-head{ padding:18px 40px 12px 16px; }
+    .review-selectall{ padding:10px 16px; }
   }
   /* ── Stat cards ── */
   .summary{
@@ -465,6 +522,10 @@
   .stat::after{ content:none; }
   .stat .n{ font-weight:700; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; }
   .stat .l{ font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; font-weight:600; }
+  .stat--clickable{ cursor:pointer; transition:box-shadow .15s, transform .15s; }
+  .stat--clickable:hover{ box-shadow:0 2px 8px rgba(46,28,74,.12); transform:translateY(-1px); }
+  .stat--active{ box-shadow:0 0 0 2px var(--tone, var(--accent)) inset; }
+  .stat--active::before{ width:6px; }
 
   /* ── Breakdown ── */
   .breakdown-wrap{ display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
@@ -1506,12 +1567,38 @@
       <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
       <span class="btn-txt">Print</span>
     </button>
+    <button class="ghost" id="review-pending-btn" title="Staff with only one scan today — set their day manually" style="display:none;">
+      <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span class="btn-txt">Review<span class="count-pill" id="review-pending-count">0</span></span>
+    </button>
   </div>
 
 
   <div class="summary" id="summary" style="display:none;"></div>
 
   <div class="breakdown-wrap" id="breakdown-wrap"></div>
+
+  <div class="modal-overlay" id="review-modal">
+    <div class="review-panel">
+      <button type="button" class="modal-close" id="review-modal-close" title="Close">&times;</button>
+      <div class="review-head">
+        <h3>Needs review</h3>
+        <p>One scan only, no window match — set the day manually for each, or select several and apply one status to all.</p>
+      </div>
+      <label class="review-selectall">
+        <input type="checkbox" id="review-select-all">
+        Select all
+      </label>
+      <div class="review-list" id="review-list"></div>
+      <div class="review-foot">
+        <span class="count" id="review-selected-count">0 selected</span>
+        <button type="button" class="rf-bulk" id="review-bulk-present" disabled>Full day</button>
+        <button type="button" class="rf-bulk" id="review-bulk-half" disabled>Half day</button>
+        <button type="button" class="rf-bulk" id="review-bulk-absent" disabled>Absent</button>
+        <button type="button" class="rf-close" id="review-modal-close2">Close</button>
+      </div>
+    </div>
+  </div>
 
   <div class="table-card" id="table-card">
     <div class="table-card-head">
@@ -1976,6 +2063,8 @@ let MONTHLY = {};
 let ABSENT_IDS = new Set();      // ids on that day's absentee list
 let ABSENT_READY = false;        // has the evening absent job run for this day?
 let STAFF_ALL_CATEGORIES = [];   // every category seen, so pills survive filtering
+let STATUS_FILTER = null;        // Set of tr[data-status] values, or null = show all — set by clicking a summary stat card
+let REVIEW_QUEUE = [];           // staff needing manual review on the currently rendered day — powers the Review modal
 
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -2593,6 +2682,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     VIEW = tab.dataset.type;
     STAFF_CATEGORY = 'All';
+    STATUS_FILTER = null;
     document.getElementById('search-input').placeholder = VIEW === 'student' ? 'Name or admission no.' : 'Name or staff ID';
     const catSel = document.getElementById('category-filter');
     catSel.style.display = '';
@@ -2663,6 +2753,97 @@ document.getElementById('register-body').addEventListener('click', async (e) => 
   }
 });
 
+/* ── Review-pending modal (staff daily view) ──
+   REVIEW_QUEUE is rebuilt by renderDailyTable() every render — it just
+   lists whoever currently shows the "needs review" badge. Applying a
+   status calls the same saveStaffOverride() the old inline buttons used,
+   then re-renders the underlying table so the queue reflects reality. */
+function updateReviewButton(){
+  const btn = document.getElementById('review-pending-btn');
+  const countEl = document.getElementById('review-pending-count');
+  const show = VIEW === 'staff' && MODE === 'daily' && isThisDeviceEditor() && REVIEW_QUEUE.length > 0;
+  btn.style.display = show ? '' : 'none';
+  countEl.textContent = REVIEW_QUEUE.length;
+}
+
+function openReviewModal(){
+  renderReviewList();
+  document.getElementById('review-modal').classList.add('open');
+}
+function closeReviewModal(){
+  document.getElementById('review-modal').classList.remove('open');
+}
+
+function renderReviewList(){
+  const list = document.getElementById('review-list');
+  if(!REVIEW_QUEUE.length){
+    list.innerHTML = '<div class="review-empty">Nothing pending — all caught up.</div>';
+    updateReviewSelectionUI();
+    return;
+  }
+  list.innerHTML = REVIEW_QUEUE.map((r, idx) => `
+    <div class="review-row" data-idx="${idx}">
+      <input type="checkbox" class="review-row-check" data-idx="${idx}">
+      <div class="who">
+        <div class="name">${escapeHtml(r.name)} <span class="mono" style="color:var(--ink-soft); font-weight:400;">(${escapeHtml(r.id)})</span></div>
+        <div class="meta">${escapeHtml(r.role)} &middot; single scan ${escapeHtml(r.scanTime)}</div>
+      </div>
+      <div class="quick">
+        <button type="button" class="review-quick-btn" data-idx="${idx}" data-set="present">Full</button>
+        <button type="button" class="review-quick-btn" data-idx="${idx}" data-set="half">Half</button>
+        <button type="button" class="review-quick-btn" data-idx="${idx}" data-set="absent">Absent</button>
+      </div>
+    </div>`).join('');
+  updateReviewSelectionUI();
+}
+
+function updateReviewSelectionUI(){
+  const total = document.querySelectorAll('.review-row-check').length;
+  const checked = document.querySelectorAll('.review-row-check:checked').length;
+  document.getElementById('review-selected-count').textContent = `${checked} selected`;
+  ['review-bulk-present','review-bulk-half','review-bulk-absent'].forEach(id => {
+    document.getElementById(id).disabled = checked === 0;
+  });
+  document.getElementById('review-select-all').checked = total > 0 && checked === total;
+}
+
+async function applyReviewStatus(idxList, status){
+  for(const idx of idxList){
+    const r = REVIEW_QUEUE[idx];
+    if(!r) continue;
+    const row = document.querySelector(`.review-row[data-idx="${idx}"]`);
+    if(row) row.querySelectorAll('button, input').forEach(el => el.disabled = true);
+    const ok = await saveStaffOverride(r.date, r.id, status);
+    if(ok && row) row.classList.add('done');
+  }
+  await applyDailyData(); // re-renders the table AND rebuilds REVIEW_QUEUE
+  renderReviewList();     // resolved people simply drop out of the fresh queue
+}
+
+document.getElementById('review-pending-btn').addEventListener('click', openReviewModal);
+document.getElementById('review-modal-close').addEventListener('click', closeReviewModal);
+document.getElementById('review-modal-close2').addEventListener('click', closeReviewModal);
+document.getElementById('review-modal').addEventListener('click', (e) => { if(e.target.id === 'review-modal') closeReviewModal(); });
+
+document.getElementById('review-select-all').addEventListener('change', (e) => {
+  document.querySelectorAll('.review-row-check').forEach(cb => cb.checked = e.target.checked);
+  updateReviewSelectionUI();
+});
+document.getElementById('review-list').addEventListener('change', (e) => {
+  if(e.target.classList.contains('review-row-check')) updateReviewSelectionUI();
+});
+document.getElementById('review-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('.review-quick-btn');
+  if(!btn) return;
+  applyReviewStatus([Number(btn.dataset.idx)], btn.dataset.set);
+});
+['present','half','absent'].forEach(status => {
+  document.getElementById(`review-bulk-${status}`).addEventListener('click', () => {
+    const idxList = [...document.querySelectorAll('.review-row-check:checked')].map(cb => Number(cb.dataset.idx));
+    if(idxList.length) applyReviewStatus(idxList, status);
+  });
+});
+
 
 function applyDisplayMode(){
   const insightsOn = DISPLAY !== 'list';
@@ -2681,6 +2862,7 @@ document.getElementById('view-daily').addEventListener('click', () => setMode('d
 document.getElementById('view-monthly').addEventListener('click', () => setMode('monthly'));
 function setMode(m){
   MODE = m;
+  STATUS_FILTER = null;
   document.getElementById('view-daily').classList.toggle('on', m === 'daily');
   document.getElementById('view-monthly').classList.toggle('on', m === 'monthly');
   document.getElementById('date-field').style.display = m === 'daily' ? 'flex' : 'none';
@@ -2895,8 +3077,8 @@ document.getElementById('print-btn').addEventListener('click', () => {
   window.print();
   setTimeout(() => { document.title = keep; }, 800);
 });
-document.getElementById('date-input').addEventListener('change', () => { stopLive(); loadRegister(); });
-document.getElementById('month-input').addEventListener('change', () => { stopLive(); loadRegister(); });
+document.getElementById('date-input').addEventListener('change', () => { STATUS_FILTER = null; stopLive(); loadRegister(); });
+document.getElementById('month-input').addEventListener('change', () => { STATUS_FILTER = null; stopLive(); loadRegister(); });
 document.getElementById('category-filter').addEventListener('change', (e) => {
   // one dropdown, two jobs: class for students, category for staff
   if(VIEW === 'staff'){
@@ -3299,7 +3481,10 @@ function setSummary(cards){
     const tone = c.color || 'var(--accent)';
     const ink = c.color || 'var(--rule-red)';
     const bg = statBg(tone);
-    return `<div class="stat" style="--tone:${tone}">
+    const clickable = Array.isArray(c.statuses) && c.statuses.length;
+    const isActive = clickable && STATUS_FILTER && c.statuses.length === STATUS_FILTER.size && c.statuses.every(s => STATUS_FILTER.has(s));
+    const attrs = clickable ? ` data-statuses="${c.statuses.join(',')}" role="button" tabindex="0"` : '';
+    return `<div class="stat${clickable ? ' stat--clickable' : ''}${isActive ? ' stat--active' : ''}" style="--tone:${tone}"${attrs}>
       <div class="stat-top">
         <div class="stat-icon" style="color:${ink}; background:${bg}">${statIcon(c.label)}</div>
         <div class="l">${c.label}</div>
@@ -3310,12 +3495,40 @@ function setSummary(cards){
   el.style.display = 'grid';
 }
 
+// One delegated click — #summary itself never gets replaced (only its
+// innerHTML), so this only needs binding once. Click a stat again (or
+// Total) to clear the filter.
+document.getElementById('summary').addEventListener('click', (e) => {
+  const card = e.target.closest('.stat--clickable');
+  if(!card) return;
+  const statuses = card.dataset.statuses.split(',');
+  const isActive = card.classList.contains('stat--active');
+  STATUS_FILTER = isActive ? null : new Set(statuses);
+  MODE === 'daily' ? renderDailyTable() : renderMonthlyTable();
+});
+document.getElementById('summary').addEventListener('keydown', (e) => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.stat--clickable');
+  if(!card) return;
+  e.preventDefault();
+  card.click();
+});
+
+function applyStatusFilter(){
+  const rows = document.querySelectorAll('#register-body tr[data-status]');
+  rows.forEach(tr => {
+    const show = !STATUS_FILTER || STATUS_FILTER.has(tr.dataset.status);
+    tr.style.display = show ? '' : 'none';
+  });
+}
+
 function renderDailyTable(){
   const rows = filteredRows();
   let present = 0, exit = 0, absent = 0, half = 0, offDay = 0, lateDay = 0, pendingDay = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   const enriched = [];
+  REVIEW_QUEUE = [];
 
   rows.forEach((s, i) => {
     const idField = personId(s);
@@ -3400,13 +3613,11 @@ function renderDailyTable(){
         : '';
       let badge;
       if(status === 'needsReview'){
-        badge = '<span class="badge half badge-wrap">One scan &mdash; needs review</span>'
-          + (isThisDeviceEditor() ? `
-          <div class="review-actions">
-            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="present">Full</button>
-            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="half">Half</button>
-            <button type="button" class="override-btn" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(dayDate)}" data-set="absent">Absent</button>
-          </div>` : '');
+        badge = '<span class="badge half badge-wrap">One scan &mdash; needs review</span>';
+        REVIEW_QUEUE.push({
+          id: idField, name: nameField || '\u2014', role: s.role || '\u2014', date: dayDate,
+          scanTime: sortedRecs.length ? timeOnly(sortedRecs[0].time) : '\u2014'
+        });
       }else{
         badge = status === 'present' ? '<span class="badge present">Full day</span>'
           : status === 'late' ? '<span class="badge late">Full day &middot; late</span>'
@@ -3429,23 +3640,25 @@ function renderDailyTable(){
   if(VIEW === 'student'){
     dailyCards = [
       {value: rows.length, label: 'Total'},
-      {value: present, label: 'In school', color:'var(--present-ink)'},
-      {value: exit, label: 'Went home', color:'var(--pending-ink)'}
+      {value: present, label: 'In school', color:'var(--present-ink)', statuses:['present','late']},
+      {value: exit, label: 'Went home', color:'var(--pending-ink)', statuses:['gatepass','flagged']}
     ];
-    if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent-ink)'});
+    if(!unlisted) dailyCards.push({value: absent, label:'Absent', color:'var(--absent-ink)', statuses:['absent']});
   }else{
     dailyCards = [
       {value: rows.length, label: 'Total'},
-      {value: present, label: 'Full day', color:'var(--present-ink)'},
-      {value: half, label: 'Half day', color:'var(--half)'},
-      {value: absent, label: 'Absent', color:'var(--absent-ink)'}
+      {value: present, label: 'Full day', color:'var(--present-ink)', statuses:['present','late']},
+      {value: half, label: 'Half day', color:'var(--half)', statuses:['half','needsReview']},
+      {value: absent, label: 'Absent', color:'var(--absent-ink)', statuses:['absent']}
     ];
-    if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent-ink)'});
-    if(offDay) dailyCards.push({value: offDay, label:'Week off'});
-    if(pendingDay) dailyCards.push({value: pendingDay, label:'Not in yet'});
+    if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent-ink)', statuses:['late']});
+    if(offDay) dailyCards.push({value: offDay, label:'Week off', statuses:['off']});
+    if(pendingDay) dailyCards.push({value: pendingDay, label:'Not in yet', statuses:['pending']});
   }
   setSummary(dailyCards);
   renderBreakdown(enriched, 'daily');
+  applyStatusFilter();
+  updateReviewButton();
   finishRender(rows.length, unlisted);
 }
 
