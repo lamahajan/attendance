@@ -607,6 +607,11 @@
     flex-wrap:wrap; row-gap:2px;
   }
   .badge.badge-wrap::before{ align-self:flex-start; margin-top:6px; }
+  .review-open-btn{
+    font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none;
+  }
+  .review-open-btn:hover{ filter:brightness(0.96); }
+  #print-grid.print-only-grid{ display:none; }
   .review-actions .override-btn:hover{ border-color:var(--ink); }
   .review-actions .override-btn:disabled{ opacity:.5; cursor:default; }
   .review-badge{
@@ -1265,8 +1270,34 @@
       display:flex; gap:14px; flex-wrap:wrap;
     }
 
-    /* Page setup: the sheet, not the screen */
+    /* Page setup: the sheet, not the screen. The monthly day-wise grid
+       needs landscape — a JS-injected <style id="print-orientation"> right
+       before window.print() overrides this @page rule for that one job
+       (see the print-btn handler), because @page can't be scoped to a
+       body class the way normal selectors can. */
     @page{ size:A4 portrait; margin:12mm 10mm; }
+
+    /* Monthly print swaps the aggregate table for the day-wise P/H/A grid —
+       one register-style sheet, letters across the month, totals at the end. */
+    body.print-grid-mode .table-card{ display:none !important; }
+    body.print-grid-mode .print-only-grid{ display:block !important; }
+    #print-grid table{ width:100%; border-collapse:collapse; }
+    #print-grid th, #print-grid td{
+      border:1px solid #D8D8DC; padding:3px 2px; text-align:center;
+      font-size:8.5px; font-variant-numeric:tabular-nums;
+    }
+    #print-grid th{ background:#F3F3F5; font-weight:700; color:#333; }
+    #print-grid td[data-name]{ text-align:left; padding-left:6px; white-space:nowrap; }
+    #print-grid .pg-id{ text-align:left; padding-left:6px; color:#666; }
+    #print-grid .pg-name{ text-align:left; font-weight:600; min-width:90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+    #print-grid .pg-p{ color:#1a7a3c; font-weight:700; }
+    #print-grid .pg-h{ color:#a06b00; font-weight:700; }
+    #print-grid .pg-a{ color:#b3261e; font-weight:700; }
+    #print-grid .pg-o{ color:#999; }
+    #print-grid .pg-dash{ color:#ccc; }
+    #print-grid .pg-total{ background:#FAFAFB; font-weight:700; }
+    #print-grid tbody tr:nth-child(even){ background:#FAFAFB; }
+    #print-grid .pg-legend{ margin:0 0 8px; font-size:9.5px; color:#555; display:flex; gap:14px; }
 
     /* The sidebar is hidden on paper, but the gutter it reserved was not,
        so every sheet came out shoved a third of the way across and the last
@@ -1612,6 +1643,8 @@
       </table>
     </div>
   </div>
+
+  <div id="print-grid" class="print-only-grid"></div>
 
   <div class="empty" id="empty-msg" style="display:none;"></div>
 
@@ -2065,6 +2098,8 @@ let ABSENT_READY = false;        // has the evening absent job run for this day?
 let STAFF_ALL_CATEGORIES = [];   // every category seen, so pills survive filtering
 let STATUS_FILTER = null;        // Set of tr[data-status] values, or null = show all — set by clicking a summary stat card
 let REVIEW_QUEUE = [];           // staff needing manual review on the currently rendered day — powers the Review modal
+let MONTHLY_MONTH_VAL = '';      // "YYYY-MM" of the last loaded month — the print grid needs the day count and label
+let MONTHLY_DAYS_IN_MONTH = 0;
 
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -2744,6 +2779,11 @@ document.getElementById('register-body').addEventListener('click', async (e) => 
     loadRegister();
     return;
   }
+  const openBtn = e.target.closest('.review-open-btn');
+  if(openBtn){
+    openReviewModal();
+    return;
+  }
   const overrideBtn = e.target.closest('.override-btn');
   if(overrideBtn){
     overrideBtn.closest('.review-actions').querySelectorAll('button').forEach(b => b.disabled = true);
@@ -3074,8 +3114,27 @@ document.getElementById('print-btn').addEventListener('click', () => {
   const what = document.getElementById('ph-title');
   const when = document.getElementById('ph-date');
   document.title = [what && what.textContent, when && when.textContent].filter(Boolean).join(' \u2014 ') || keep;
+
+  // Monthly print is the day-wise P/H/A grid, and that needs landscape —
+  // @page can't be scoped to a body class, so a temp <style> tag is the
+  // only way to override it for just this one print job.
+  const isMonthlyGrid = MODE === 'monthly';
+  let orientationTag = null;
+  if(isMonthlyGrid){
+    document.body.classList.add('print-grid-mode');
+    orientationTag = document.createElement('style');
+    orientationTag.id = 'print-orientation';
+    orientationTag.textContent = '@page{ size:A4 landscape; margin:10mm 8mm; }';
+    document.head.appendChild(orientationTag);
+  }
+
   window.print();
-  setTimeout(() => { document.title = keep; }, 800);
+
+  setTimeout(() => {
+    document.title = keep;
+    document.body.classList.remove('print-grid-mode');
+    if(orientationTag) orientationTag.remove();
+  }, 800);
 });
 document.getElementById('date-input').addEventListener('change', () => { STATUS_FILTER = null; stopLive(); loadRegister(); });
 document.getElementById('month-input').addEventListener('change', () => { STATUS_FILTER = null; stopLive(); loadRegister(); });
@@ -3189,6 +3248,8 @@ async function loadMonthly(){
   const monthVal = document.getElementById('month-input').value || TODAY.slice(0,7);
   const [y, m] = monthVal.split('-').map(Number);
   const daysInMonth = new Date(y, m, 0).getDate();
+  MONTHLY_MONTH_VAL = monthVal;
+  MONTHLY_DAYS_IN_MONTH = daysInMonth;
   const startDate = `${monthVal}-01`;
   const endDate = `${monthVal}-${String(daysInMonth).padStart(2,'0')}`;
   document.getElementById('date-label').textContent =
@@ -3310,7 +3371,7 @@ async function loadMonthly(){
       else if(st === 'off') paidOff++;
     });
 
-    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates };
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates, days: settled };
   });
 
   updateViewTitle();
@@ -3613,7 +3674,9 @@ function renderDailyTable(){
         : '';
       let badge;
       if(status === 'needsReview'){
-        badge = '<span class="badge half badge-wrap">One scan &mdash; needs review</span>';
+        badge = isThisDeviceEditor()
+          ? `<button type="button" class="badge half review-open-btn" data-id="${escapeHtml(idField)}">Review</button>`
+          : '<span class="badge half">Review</span>';
         REVIEW_QUEUE.push({
           id: idField, name: nameField || '\u2014', role: s.role || '\u2014', date: dayDate,
           scanTime: sortedRecs.length ? timeOnly(sortedRecs[0].time) : '\u2014'
@@ -3717,7 +3780,62 @@ function renderMonthlyTable(){
     ]);
   }
   renderBreakdown(enriched, 'monthly');
+  buildPrintGrid(rows);
   finishRender(rows.length);
+}
+
+// Day-wise register grid — screen se hidden, sirf print (landscape) me
+// dikhta hai. Har din ke liye ek letter column: P/H/A/O, aakhri me totals.
+function dayLetter(status){
+  if(status === 'present' || status === 'late') return {t:'P', cls:'pg-p'};
+  if(status === 'half' || status === 'needsReview') return {t:'H', cls:'pg-h'};
+  if(status === 'absent' || status === 'absorbed') return {t:'A', cls:'pg-a'};
+  if(status === 'off') return {t:'O', cls:'pg-o'};
+  return {t:'\u2013', cls:'pg-dash'}; // 'none' — school/office was open, no record either way
+}
+
+function buildPrintGrid(rows){
+  const el = document.getElementById('print-grid');
+  if(!rows.length || !MONTHLY_DAYS_IN_MONTH){ el.innerHTML = ''; return; }
+  const idHead = VIEW === 'student' ? 'Adm. No.' : 'Staff ID';
+  const monthLabel = MONTHLY_MONTH_VAL
+    ? new Date(MONTHLY_MONTH_VAL + '-01').toLocaleDateString('en-IN', {month:'long', year:'numeric'})
+    : '';
+  const dayHeads = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => `<th>${d+1}</th>`).join('');
+
+  const bodyRows = rows.map((s, i) => {
+    const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
+    const nameField = VIEW === 'student' ? s.studentName : s.name;
+    const m = MONTHLY[idField];
+    const days = (m && m.days) || [];
+    const cells = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => {
+      const dl = dayLetter(days[d]);
+      return `<td class="${dl.cls}">${dl.t}</td>`;
+    }).join('');
+    const daysOff = m ? (m.absent + (m.half || 0) * 0.5) : 0;
+    return `<tr>
+      <td class="mono pg-id">${i+1}</td>
+      <td class="mono pg-id">${escapeHtml(idField)}</td>
+      <td class="pg-name">${escapeHtml(nameField)}</td>
+      ${cells}
+      <td class="mono pg-total pg-p">${m ? m.present : 0}</td>
+      <td class="mono pg-total pg-h">${m ? (m.half||0) : 0}</td>
+      <td class="mono pg-total pg-a">${m ? m.absent : 0}</td>
+      <td class="mono pg-total">${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="pg-legend"><span><b>P</b> Full day</span><span><b>H</b> Half day</span><span><b>A</b> Absent</span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th>S.No</th><th>${idHead}</th><th>Name</th>${dayHeads}
+          <th>P</th><th>H</th><th>A</th><th>Off</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>`;
 }
 
 function renderBreakdown(enriched, mode){
