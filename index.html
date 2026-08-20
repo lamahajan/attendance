@@ -339,16 +339,19 @@
     display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px;
     border-top:1px solid var(--paper-line);
   }
-  .shift-rule-card.duration-on .src-windows{ display:none; }
+  .shift-rule-card.mode-duration .src-windows{ display:none; }
+  .shift-rule-card.mode-single .src-windows .evening-field,
+  .shift-rule-card.mode-single .src-windows .min-shift-field{ display:none; }
   .shift-rule-card .src-min-shift-hint{ font-size:11px; color:var(--ink-soft); margin-top:8px; }
-  .shift-rule-card.duration-on .src-min-shift-hint{ display:none; }
+  .shift-rule-card.mode-duration .src-min-shift-hint,
+  .shift-rule-card.mode-single .src-min-shift-hint{ display:none; }
   .shift-rule-card .src-duration-note{ display:none; }
-  .shift-rule-card.duration-on .src-duration-note{
+  .shift-rule-card.mode-duration .src-duration-note{
     display:block; font-size:11.5px; color:var(--ink-soft); margin-top:12px; padding-top:12px;
     border-top:1px solid var(--paper-line);
   }
   .shift-rule-card .src-duration-fields{ display:none; }
-  .shift-rule-card.duration-on .src-duration-fields{
+  .shift-rule-card.mode-duration .src-duration-fields{
     display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;
   }
   .shift-rule-card .src-duration-fields .field{ min-width:128px; }
@@ -4066,20 +4069,25 @@ function buildShiftRulesGrid(){
     const rule = map[cat] || {};
     const days = Array.isArray(rule.days) ? rule.days : [];
     const isDuration = rule.mode === 'duration';
+    const mode = isDuration ? 'duration' : (rule.eFrom && rule.eTo ? 'double' : 'single');
     const dayPills = WEEKDAY_NAMES.map((n, i) =>
       `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
     ).join('');
-    return `<div class="shift-rule-card${isDuration ? ' duration-on' : ''}" data-cat="${escapeHtml(cat)}">
+    return `<div class="shift-rule-card mode-${mode}" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
         <strong>${escapeHtml(cat)}</strong>
-        <label class="inline-check src-duration-toggle"><input type="checkbox" class="src-duration" ${isDuration ? 'checked' : ''}> Duration mode</label>
+        <select class="src-mode-select" title="How this category's day is judged">
+          <option value="single" ${mode==='single'?'selected':''}>Single shift</option>
+          <option value="double" ${mode==='double'?'selected':''}>Double shift</option>
+          <option value="duration" ${mode==='duration'?'selected':''}>Duration mode</option>
+        </select>
       </div>
       <div class="src-windows">
-        <div class="field"><label>Morning punch from</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
-        <div class="field"><label>Morning punch to</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
-        <div class="field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
-        <div class="field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
-        <div class="field"><label>Min hours per shift (min)</label><input type="number" class="scw-min-shift" placeholder="off &mdash; any punch counts" value="${rule.minShiftMin === 0 || rule.minShiftMin ? escapeHtml(String(rule.minShiftMin)) : ''}"></div>
+        <div class="field morning-field"><label class="win-label-m-from">${mode==='single' ? 'Punch window from' : 'Morning punch from'}</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
+        <div class="field morning-field"><label class="win-label-m-to">${mode==='single' ? 'Punch window to' : 'Morning punch to'}</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
+        <div class="field evening-field"><label>Evening punch from</label><input type="time" class="scw-e-from" value="${escapeHtml(rule.eFrom || '')}"></div>
+        <div class="field evening-field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
+        <div class="field min-shift-field"><label>Min hours per shift (min)</label><input type="number" class="scw-min-shift" placeholder="off &mdash; any punch counts" value="${rule.minShiftMin === 0 || rule.minShiftMin ? escapeHtml(String(rule.minShiftMin)) : ''}"></div>
       </div>
       <p class="hint src-min-shift-hint">Leave blank and any punch inside a window counts as that shift done, like before. Set a number and a shift only counts if the gap between its first and last scan in that window reaches it &mdash; a shift that falls short (or never got a matching scan) makes the day Half, even if the other shift was a full punch-in/punch-out.</p>
       <p class="src-duration-note">Punch whenever &mdash; only the gap between first and last scan matters.</p>
@@ -4098,9 +4106,20 @@ function buildShiftRulesGrid(){
     </div>`;
   }).join('');
 
-  grid.querySelectorAll('.src-duration').forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.closest('.shift-rule-card').classList.toggle('duration-on', cb.checked);
+  grid.querySelectorAll('.src-mode-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const card = sel.closest('.shift-rule-card');
+      card.classList.remove('mode-single', 'mode-double', 'mode-duration');
+      card.classList.add(`mode-${sel.value}`);
+      const mFromLabel = card.querySelector('.win-label-m-from');
+      const mToLabel = card.querySelector('.win-label-m-to');
+      if(sel.value === 'single'){
+        mFromLabel.textContent = 'Punch window from';
+        mToLabel.textContent = 'Punch window to';
+      }else{
+        mFromLabel.textContent = 'Morning punch from';
+        mToLabel.textContent = 'Morning punch to';
+      }
     });
   });
 
@@ -4586,12 +4605,17 @@ function collectSettingsObject(){
     // would leave the old time sitting in the saved object
     shiftRulesObj[cat].days = [...card.querySelectorAll('.src-day:checked')].map(cb => parseInt(cb.dataset.day, 10));
     shiftRulesObj[cat].arriveBy = card.querySelector('.src-arrive-by').value || '';
-    shiftRulesObj[cat].mode = card.querySelector('.src-duration').checked ? 'duration' : 'window';
+    const selMode = card.querySelector('.src-mode-select').value; // 'single' | 'double' | 'duration'
+    shiftRulesObj[cat].mode = selMode === 'duration' ? 'duration' : 'window';
     const g = sel => { const el = card.querySelector(sel); return el ? el.value : ''; };
     shiftRulesObj[cat].mFrom = g('.scw-m-from');
     shiftRulesObj[cat].mTo   = g('.scw-m-to');
-    shiftRulesObj[cat].eFrom = g('.scw-e-from');
-    shiftRulesObj[cat].eTo   = g('.scw-e-to');
+    // Single shift = only one punch window — evening fields stay blank
+    // no matter what's sitting in those inputs (they're hidden, but a
+    // leftover value from a previous "Double shift" pick shouldn't sneak
+    // back in as a real evening window).
+    shiftRulesObj[cat].eFrom = selMode === 'double' ? g('.scw-e-from') : '';
+    shiftRulesObj[cat].eTo   = selMode === 'double' ? g('.scw-e-to') : '';
     const ms = g('.scw-min-shift');
     shiftRulesObj[cat].minShiftMin = ms === '' ? '' : Number(ms);
     const ss = g('.src-season-shift');
