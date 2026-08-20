@@ -443,7 +443,8 @@
   .print-split{ position:relative; display:inline-flex; }
   .print-split .print-main{ border-radius:10px 0 0 10px; border-right:none; }
   .print-split .print-arrow{
-    border-radius:0 10px 10px 0; padding:0 9px; display:flex; align-items:center; justify-content:center;
+    border-radius:0 10px 10px 0; padding:0; width:26px; min-width:26px; flex:none;
+    display:flex; align-items:center; justify-content:center;
   }
   .print-split .print-arrow svg{ width:14px; height:14px; transition:transform .15s; }
   .print-split .print-arrow[aria-expanded="true"] svg{ transform:rotate(180deg); }
@@ -632,6 +633,7 @@
   .badge.badge-wrap::before{ align-self:flex-start; margin-top:6px; }
   .review-open-btn{
     font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none;
+    height:auto; line-height:normal; margin:0;
   }
   .review-open-btn:hover{ filter:brightness(0.96); }
   #print-grid.print-only-grid{ display:none; }
@@ -1491,6 +1493,11 @@
     }
     .controls button.ghost .btn-txt{ display:none; }
     .controls .btn-ico{ display:block; width:17px; height:17px; }
+    /* The arrow only needs to fit a chevron, not a full icon touch target —
+       the blanket 38px square above would double the split-button's width
+       for no reason and crowd Refresh/Print/Review off the row. */
+    .controls .print-split .print-main{ width:38px; }
+    .controls .print-split .print-arrow{ width:20px; min-width:20px; height:38px; min-height:38px; border-radius:0 9px 9px 0; }
 
     /* The selected pill used to stand taller than the track it sits in —
        a 44px minimum inside a fixed 38px rail. The rail sizes itself now. */
