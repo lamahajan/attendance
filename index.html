@@ -440,6 +440,10 @@
     display:flex; align-items:center; justify-content:center; font-size:17px; line-height:1;
   }
   .modal-close:hover{ background:var(--row-alt); color:var(--ink); }
+  #print-style-select{
+    padding:8px 11px; font-size:12.5px; border-radius:10px; border:1px solid var(--border);
+    background:var(--card); color:var(--ink); cursor:pointer; height:38px;
+  }
 
   /* ── Review-pending modal ── */
   .review-panel{
@@ -1301,6 +1305,15 @@
     #print-grid .pg-total{ background:#FAFAFB; font-weight:700; }
     #print-grid tbody tr:nth-child(even){ background:#FAFAFB; }
     #print-grid .pg-legend{ margin:0 0 8px; font-size:9.5px; color:#555; display:flex; gap:14px; }
+    /* Times mode — two lines per day-cell (In over Out), so the font drops
+       a touch and rows breathe a bit more than the single-letter grid. */
+    #print-grid.pg-times-mode th{ font-size:8px; }
+    #print-grid.pg-times-mode td.pg-time-cell{ padding:2px 1px; line-height:1.35; }
+    #print-grid.pg-times-mode .pg-in, #print-grid.pg-times-mode .pg-out{
+      display:block; font-size:7.8px; white-space:nowrap;
+    }
+    #print-grid.pg-times-mode .pg-in{ color:#1a7a3c; }
+    #print-grid.pg-times-mode .pg-out{ color:#b3261e; }
 
     /* The sidebar is hidden on paper, but the gutter it reserved was not,
        so every sheet came out shoved a third of the way across and the last
@@ -1597,6 +1610,10 @@
       <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
       <span class="btn-txt">Refresh</span>
     </button>
+    <select id="print-style-select" title="Monthly print layout" style="display:none;">
+      <option value="letters">Print: P/H/A grid</option>
+      <option value="times">Print: In/Out times</option>
+    </select>
     <button class="ghost" id="print-btn" title="Print this register">
       <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
       <span class="btn-txt">Print</span>
@@ -2103,10 +2120,22 @@ let STATUS_FILTER = null;        // Set of tr[data-status] values, or null = sho
 let REVIEW_QUEUE = [];           // staff needing manual review on the currently rendered day — powers the Review modal
 let MONTHLY_MONTH_VAL = '';      // "YYYY-MM" of the last loaded month — the print grid needs the day count and label
 let MONTHLY_DAYS_IN_MONTH = 0;
+let MONTHLY_PRINT_ROWS = [];     // last-rendered monthly rows — lets the style dropdown rebuild the print grid without a reload
 
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function timeOnly(t){ if(!t) return ''; const m=String(t).match(/(\d{1,2}:\d{2}:\d{2})/); return m?m[1]:t; }
+// "14:16:33" or "14:16" → "2:16 PM" — for the print grid's In/Out layout
+function to12h(t){
+  if(!t) return '';
+  const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return t;
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if(h === 0) h = 12;
+  return `${h}:${min} ${ampm}`;
+}
 async function fetchJson(url, options){ try{ const r=await fetch(url, options); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 function parseTimeMs(t){ if(!t) return null; const iso = String(t).trim().replace(' ','T'); const d = new Date(iso); return isNaN(d.getTime()) ? null : d.getTime(); }
 
@@ -2910,6 +2939,7 @@ function setMode(m){
   document.getElementById('view-monthly').classList.toggle('on', m === 'monthly');
   document.getElementById('date-field').style.display = m === 'daily' ? 'flex' : 'none';
   document.getElementById('month-field').style.display = m === 'monthly' ? 'flex' : 'none';
+  document.getElementById('print-style-select').style.display = m === 'monthly' ? '' : 'none';
   updateDisplaySwitchVisibility();
   loadRegister();
 }
@@ -3112,6 +3142,9 @@ setInterval(freshnessLabel, 20000);
 /* The browser stamps the document title into its own page header. Left alone
    that came out as whatever the tab was called; this makes the corner of the
    sheet say what the sheet is. */
+document.getElementById('print-style-select').addEventListener('change', () => {
+  buildPrintGrid(MONTHLY_PRINT_ROWS);
+});
 document.getElementById('print-btn').addEventListener('click', () => {
   const keep = document.title;
   const what = document.getElementById('ph-title');
@@ -3124,6 +3157,7 @@ document.getElementById('print-btn').addEventListener('click', () => {
   const isMonthlyGrid = MODE === 'monthly';
   let orientationTag = null;
   if(isMonthlyGrid){
+    buildPrintGrid(MONTHLY_PRINT_ROWS); // pick up whatever style is selected right now
     document.body.classList.add('print-grid-mode');
     orientationTag = document.createElement('style');
     orientationTag.id = 'print-orientation';
@@ -3374,7 +3408,7 @@ async function loadMonthly(){
       else if(st === 'off') paidOff++;
     });
 
-    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates, days: settled };
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates, days: settled, dayTimes: dayTimesFor(allDates, dayScans, id) };
   });
 
   updateViewTitle();
@@ -3382,6 +3416,25 @@ async function loadMonthly(){
   if(VIEW === 'student') populateClassFilter();
   renderMonthlyTable();
   startLive(TODAY, groupKey());
+}
+
+// Per-day In/Out time strings for the whole month — same action-tag
+// classification the daily table uses (night_in/morning_entry/evening_entry
+// = In; night_out/morning_exit/evening_exit/gatepass_exit = Out), just
+// collapsed to one first-in + one last-out per day instead of per-window
+// lines, since the print grid only has room for one pair per cell.
+function dayTimesFor(allDates, dayScans, id){
+  return allDates.map(day => {
+    const recs = ((dayScans[day] || {})[id]) || [];
+    if(!recs.length) return null;
+    const sorted = [...recs].sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
+    const inRecs = sorted.filter(r => r.action === 'night_in' || r.action === 'morning_entry' || r.action === 'evening_entry');
+    const outRecs = sorted.filter(r => r.action === 'night_out' || r.action === 'morning_exit' || r.action === 'evening_exit' || r.action === 'gatepass_exit');
+    return {
+      in: inRecs.length ? timeOnly(inRecs[0].time) : null,
+      out: outRecs.length ? timeOnly(outRecs[outRecs.length - 1].time) : null
+    };
+  });
 }
 
 // Per-device hidden staff categories + the category pill filter
@@ -3783,12 +3836,14 @@ function renderMonthlyTable(){
     ]);
   }
   renderBreakdown(enriched, 'monthly');
+  MONTHLY_PRINT_ROWS = rows;
   buildPrintGrid(rows);
   finishRender(rows.length);
 }
 
 // Day-wise register grid — screen se hidden, sirf print (landscape) me
-// dikhta hai. Har din ke liye ek letter column: P/H/A/O, aakhri me totals.
+// dikhta hai. Do styles: 'letters' (P/H/A, jaisa pehle tha) aur 'times'
+// (asli In/Out time har din, HH:MM AM/PM). print-style-select se chunte hain.
 function dayLetter(status){
   if(status === 'present' || status === 'late') return {t:'P', cls:'pg-p'};
   if(status === 'half' || status === 'needsReview') return {t:'H', cls:'pg-h'};
@@ -3796,14 +3851,29 @@ function dayLetter(status){
   if(status === 'off') return {t:'O', cls:'pg-o'};
   return {t:'\u2013', cls:'pg-dash'}; // 'none' — school/office was open, no record either way
 }
+// Compact 12h — "8:05a" / "10:16p" — full "AM"/"PM" would blow out the
+// column width across 31 stacked day-cells, so this is print-grid-only.
+function to12hCompact(t){
+  if(!t) return '';
+  const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return t;
+  let h = parseInt(m[1], 10);
+  const ap = h >= 12 ? 'p' : 'a';
+  h = h % 12; if(h === 0) h = 12;
+  return `${h}:${m[2]}${ap}`;
+}
 
 function buildPrintGrid(rows){
+  const style = document.getElementById('print-style-select').value || 'letters';
+  if(style === 'times') buildPrintGridTimes(rows);
+  else buildPrintGridLetters(rows);
+}
+
+function buildPrintGridLetters(rows){
   const el = document.getElementById('print-grid');
+  el.classList.remove('pg-times-mode');
   if(!rows.length || !MONTHLY_DAYS_IN_MONTH){ el.innerHTML = ''; return; }
   const idHead = VIEW === 'student' ? 'Adm. No.' : 'Staff ID';
-  const monthLabel = MONTHLY_MONTH_VAL
-    ? new Date(MONTHLY_MONTH_VAL + '-01').toLocaleDateString('en-IN', {month:'long', year:'numeric'})
-    : '';
   const dayHeads = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => `<th>${d+1}</th>`).join('');
 
   const bodyRows = rows.map((s, i) => {
@@ -3830,6 +3900,53 @@ function buildPrintGrid(rows){
 
   el.innerHTML = `
     <div class="pg-legend"><span><b>P</b> Full day</span><span><b>H</b> Half day</span><span><b>A</b> Absent</span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
+    <table>
+      <thead>
+        <tr>
+          <th>S.No</th><th>${idHead}</th><th>Name</th>${dayHeads}
+          <th>P</th><th>H</th><th>A</th><th>Off</th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>`;
+}
+
+function buildPrintGridTimes(rows){
+  const el = document.getElementById('print-grid');
+  el.classList.add('pg-times-mode');
+  if(!rows.length || !MONTHLY_DAYS_IN_MONTH){ el.innerHTML = ''; return; }
+  const idHead = VIEW === 'student' ? 'Adm. No.' : 'Staff ID';
+  const dayHeads = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => `<th>${d+1}</th>`).join('');
+
+  const bodyRows = rows.map((s, i) => {
+    const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
+    const nameField = VIEW === 'student' ? s.studentName : s.name;
+    const m = MONTHLY[idField];
+    const days = (m && m.days) || [];
+    const times = (m && m.dayTimes) || [];
+    const cells = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => {
+      const dl = dayLetter(days[d]);
+      const t = times[d];
+      if(dl.t === 'O' || dl.t === '\u2013' || !t || (!t.in && !t.out)){
+        return `<td class="${dl.cls}">${dl.t}</td>`;
+      }
+      return `<td class="pg-time-cell"><span class="pg-in">${t.in ? to12hCompact(t.in) : '\u2013'}</span><span class="pg-out">${t.out ? to12hCompact(t.out) : '\u2013'}</span></td>`;
+    }).join('');
+    const daysOff = m ? (m.absent + (m.half || 0) * 0.5) : 0;
+    return `<tr>
+      <td class="mono pg-id">${i+1}</td>
+      <td class="mono pg-id">${escapeHtml(idField)}</td>
+      <td class="pg-name">${escapeHtml(nameField)}</td>
+      ${cells}
+      <td class="mono pg-total pg-p">${m ? m.present : 0}</td>
+      <td class="mono pg-total pg-h">${m ? (m.half||0) : 0}</td>
+      <td class="mono pg-total pg-a">${m ? m.absent : 0}</td>
+      <td class="mono pg-total">${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="pg-legend"><span>Top line: <b>In</b></span><span>Bottom line: <b>Out</b></span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
     <table>
       <thead>
         <tr>
