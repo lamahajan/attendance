@@ -440,10 +440,26 @@
     display:flex; align-items:center; justify-content:center; font-size:17px; line-height:1;
   }
   .modal-close:hover{ background:var(--row-alt); color:var(--ink); }
-  #print-style-select{
-    padding:8px 11px; font-size:12.5px; border-radius:10px; border:1px solid var(--border);
-    background:var(--card); color:var(--ink); cursor:pointer; height:38px;
+  .print-split{ position:relative; display:inline-flex; }
+  .print-split .print-main{ border-radius:10px 0 0 10px; border-right:none; }
+  .print-split .print-arrow{
+    border-radius:0 10px 10px 0; padding:0 9px; display:flex; align-items:center; justify-content:center;
   }
+  .print-split .print-arrow svg{ width:14px; height:14px; transition:transform .15s; }
+  .print-split .print-arrow[aria-expanded="true"] svg{ transform:rotate(180deg); }
+  .print-menu{
+    display:none; position:absolute; top:calc(100% + 6px); right:0; z-index:20;
+    background:var(--paper); border:1px solid var(--border); border-radius:10px;
+    box-shadow:0 8px 24px rgba(20,24,42,.18); padding:5px; min-width:158px;
+  }
+  .print-menu.open{ display:block; }
+  .print-menu-item{
+    display:block; width:100%; text-align:left; padding:8px 10px; border-radius:7px;
+    border:none; background:transparent; color:var(--ink); font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .print-menu-item:hover{ background:var(--row-alt); }
+  .print-menu-item.active{ background:var(--accent-soft); color:var(--ink); }
+  .print-menu-item.active::before{ content:'\2713  '; }
 
   /* ── Review-pending modal ── */
   .review-panel{
@@ -1306,14 +1322,20 @@
     #print-grid tbody tr:nth-child(even){ background:#FAFAFB; }
     #print-grid .pg-legend{ margin:0 0 8px; font-size:9.5px; color:#555; display:flex; gap:14px; }
     /* Times mode — two lines per day-cell (In over Out), so the font drops
-       a touch and rows breathe a bit more than the single-letter grid. */
-    #print-grid.pg-times-mode th{ font-size:8px; }
-    #print-grid.pg-times-mode td.pg-time-cell{ padding:2px 1px; line-height:1.35; }
+       a touch and rows breathe a bit more than the single-letter grid.
+       31 columns + full "AM"/"PM" is a genuinely tight fit on one A4
+       landscape sheet — squeezed as far as legibility allows. */
+    #print-grid.pg-times-mode th{ font-size:7.5px; }
+    #print-grid.pg-times-mode td.pg-time-cell{ padding:2px 0; line-height:1.3; }
     #print-grid.pg-times-mode .pg-in, #print-grid.pg-times-mode .pg-out{
-      display:block; font-size:7.8px; white-space:nowrap;
+      display:block; font-size:6.6px; white-space:nowrap; letter-spacing:-.3px;
     }
     #print-grid.pg-times-mode .pg-in{ color:#1a7a3c; }
     #print-grid.pg-times-mode .pg-out{ color:#b3261e; }
+    #print-grid.pg-times-mode td.pg-double{ padding:1px 0; line-height:1.15; }
+    #print-grid.pg-times-mode td.pg-double .pg-in, #print-grid.pg-times-mode td.pg-double .pg-out{ font-size:5.8px; letter-spacing:-.3px; }
+    #print-grid.pg-times-mode td.pg-double .pg-out:nth-of-type(2){ margin-bottom:1.5px; }
+    #print-grid.pg-times-mode .pg-name{ max-width:95px; }
 
     /* The sidebar is hidden on paper, but the gutter it reserved was not,
        so every sheet came out shoved a third of the way across and the last
@@ -1610,14 +1632,19 @@
       <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
       <span class="btn-txt">Refresh</span>
     </button>
-    <select id="print-style-select" title="Monthly print layout" style="display:none;">
-      <option value="letters">Print: P/H/A grid</option>
-      <option value="times">Print: In/Out times</option>
-    </select>
-    <button class="ghost" id="print-btn" title="Print this register">
-      <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
-      <span class="btn-txt">Print</span>
-    </button>
+    <div class="print-split" id="print-split">
+      <button class="ghost print-main" id="print-btn" title="Print this register">
+        <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 15h12v6H6z"/></svg>
+        <span class="btn-txt">Print</span>
+      </button>
+      <button type="button" class="ghost print-arrow" id="print-arrow" title="Monthly print layout" style="display:none;" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="print-menu" id="print-menu">
+        <button type="button" class="print-menu-item" data-style="letters">P/H/A grid</button>
+        <button type="button" class="print-menu-item" data-style="times">In/Out times</button>
+      </div>
+    </div>
     <button class="ghost" id="review-pending-btn" title="Staff with only one scan today — set their day manually" style="display:none;">
       <svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       <span class="btn-txt">Review<span class="count-pill" id="review-pending-count">0</span></span>
@@ -2120,7 +2147,8 @@ let STATUS_FILTER = null;        // Set of tr[data-status] values, or null = sho
 let REVIEW_QUEUE = [];           // staff needing manual review on the currently rendered day — powers the Review modal
 let MONTHLY_MONTH_VAL = '';      // "YYYY-MM" of the last loaded month — the print grid needs the day count and label
 let MONTHLY_DAYS_IN_MONTH = 0;
-let MONTHLY_PRINT_ROWS = [];     // last-rendered monthly rows — lets the style dropdown rebuild the print grid without a reload
+let MONTHLY_PRINT_ROWS = [];     // last-rendered monthly rows — lets the style menu rebuild the print grid without a reload
+let PRINT_STYLE = 'letters';     // 'letters' (P/H/A grid) | 'times' (In/Out) — chosen from the print-arrow menu
 
 function todayKolkata(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -2939,7 +2967,7 @@ function setMode(m){
   document.getElementById('view-monthly').classList.toggle('on', m === 'monthly');
   document.getElementById('date-field').style.display = m === 'daily' ? 'flex' : 'none';
   document.getElementById('month-field').style.display = m === 'monthly' ? 'flex' : 'none';
-  document.getElementById('print-style-select').style.display = m === 'monthly' ? '' : 'none';
+  document.getElementById('print-arrow').style.display = m === 'monthly' ? '' : 'none';
   updateDisplaySwitchVisibility();
   loadRegister();
 }
@@ -3142,8 +3170,25 @@ setInterval(freshnessLabel, 20000);
 /* The browser stamps the document title into its own page header. Left alone
    that came out as whatever the tab was called; this makes the corner of the
    sheet say what the sheet is. */
-document.getElementById('print-style-select').addEventListener('change', () => {
-  buildPrintGrid(MONTHLY_PRINT_ROWS);
+document.getElementById('print-arrow').addEventListener('click', (e) => {
+  e.stopPropagation();
+  const menu = document.getElementById('print-menu');
+  const arrow = document.getElementById('print-arrow');
+  const open = menu.classList.toggle('open');
+  arrow.setAttribute('aria-expanded', open ? 'true' : 'false');
+});
+document.querySelectorAll('.print-menu-item').forEach(item => {
+  item.classList.toggle('active', item.dataset.style === PRINT_STYLE);
+  item.addEventListener('click', () => {
+    PRINT_STYLE = item.dataset.style;
+    document.querySelectorAll('.print-menu-item').forEach(i => i.classList.toggle('active', i === item));
+    document.getElementById('print-menu').classList.remove('open');
+    document.getElementById('print-arrow').setAttribute('aria-expanded', 'false');
+  });
+});
+document.addEventListener('click', (e) => {
+  const split = document.getElementById('print-split');
+  if(!split.contains(e.target)) document.getElementById('print-menu').classList.remove('open');
 });
 document.getElementById('print-btn').addEventListener('click', () => {
   const keep = document.title;
@@ -3373,10 +3418,13 @@ async function loadMonthly(){
   if(VIEW === 'staff') buildCategoryPills(ROSTER);
 
   const mode = getSandwichRule();
+  const shiftRulesMap = VIEW === 'staff' ? getShiftRulesMap() : {};
 
   ROSTER.forEach(person => {
     const id = personId(person);
     const category = VIEW === 'staff' ? normalizedRole(person.role || '') : '';
+    const catRule = shiftRulesMap[category] || {};
+    const isDoubleShift = VIEW === 'staff' && catRule.mode !== 'duration' && !!catRule.eFrom && !!catRule.eTo;
 
     // 1. One status per calendar day — a saved override always wins
     const flaggedDates = [];
@@ -3408,7 +3456,7 @@ async function loadMonthly(){
       else if(st === 'off') paidOff++;
     });
 
-    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates, days: settled, dayTimes: dayTimesFor(allDates, dayScans, id) };
+    MONTHLY[id] = { present, half, absent, absorbed, paidOff, late, totalDays: present + half + absent, flaggedDates, days: settled, dayTimes: dayTimesFor(allDates, dayScans, id, isDoubleShift) };
   });
 
   updateViewTitle();
@@ -3420,19 +3468,35 @@ async function loadMonthly(){
 
 // Per-day In/Out time strings for the whole month — same action-tag
 // classification the daily table uses (night_in/morning_entry/evening_entry
-// = In; night_out/morning_exit/evening_exit/gatepass_exit = Out), just
-// collapsed to one first-in + one last-out per day instead of per-window
-// lines, since the print grid only has room for one pair per cell.
-function dayTimesFor(allDates, dayScans, id){
+// = In; night_out/morning_exit/evening_exit/gatepass_exit = Out).
+// Double-shift categories (Driver, Cleaner — genuine two windows/day) keep
+// their morning leg and evening leg separate, since collapsing "drop" and
+// "pickup" into one first-in/last-out would hide one whole trip. Everyone
+// else (single-shift, duration mode) gets one combined in/out per day.
+function dayTimesFor(allDates, dayScans, id, isDouble){
   return allDates.map(day => {
     const recs = ((dayScans[day] || {})[id]) || [];
     if(!recs.length) return null;
     const sorted = [...recs].sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
     const inRecs = sorted.filter(r => r.action === 'night_in' || r.action === 'morning_entry' || r.action === 'evening_entry');
     const outRecs = sorted.filter(r => r.action === 'night_out' || r.action === 'morning_exit' || r.action === 'evening_exit' || r.action === 'gatepass_exit');
+    if(!isDouble){
+      return {
+        in: inRecs.length ? timeOnly(inRecs[0].time) : null,
+        out: outRecs.length ? timeOnly(outRecs[outRecs.length - 1].time) : null
+      };
+    }
+    const leg = r => String(r.action || '').startsWith('evening') ? 'evening' : 'morning';
+    const mIn = inRecs.filter(r => leg(r) === 'morning');
+    const mOut = outRecs.filter(r => leg(r) === 'morning');
+    const eIn = inRecs.filter(r => leg(r) === 'evening');
+    const eOut = outRecs.filter(r => leg(r) === 'evening');
     return {
-      in: inRecs.length ? timeOnly(inRecs[0].time) : null,
-      out: outRecs.length ? timeOnly(outRecs[outRecs.length - 1].time) : null
+      double: true,
+      mIn: mIn.length ? timeOnly(mIn[0].time) : null,
+      mOut: mOut.length ? timeOnly(mOut[mOut.length - 1].time) : null,
+      eIn: eIn.length ? timeOnly(eIn[0].time) : null,
+      eOut: eOut.length ? timeOnly(eOut[eOut.length - 1].time) : null
     };
   });
 }
@@ -3843,7 +3907,7 @@ function renderMonthlyTable(){
 
 // Day-wise register grid — screen se hidden, sirf print (landscape) me
 // dikhta hai. Do styles: 'letters' (P/H/A, jaisa pehle tha) aur 'times'
-// (asli In/Out time har din, HH:MM AM/PM). print-style-select se chunte hain.
+// (asli In/Out time har din, HH:MM AM/PM). Print button ke arrow-menu se chunte hain.
 function dayLetter(status){
   if(status === 'present' || status === 'late') return {t:'P', cls:'pg-p'};
   if(status === 'half' || status === 'needsReview') return {t:'H', cls:'pg-h'};
@@ -3851,20 +3915,19 @@ function dayLetter(status){
   if(status === 'off') return {t:'O', cls:'pg-o'};
   return {t:'\u2013', cls:'pg-dash'}; // 'none' — school/office was open, no record either way
 }
-// Compact 12h — "8:05a" / "10:16p" — full "AM"/"PM" would blow out the
-// column width across 31 stacked day-cells, so this is print-grid-only.
+// Full 12h — "8:05 AM" / "6:10 PM" — print-grid-only helper.
 function to12hCompact(t){
   if(!t) return '';
   const m = String(t).match(/^(\d{1,2}):(\d{2})/);
   if(!m) return t;
   let h = parseInt(m[1], 10);
-  const ap = h >= 12 ? 'p' : 'a';
+  const ap = h >= 12 ? 'PM' : 'AM';
   h = h % 12; if(h === 0) h = 12;
-  return `${h}:${m[2]}${ap}`;
+  return `${h}:${m[2]} ${ap}`;
 }
 
 function buildPrintGrid(rows){
-  const style = document.getElementById('print-style-select').value || 'letters';
+  const style = PRINT_STYLE || 'letters';
   if(style === 'times') buildPrintGridTimes(rows);
   else buildPrintGridLetters(rows);
 }
@@ -3927,6 +3990,15 @@ function buildPrintGridTimes(rows){
     const cells = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => {
       const dl = dayLetter(days[d]);
       const t = times[d];
+      if(t && t.double){
+        if(dl.t === 'O' || (!t.mIn && !t.mOut && !t.eIn && !t.eOut)) return `<td class="${dl.cls}">${dl.t}</td>`;
+        return `<td class="pg-time-cell pg-double">
+          <span class="pg-in">${t.mIn ? to12hCompact(t.mIn) : '\u2013'}</span>
+          <span class="pg-out">${t.mOut ? to12hCompact(t.mOut) : '\u2013'}</span>
+          <span class="pg-in">${t.eIn ? to12hCompact(t.eIn) : '\u2013'}</span>
+          <span class="pg-out">${t.eOut ? to12hCompact(t.eOut) : '\u2013'}</span>
+        </td>`;
+      }
       if(dl.t === 'O' || dl.t === '\u2013' || !t || (!t.in && !t.out)){
         return `<td class="${dl.cls}">${dl.t}</td>`;
       }
@@ -3946,7 +4018,7 @@ function buildPrintGridTimes(rows){
   }).join('');
 
   el.innerHTML = `
-    <div class="pg-legend"><span>Top line: <b>In</b></span><span>Bottom line: <b>Out</b></span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
+    <div class="pg-legend"><span><b>In</b> / <b>Out</b> per cell &mdash; Driver &amp; Cleaner show both trips (morning pair, evening pair)</span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
     <table>
       <thead>
         <tr>
