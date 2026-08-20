@@ -1333,6 +1333,14 @@
     #print-grid .pg-vert-table thead th{ font-weight:700; }
     #print-grid .pg-date-col{ text-align:left; padding-left:6px; font-weight:600; white-space:nowrap; background:#F8F8FA; }
     #print-grid .pg-sub-id{ font-weight:400; color:#777; }
+    /* Divider between one staff member's columns and the next — put on
+       every row (both header rows + every body row) so it reads as one
+       continuous black rule from the name down to the last date. */
+    #print-grid .pg-vert-table .pg-staff-div{ border-left:2px solid #000 !important; }
+    /* Absent = no punch at all that day (every Time IN/Out in that
+       person's block is blank) — flagged with a red tint so a gap in
+       the sheet reads as "didn't come in", not "forgot to check". */
+    #print-grid .pg-vert-table td.pg-absent-cell{ color:#b3261e; font-weight:700; }
 
     /* The sidebar is hidden on paper, but the gutter it reserved was not,
        so every sheet came out shoved a third of the way across and the last
@@ -4013,24 +4021,35 @@ function buildPrintGridTimes(rows){
   });
 
   const tables = pages.map((pagePeople, pageIdx) => {
-    const headRow1 = pagePeople.map(p =>
-      `<th colspan="${p.units}">${escapeHtml(p.nameField)} <span class="pg-sub-id">(${escapeHtml(p.idField)})</span></th>`
+    // idx > 0 gets the divider — the first staff block on the page sits
+    // right after the Date column, which already has its own border.
+    const headRow1 = pagePeople.map((p, idx) =>
+      `<th colspan="${p.units}"${idx > 0 ? ' class="pg-staff-div"' : ''}>${escapeHtml(p.nameField)} <span class="pg-sub-id">(${escapeHtml(p.idField)})</span></th>`
     ).join('');
-    const headRow2 = pagePeople.map(p => p.isDouble
-      ? '<th>Time IN</th><th>Time Out</th><th>Time IN</th><th>Time Out</th>'
-      : '<th>Time IN</th><th>Time Out</th>'
-    ).join('');
+    const headRow2 = pagePeople.map((p, idx) => {
+      const divCls = idx > 0 ? ' class="pg-staff-div"' : '';
+      return p.isDouble
+        ? `<th${divCls}>Time IN</th><th>Time Out</th><th>Time IN</th><th>Time Out</th>`
+        : `<th${divCls}>Time IN</th><th>Time Out</th>`;
+    }).join('');
     const bodyRows = dateLabels.map((label, d) => {
-      const cells = pagePeople.map(p => {
+      const cells = pagePeople.map((p, idx) => {
         const m = MONTHLY[p.idField];
         const t = (m && m.dayTimes && m.dayTimes[d]) || null;
+        const divCls = idx > 0 ? 'pg-staff-div' : '';
         if(p.isDouble){
           const tt = (t && t.double) ? t : { mIn:null, mOut:null, eIn:null, eOut:null };
-          return `<td>${tt.mIn ? to12hCompact(tt.mIn) : ''}</td><td>${tt.mOut ? to12hCompact(tt.mOut) : ''}</td><td>${tt.eIn ? to12hCompact(tt.eIn) : ''}</td><td>${tt.eOut ? to12hCompact(tt.eOut) : ''}</td>`;
+          const absCls = (!tt.mIn && !tt.mOut && !tt.eIn && !tt.eOut) ? 'pg-absent-cell' : '';
+          const firstCls = `${divCls} ${absCls}`.trim();
+          const dash = absCls ? '\u2013' : '';
+          return `<td class="${firstCls}">${tt.mIn ? to12hCompact(tt.mIn) : dash}</td><td class="${absCls}">${tt.mOut ? to12hCompact(tt.mOut) : dash}</td><td class="${absCls}">${tt.eIn ? to12hCompact(tt.eIn) : dash}</td><td class="${absCls}">${tt.eOut ? to12hCompact(tt.eOut) : dash}</td>`;
         }
         const inV = (t && !t.double) ? t.in : null;
         const outV = (t && !t.double) ? t.out : null;
-        return `<td>${inV ? to12hCompact(inV) : ''}</td><td>${outV ? to12hCompact(outV) : ''}</td>`;
+        const absCls = (!inV && !outV) ? 'pg-absent-cell' : '';
+        const firstCls = `${divCls} ${absCls}`.trim();
+        const dash = absCls ? '\u2013' : '';
+        return `<td class="${firstCls}">${inV ? to12hCompact(inV) : dash}</td><td class="${absCls}">${outV ? to12hCompact(outV) : dash}</td>`;
       }).join('');
       return `<tr><td class="pg-date-col">${label}</td>${cells}</tr>`;
     }).join('');
