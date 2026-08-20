@@ -1321,21 +1321,16 @@
     #print-grid .pg-total{ background:#FAFAFB; font-weight:700; }
     #print-grid tbody tr:nth-child(even){ background:#FAFAFB; }
     #print-grid .pg-legend{ margin:0 0 8px; font-size:9.5px; color:#555; display:flex; gap:14px; }
-    /* Times mode — two lines per day-cell (In over Out), so the font drops
-       a touch and rows breathe a bit more than the single-letter grid.
-       31 columns + full "AM"/"PM" is a genuinely tight fit on one A4
-       landscape sheet — squeezed as far as legibility allows. */
-    #print-grid.pg-times-mode th{ font-size:7.5px; }
-    #print-grid.pg-times-mode td.pg-time-cell{ padding:2px 0; line-height:1.3; }
-    #print-grid.pg-times-mode .pg-in, #print-grid.pg-times-mode .pg-out{
-      display:block; font-size:6.6px; white-space:nowrap; letter-spacing:-.3px;
-    }
-    #print-grid.pg-times-mode .pg-in{ color:#1a7a3c; }
-    #print-grid.pg-times-mode .pg-out{ color:#b3261e; }
-    #print-grid.pg-times-mode td.pg-double{ padding:1px 0; line-height:1.15; }
-    #print-grid.pg-times-mode td.pg-double .pg-in, #print-grid.pg-times-mode td.pg-double .pg-out{ font-size:5.8px; letter-spacing:-.3px; }
-    #print-grid.pg-times-mode td.pg-double .pg-out:nth-of-type(2){ margin-bottom:1.5px; }
-    #print-grid.pg-times-mode .pg-name{ max-width:95px; }
+    /* Times mode — vertical staff register: dates go down the side, each
+       staff member is a 2- or 4-column block across the top (Time IN /
+       Time Out, twice for double-shift). Too many staff for one sheet
+       gets split into several <table>s (JS adds page-break-after between
+       them), each repeating the Date column. */
+    #print-grid.pg-times-mode table{ margin-bottom:14px; table-layout:auto; }
+    #print-grid .pg-vert-table th, #print-grid .pg-vert-table td{ font-size:8.5px; padding:3px 4px; }
+    #print-grid .pg-vert-table thead th{ font-weight:700; }
+    #print-grid .pg-date-col{ text-align:left; padding-left:6px; font-weight:600; white-space:nowrap; background:#F8F8FA; }
+    #print-grid .pg-sub-id{ font-weight:400; color:#777; }
 
     /* The sidebar is hidden on paper, but the gutter it reserved was not,
        so every sheet came out shoved a third of the way across and the last
@@ -3974,60 +3969,75 @@ function buildPrintGridLetters(rows){
     </table>`;
 }
 
+// Vertical layout — dates go DOWN the left side, one row per date, and
+// each staff member gets a 2- or 4-column block across the top (2 for
+// single/duration-mode shift, 4 for double-shift so both trips show).
+// Too many staff to fit one page wide, so they're greedily packed into
+// page-width chunks and each chunk becomes its own <table> with a hard
+// page break after it — every page repeats the Date column down the side.
 function buildPrintGridTimes(rows){
   const el = document.getElementById('print-grid');
   el.classList.add('pg-times-mode');
-  if(!rows.length || !MONTHLY_DAYS_IN_MONTH){ el.innerHTML = ''; return; }
-  const idHead = VIEW === 'student' ? 'Adm. No.' : 'Staff ID';
-  const dayHeads = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => `<th>${d+1}</th>`).join('');
+  if(!rows.length || !MONTHLY_DAYS_IN_MONTH || !MONTHLY_MONTH_VAL){ el.innerHTML = ''; return; }
 
-  const bodyRows = rows.map((s, i) => {
+  const PAGE_UNIT_BUDGET = 22; // ~how many Time-IN/Time-Out columns fit one landscape sheet
+  const shiftRulesMap = VIEW === 'staff' ? getShiftRulesMap() : {};
+
+  const people = rows.map(s => {
     const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
     const nameField = VIEW === 'student' ? s.studentName : s.name;
-    const m = MONTHLY[idField];
-    const days = (m && m.days) || [];
-    const times = (m && m.dayTimes) || [];
-    const cells = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => {
-      const dl = dayLetter(days[d]);
-      const t = times[d];
-      if(t && t.double){
-        if(dl.t === 'O' || (!t.mIn && !t.mOut && !t.eIn && !t.eOut)) return `<td class="${dl.cls}">${dl.t}</td>`;
-        return `<td class="pg-time-cell pg-double">
-          <span class="pg-in">${t.mIn ? to12hCompact(t.mIn) : '\u2013'}</span>
-          <span class="pg-out">${t.mOut ? to12hCompact(t.mOut) : '\u2013'}</span>
-          <span class="pg-in">${t.eIn ? to12hCompact(t.eIn) : '\u2013'}</span>
-          <span class="pg-out">${t.eOut ? to12hCompact(t.eOut) : '\u2013'}</span>
-        </td>`;
-      }
-      if(dl.t === 'O' || dl.t === '\u2013' || !t || (!t.in && !t.out)){
-        return `<td class="${dl.cls}">${dl.t}</td>`;
-      }
-      return `<td class="pg-time-cell"><span class="pg-in">${t.in ? to12hCompact(t.in) : '\u2013'}</span><span class="pg-out">${t.out ? to12hCompact(t.out) : '\u2013'}</span></td>`;
-    }).join('');
-    const daysOff = m ? (m.absent + (m.half || 0) * 0.5) : 0;
-    return `<tr>
-      <td class="mono pg-id">${i+1}</td>
-      <td class="mono pg-id">${escapeHtml(idField)}</td>
-      <td class="pg-name">${escapeHtml(nameField)}</td>
-      ${cells}
-      <td class="mono pg-total pg-p">${m ? m.present : 0}</td>
-      <td class="mono pg-total pg-h">${m ? (m.half||0) : 0}</td>
-      <td class="mono pg-total pg-a">${m ? m.absent : 0}</td>
-      <td class="mono pg-total">${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</td>
-    </tr>`;
-  }).join('');
+    const category = VIEW === 'staff' ? normalizedRole(s.role || '') : '';
+    const catRule = shiftRulesMap[category] || {};
+    const isDouble = VIEW === 'staff' && catRule.mode !== 'duration' && !!catRule.eFrom && !!catRule.eTo;
+    return { idField, nameField, isDouble, units: isDouble ? 4 : 2 };
+  });
 
-  el.innerHTML = `
-    <div class="pg-legend"><span><b>In</b> / <b>Out</b> per cell &mdash; Driver &amp; Cleaner show both trips (morning pair, evening pair)</span><span><b>O</b> Week off / holiday</span><span><b>&ndash;</b> No record</span></div>
-    <table>
+  const pages = [];
+  let cur = [], curUnits = 0;
+  people.forEach(p => {
+    if(cur.length && curUnits + p.units > PAGE_UNIT_BUDGET){ pages.push(cur); cur = []; curUnits = 0; }
+    cur.push(p); curUnits += p.units;
+  });
+  if(cur.length) pages.push(cur);
+
+  const dateLabels = Array.from({length: MONTHLY_DAYS_IN_MONTH}, (_, d) => {
+    const dt = new Date(`${MONTHLY_MONTH_VAL}-${String(d + 1).padStart(2, '0')}T00:00:00`);
+    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).replace(' ', '-');
+  });
+
+  const tables = pages.map((pagePeople, pageIdx) => {
+    const headRow1 = pagePeople.map(p =>
+      `<th colspan="${p.units}">${escapeHtml(p.nameField)} <span class="pg-sub-id">(${escapeHtml(p.idField)})</span></th>`
+    ).join('');
+    const headRow2 = pagePeople.map(p => p.isDouble
+      ? '<th>Time IN</th><th>Time Out</th><th>Time IN</th><th>Time Out</th>'
+      : '<th>Time IN</th><th>Time Out</th>'
+    ).join('');
+    const bodyRows = dateLabels.map((label, d) => {
+      const cells = pagePeople.map(p => {
+        const m = MONTHLY[p.idField];
+        const t = (m && m.dayTimes && m.dayTimes[d]) || null;
+        if(p.isDouble){
+          const tt = (t && t.double) ? t : { mIn:null, mOut:null, eIn:null, eOut:null };
+          return `<td>${tt.mIn ? to12hCompact(tt.mIn) : ''}</td><td>${tt.mOut ? to12hCompact(tt.mOut) : ''}</td><td>${tt.eIn ? to12hCompact(tt.eIn) : ''}</td><td>${tt.eOut ? to12hCompact(tt.eOut) : ''}</td>`;
+        }
+        const inV = (t && !t.double) ? t.in : null;
+        const outV = (t && !t.double) ? t.out : null;
+        return `<td>${inV ? to12hCompact(inV) : ''}</td><td>${outV ? to12hCompact(outV) : ''}</td>`;
+      }).join('');
+      return `<tr><td class="pg-date-col">${label}</td>${cells}</tr>`;
+    }).join('');
+    const pageBreak = pageIdx < pages.length - 1 ? ' style="page-break-after:always;"' : '';
+    return `<table class="pg-vert-table"${pageBreak}>
       <thead>
-        <tr>
-          <th>S.No</th><th>${idHead}</th><th>Name</th>${dayHeads}
-          <th>P</th><th>H</th><th>A</th><th>Off</th>
-        </tr>
+        <tr><th class="pg-date-col" rowspan="2">Staff \u2194 Date</th>${headRow1}</tr>
+        <tr>${headRow2}</tr>
       </thead>
       <tbody>${bodyRows}</tbody>
     </table>`;
+  }).join('');
+
+  el.innerHTML = `<div class="pg-legend"><span>Driver &amp; Cleaner show both trips (2 Time IN/Out pairs)</span>${pages.length > 1 ? `<span>${pages.length} pages &mdash; staff split across sheets, dates repeat on each</span>` : ''}</div>${tables}`;
 }
 
 function renderBreakdown(enriched, mode){
