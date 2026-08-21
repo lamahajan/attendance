@@ -357,6 +357,19 @@
   .shift-rule-card .src-duration-fields .field{ min-width:128px; }
   .shift-rule-card .src-duration-fields .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
   .shift-rule-card .src-duration-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
+  .shift-rule-card .src-half-fields{ display:none; }
+  .shift-rule-card.mode-single .src-half-fields{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-top:10px; padding-top:12px;
+    border-top:1px solid var(--paper-line);
+  }
+  .shift-rule-card .src-half-fields .field{ min-width:128px; }
+  .shift-rule-card .src-half-fields .field input,
+  .shift-rule-card .src-half-fields .field select{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
+  .shift-rule-card .src-half-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
+  .shift-rule-card .src-half-fields .src-half-min-field,
+  .shift-rule-card .src-half-fields .src-half-before-field{ display:none; }
+  .shift-rule-card .src-half-fields.half-mode-duration .src-half-min-field{ display:block; }
+  .shift-rule-card .src-half-fields.half-mode-time .src-half-before-field{ display:block; }
   .shift-rule-card .src-windows .field{ min-width:112px; }
   .shift-rule-card .src-windows .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; }
   .shift-rule-card .src-windows .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
@@ -1859,6 +1872,14 @@
         </div>
 
         <div class="group">
+          <h3>School start time</h3>
+          <p class="hint">Used as "Must arrive by" for any staff category whose own card leaves that field blank — shifts with the season like everything else. A category that needs its own arrival time just sets it on that category's card, same as it already can.</p>
+          <div class="grid">
+            <div class="field"><label for="school-start-input">Start time</label><input type="time" id="school-start-input"></div>
+          </div>
+        </div>
+
+        <div class="group">
           <h3>Seasons</h3>
           <p class="hint">Give the range without a year, so it repeats. A range may run past December — 1 Nov to 15 Feb is one winter. Minus shifts everything earlier, plus shifts it later.</p>
           <div class="row">
@@ -1970,6 +1991,20 @@
             <div class="field"><label for="review-after-time">Don't flag it until</label><input type="time" id="review-after-time"></div>
           </div>
           <p class="hint" style="margin-top:8px;">Before that time, one scan just means the day's still on &mdash; not yet a problem. (Single-scan policy and the review time stay shared across every duration-mode category.)</p>
+        </div>
+
+        <div class="group">
+          <h3>Single-shift days</h3>
+          <p class="hint">For a double-shift category (Driver, Cleaner &mdash; both trips expected) that's only running one trip on a particular date. On a listed date, one punch window scanned counts as a Full day instead of Half. Leave categories unticked and it covers every double-shift category.</p>
+          <div class="row">
+            <div class="field" style="min-width:140px;"><label for="ssd-date-input">Date</label><input type="date" id="ssd-date-input"></div>
+            <button type="button" id="add-ssd-btn" class="ghost small" style="height:36px;">Add</button>
+          </div>
+          <div class="catpick" id="ssd-cats" style="display:block;">
+            <span class="catpick-label">Which staff categories &mdash; leave all unticked and it covers every category</span>
+            <div class="cat-checks" id="ssd-cats-row"></div>
+          </div>
+          <div id="ssd-list" class="chip-wrap"></div>
         </div>
 
         <div class="group">
@@ -2092,8 +2127,10 @@ const LS = {
   shiftHours:'reg_shift_hours',
   workingDays:'reg_working_days',
   holidays:'reg_holidays',
+  singleShiftDays:'reg_single_shift_days',
   holidayRules:'reg_holiday_rules',
   cutoffDefault:'reg_cutoff_default',
+  schoolStartTime:'reg_school_start_time',
   cutoffOverrides:'reg_cutoff_overrides',
   cutoffDateOverrides:'reg_cutoff_date_overrides',
   sandwichRule:'reg_sandwich_rule',
@@ -2447,16 +2484,32 @@ function shiftTimeStr(hhmm, mins){
   if(t < 0) t += 1440;
   return String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
 }
-// The category's windows with the season already applied.
+// The school's default arrival time, used only by a category that has no
+// punch window configured at all AND leaves "Must arrive by" blank.
+function getSchoolStartTime(){
+  return localStorage.getItem(LS.schoolStartTime) || '09:00';
+}
+// The category's windows with the season already applied. "Must arrive by"
+// rides along too — a category that set its own time gets that time shifted
+// same as its punch windows. Left blank:
+//   - a category with a morning punch window (Driver, Cleaner — often
+//     running before school even opens) falls back to that window's own
+//     close time, since that's the real "should have shown up by now" line,
+//     not the school bell.
+//   - a category with no window at all falls back to the school start time.
 function shiftedRuleFor(category, dateStr){
   const rule = getShiftRulesMap()[category];
   if(!rule) return null;
   const mins = seasonShiftFor(dateStr, category);
-  if(!mins) return { ...rule, _shift:0 };
+  const windowClose = (rule.mFrom && rule.mTo) ? rule.mTo : '';
+  const baseArriveBy = rule.arriveBy || windowClose || getSchoolStartTime();
+  if(!mins) return { ...rule, arriveBy: baseArriveBy, _shift:0 };
   return {
     ...rule,
     mFrom: shiftTimeStr(rule.mFrom, mins), mTo: shiftTimeStr(rule.mTo, mins),
     eFrom: shiftTimeStr(rule.eFrom, mins), eTo: shiftTimeStr(rule.eTo, mins),
+    arriveBy: shiftTimeStr(baseArriveBy, mins),
+    halfDayBefore: rule.halfDayBefore ? shiftTimeStr(rule.halfDayBefore, mins) : rule.halfDayBefore,
     _shift: mins
   };
 }
@@ -2545,6 +2598,23 @@ function getHolidays(){
     const stored = JSON.parse(localStorage.getItem(LS.holidays) || '[]');
     return Array.isArray(stored) ? stored : [];
   }catch(e){ return []; }
+}
+// Dates where a normally double-shift category (Driver, Cleaner \u2014 both
+// trips expected) only runs one trip that day \u2014 school half day, a single
+// exam-day pickup, etc. On a listed date, one punch window scanned is
+// enough for a Full day instead of the usual Half.
+function getSingleShiftDays(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(LS.singleShiftDays) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  }catch(e){ return []; }
+}
+function singleShiftDayApplies(entry, category){
+  if(!entry) return false;
+  return !Array.isArray(entry.cats) || !entry.cats.length || entry.cats.includes(category);
+}
+function isSingleShiftDayFor(dateStr, category){
+  return getSingleShiftDays().some(e => e.date === dateStr && singleShiftDayApplies(e, category));
 }
 /* Sorts a day's scans into the two windows and throws away the rest.
    Returns { morning:[recs], evening:[recs], ignored:[recs], hasM, hasE }. */
@@ -2637,12 +2707,33 @@ function computeStaffDayStatus(recs, category){
     return (Math.max(...times) - Math.min(...times)) >= minShift;
   };
 
-  const need = (hasM ? 1 : 0) + (hasE ? 1 : 0);
+  const need0 = (hasM ? 1 : 0) + (hasE ? 1 : 0);
+  // A double-shift category can be told, for specific dates, that only one
+  // trip is running \u2014 so one punch window is enough for a Full day.
+  const need = (need0 === 2 && isSingleShiftDayFor(dateOnly(recs[0].time), category)) ? 1 : need0;
   const morningOk = hasM && shiftSatisfied(morning);
   const eveningOk = hasE && shiftSatisfied(evening);
   const hit = (morningOk ? 1 : 0) + (eveningOk ? 1 : 0);
   if(!hit) return 'absent';                 // every scan fell outside the windows (or fell short of the hours)
   if(hit < need) return 'half';
+
+  // Single shift only — there's just the one window, so "punched inside it"
+  // can't tell full from half on its own. This is an extra, opt-in check on
+  // top: too short a gap between first and last scan, or a checkout before
+  // a set time, downgrades an otherwise-full day to Half.
+  if(hasM && !hasE && winRule.halfDayMode && winRule.halfDayMode !== 'off'){
+    const times = morning.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
+    if(times.length){
+      if(winRule.halfDayMode === 'duration'){
+        const halfMin = (winRule.halfDayMin === 0 || winRule.halfDayMin) ? winRule.halfDayMin : null;
+        if(halfMin != null && (Math.max(...times) - Math.min(...times)) < halfMin) return 'half';
+      }else if(winRule.halfDayMode === 'time'){
+        const beforeMin = timeStrToMinutes(winRule.halfDayBefore);
+        if(beforeMin != null && Math.max(...times) < beforeMin) return 'half';
+      }
+    }
+  }
+
   return lateCheck(morning, recs) ? 'late' : 'present';
 }
 
@@ -2768,7 +2859,7 @@ function getStudentDefaultView(){
 // Settings are edited in the in-page Settings popup and written both to localStorage (per device)
 // and, when a Raw attendance Firebase URL is configured, to that same Firebase so every
 // device pulls the same configuration. This page pulls the latest synced copy on load.
-const SYNCED_KEYS = ['shiftHours','workingDays','holidays','holidayRules','cutoffDefault','cutoffOverrides','cutoffDateOverrides','sandwichRule','seasons','settingsPassHash','studentDefaultView','devices','studentShiftHours','studentClassEvening','examMode','staffDurationThresholds','singleScanPolicy','reviewAfterTime','nightStaffIds'];
+const SYNCED_KEYS = ['shiftHours','workingDays','holidays','singleShiftDays','holidayRules','cutoffDefault','schoolStartTime','cutoffOverrides','cutoffDateOverrides','sandwichRule','seasons','settingsPassHash','studentDefaultView','devices','studentShiftHours','studentClassEvening','examMode','staffDurationThresholds','singleScanPolicy','reviewAfterTime','nightStaffIds'];
 async function syncSettingsFromCloud(){
   const base = attBase();
   if(!base) return;
@@ -4262,6 +4353,7 @@ function loadSettingsFormFromLocal(){
   document.getElementById('r-code').value = localStorage.getItem(LS.rCode) || '';
   document.getElementById('default-view-input').value = localStorage.getItem(LS.studentDefaultView) || 'list';
   document.getElementById('cutoff-default-input').value = localStorage.getItem(LS.cutoffDefault) || '11:00';
+  document.getElementById('school-start-input').value = localStorage.getItem(LS.schoolStartTime) || '09:00';
   document.getElementById('sandwich-toggle').checked = getSandwichRule() === 'on';
 
   const stu = getStudentShiftHours();
@@ -4282,6 +4374,7 @@ function loadSettingsFormFromLocal(){
   buildShiftRulesGrid();
   buildWorkingDaysRow();
   renderHolidayList();
+  renderSingleShiftDayList();
   renderRuleList();
   renderCutoffList();
   renderDeviceList();
@@ -4321,15 +4414,37 @@ function buildShiftRulesGrid(){
         <div class="field"><label>Full day over (min)</label><input type="number" class="src-dur-full" placeholder="${escapeHtml(String(defaultTh.fullAboveMin))}" value="${rule.fullAboveMin === 0 || rule.fullAboveMin ? escapeHtml(String(rule.fullAboveMin)) : ''}"></div>
       </div>
       <div class="src-arrive">
-        <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" value="${escapeHtml(rule.arriveBy || '')}"></div>
+        <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" placeholder="auto — school start" value="${escapeHtml(rule.arriveBy || '')}"></div>
         <div class="field"><label>Season shift (min)</label><input type="number" step="5" class="src-season-shift" placeholder="auto" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}"></div>
       </div>
+      <p class="hint src-arrive-hint">Left blank: a category with a punch window (morning trip before school even opens, for Driver/Cleaner) uses that window's own close time as the deadline. A category with no window falls back to the school start time set on the Seasons page. Either way it shifts with the season. Set a time here only to override that.</p>
+      <div class="src-half-fields half-mode-${escapeHtml(rule.halfDayMode || 'off')}">
+        <div class="field"><label>Half day</label>
+          <select class="src-half-mode">
+            <option value="off" ${(!rule.halfDayMode || rule.halfDayMode==='off')?'selected':''}>Off</option>
+            <option value="duration" ${rule.halfDayMode==='duration'?'selected':''}>By duration (min)</option>
+            <option value="time" ${rule.halfDayMode==='time'?'selected':''}>By checkout time</option>
+          </select>
+        </div>
+        <div class="field src-half-min-field"><label>Half day under (min)</label><input type="number" class="src-half-min" value="${rule.halfDayMin === 0 || rule.halfDayMin ? escapeHtml(String(rule.halfDayMin)) : ''}"></div>
+        <div class="field src-half-before-field"><label>Half day if checkout before</label><input type="time" class="src-half-before" value="${escapeHtml(rule.halfDayBefore || '')}"></div>
+      </div>
+      <p class="hint src-half-hint">Single shift only. "By duration" makes a short first-to-last-scan gap a Half day instead of Present. "By checkout time" makes leaving before that clock time a Half day, whatever time they arrived.</p>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 school default'}</span>
         <div class="daypick">${dayPills}</div>
       </div>
     </div>`;
   }).join('');
+
+  grid.querySelectorAll('.src-half-mode').forEach(sel => {
+    const apply = () => {
+      const wrap = sel.closest('.src-half-fields');
+      wrap.classList.remove('half-mode-off', 'half-mode-duration', 'half-mode-time');
+      wrap.classList.add(`half-mode-${sel.value}`);
+    };
+    sel.addEventListener('change', apply);
+  });
 
   grid.querySelectorAll('.src-mode-select').forEach(sel => {
     sel.addEventListener('change', () => {
@@ -4421,10 +4536,10 @@ function knownStaffCategories(){
 }
 function buildCategoryPickers(){
   const cats = knownStaffCategories();
-  ['holiday-cats-row', 'rule-cats-row'].forEach(id => {
+  ['holiday-cats-row', 'rule-cats-row', 'ssd-cats-row'].forEach(id => {
     const row = document.getElementById(id);
     if(!row) return;
-    const prefix = id.split('-')[0];
+    const prefix = id === 'ssd-cats-row' ? 'ssd' : id.split('-')[0];
     row.innerHTML = cats.map(c =>
       `<label><input type="checkbox" class="${prefix}-cat" value="${escapeHtml(c)}"> ${escapeHtml(c)}</label>`
     ).join('');
@@ -4506,6 +4621,36 @@ document.getElementById('add-holiday-btn').addEventListener('click', () => {
 
 document.getElementById('rule-weekday-input').innerHTML = WEEKDAY_NAMES.map((n, i) => `<option value="${i}">${n}</option>`).join('');
 document.getElementById('rule-weekday-input').value = '6';
+
+function renderSingleShiftDayList(){
+  const list = getSingleShiftDays().sort((a,b) => a.date.localeCompare(b.date));
+  const wrap = document.getElementById('ssd-list');
+  if(!list.length){ wrap.innerHTML = '<span style="font-size:12.5px; color:var(--ink-soft);">No single-shift days added yet.</span>'; return; }
+  wrap.innerHTML = list.map((e, idx) => `
+    <span class="chip">${escapeHtml(e.date)} <span class="scope">&middot; ${e.cats && e.cats.length ? escapeHtml(e.cats.join(', ')) : 'Every category'}</span>
+      <button type="button" data-idx="${idx}" title="Remove">&times;</button></span>`).join('');
+  wrap.querySelectorAll('button[data-idx]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const es = getSingleShiftDays().sort((a,b) => a.date.localeCompare(b.date));
+      es.splice(parseInt(btn.dataset.idx, 10), 1);
+      localStorage.setItem(LS.singleShiftDays, JSON.stringify(es));
+      renderSingleShiftDayList();
+    });
+  });
+}
+document.getElementById('add-ssd-btn').addEventListener('click', () => {
+  const date = document.getElementById('ssd-date-input').value;
+  if(!date) return;
+  const cats = pickedCategories('ssd');
+  const list = getSingleShiftDays();
+  if(!list.some(e => e.date === date && String(e.cats||'') === String(cats||''))){
+    list.push(cats.length ? { date, cats } : { date });
+  }
+  localStorage.setItem(LS.singleShiftDays, JSON.stringify(list));
+  document.getElementById('ssd-date-input').value = '';
+  clearPickedCategories('ssd');
+  renderSingleShiftDayList();
+});
 
 function renderRuleList(){
   const rules = getHolidayRules();
@@ -4848,14 +4993,24 @@ function collectSettingsObject(){
     const da = g('.src-dur-absent'), df = g('.src-dur-full');
     shiftRulesObj[cat].absentBelowMin = da === '' ? '' : Number(da);
     shiftRulesObj[cat].fullAboveMin   = df === '' ? '' : Number(df);
+    // Half day (single shift only) — still written when the card is on a
+    // different mode so a value typed in doesn't linger invisibly if the
+    // category gets switched back to Single shift later.
+    const hm = g('.src-half-mode');
+    shiftRulesObj[cat].halfDayMode = hm || 'off';
+    const hmin = g('.src-half-min');
+    shiftRulesObj[cat].halfDayMin = hmin === '' ? '' : Number(hmin);
+    shiftRulesObj[cat].halfDayBefore = g('.src-half-before') || '';
   });
   const workingDays = [...document.querySelectorAll('.working-day-cb:checked')].map(cb => parseInt(cb.dataset.day, 10));
   return {
     shiftHours: shiftRulesObj,
     workingDays,
     holidays: getHolidays(),
+    singleShiftDays: getSingleShiftDays(),
     holidayRules: getHolidayRules(),
     cutoffDefault: document.getElementById('cutoff-default-input').value || '11:00',
+    schoolStartTime: document.getElementById('school-start-input').value || '09:00',
     cutoffOverrides: getCutoffOverrides(),
     cutoffDateOverrides: getCutoffDateOverrides(),
     sandwichRule: document.getElementById('sandwich-toggle').checked ? 'on' : 'off',
@@ -4894,6 +5049,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   localStorage.setItem(LS.shiftHours, JSON.stringify(settings.shiftHours));
   localStorage.setItem(LS.workingDays, JSON.stringify(settings.workingDays));
   localStorage.setItem(LS.cutoffDefault, settings.cutoffDefault);
+  localStorage.setItem(LS.schoolStartTime, settings.schoolStartTime);
   localStorage.setItem(LS.cutoffOverrides, JSON.stringify(settings.cutoffOverrides));
   localStorage.setItem(LS.cutoffDateOverrides, JSON.stringify(settings.cutoffDateOverrides));
   localStorage.setItem(LS.sandwichRule, settings.sandwichRule);
