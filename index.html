@@ -330,25 +330,48 @@
   .catpick{ margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
   .catpick-label{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }
 
-  /* Staff shift cards */
-  .shift-rule-card{ border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; background:var(--card); }
+  /* Staff shift cards — collapsed by default, tap the name to expand */
+  .shift-rule-card{ border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin-bottom:8px; background:var(--card); transition:border-color .15s; }
+  .shift-rule-card.expanded{ padding-bottom:16px; border-color:var(--border); }
   .shift-rule-card .src-head{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
   .shift-rule-card .src-head strong{ font-size:13.5px; }
   .shift-rule-card select{ font-size:12.5px; padding:6px 9px; border:1px solid var(--border); background:var(--card); border-radius:6px; color:var(--ink); }
+  .shift-rule-card .src-toggle{
+    all:unset; box-sizing:border-box; display:flex; align-items:center; gap:9px; cursor:pointer;
+    flex:1; min-width:0; padding:4px 2px;
+  }
+  .shift-rule-card .src-chev{
+    width:13px; height:13px; stroke:var(--ink-soft); stroke-width:2.2; fill:none; flex:none;
+    transition:transform .15s ease;
+  }
+  .shift-rule-card.expanded .src-chev{ transform:rotate(90deg); stroke:var(--ink); }
+  .shift-rule-card .src-summary{
+    font-size:11.5px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; min-width:0;
+  }
+  .shift-rule-card.expanded .src-summary{ display:none; }
+  .shift-rule-card .src-body{ display:none; }
+  .shift-rule-card.expanded .src-body{
+    display:block; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line);
+  }
   .shift-rule-card .src-windows{
-    display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px;
-    border-top:1px solid var(--paper-line);
+    display:flex; flex-wrap:wrap; gap:10px;
   }
   .shift-rule-card.mode-duration .src-windows{ display:none; }
   .shift-rule-card.mode-single .src-windows .evening-field,
   .shift-rule-card.mode-single .src-windows .min-shift-field{ display:none; }
-  .shift-rule-card .src-min-shift-hint{ font-size:11px; color:var(--ink-soft); margin-top:8px; }
+  /* Every explanatory line on a shift-rule card, whatever class it carries,
+     reads as a small muted note — never a bold black paragraph. */
+  .shift-rule-card > p.hint, .shift-rule-card p.hint{
+    font-size:11px; color:var(--ink-soft); line-height:1.5; margin:6px 0 0; font-weight:400;
+  }
   .shift-rule-card.mode-duration .src-min-shift-hint,
   .shift-rule-card.mode-single .src-min-shift-hint{ display:none; }
+  .shift-rule-card .src-half-hint{ display:none; }
+  .shift-rule-card.mode-single .src-half-hint{ display:block; }
   .shift-rule-card .src-duration-note{ display:none; }
   .shift-rule-card.mode-duration .src-duration-note{
-    display:block; font-size:11.5px; color:var(--ink-soft); margin-top:12px; padding-top:12px;
-    border-top:1px solid var(--paper-line);
+    display:block; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line);
   }
   .shift-rule-card .src-duration-fields{ display:none; }
   .shift-rule-card.mode-duration .src-duration-fields{
@@ -359,29 +382,28 @@
   .shift-rule-card .src-duration-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
   .shift-rule-card .src-half-fields{ display:none; }
   .shift-rule-card.mode-single .src-half-fields{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-top:10px; padding-top:12px;
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-start; margin-top:10px; padding-top:12px;
     border-top:1px solid var(--paper-line);
   }
-  .shift-rule-card .src-half-fields .field{ min-width:128px; }
+  .shift-rule-card .src-half-fields .field{ min-width:150px; flex:0 0 auto; }
   .shift-rule-card .src-half-fields .field input,
   .shift-rule-card .src-half-fields .field select{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
-  .shift-rule-card .src-half-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
+  .shift-rule-card .src-half-fields .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); white-space:nowrap; }
   .shift-rule-card .src-half-fields .src-half-min-field,
   .shift-rule-card .src-half-fields .src-half-before-field{ display:none; }
-  .shift-rule-card .src-half-fields.half-mode-duration .src-half-min-field{ display:block; }
-  .shift-rule-card .src-half-fields.half-mode-time .src-half-before-field{ display:block; }
+  .shift-rule-card .src-half-fields.half-mode-duration .src-half-min-field{ display:flex; }
+  .shift-rule-card .src-half-fields.half-mode-time .src-half-before-field{ display:flex; }
   .shift-rule-card .src-windows .field{ min-width:112px; }
   .shift-rule-card .src-windows .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:8px; }
   .shift-rule-card .src-windows .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
   .shift-rule-card .src-shifts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
   .shift-rule-card .src-arrive{
-    display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;
     margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line);
   }
   .shift-rule-card .src-arrive .field{ min-width:128px; }
   .shift-rule-card .src-arrive .field input{ font-size:13px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; }
   .shift-rule-card .src-arrive .field label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); }
-  .shift-rule-card .src-arrive > span{ flex:1; min-width:200px; font-size:11.5px; color:var(--ink-soft); line-height:1.5; }
   .shift-rule-card .src-days{ margin-top:12px; padding-top:12px; border-top:1px solid var(--paper-line); }
   .shift-rule-card .src-days > span{ display:block; font-size:11.5px; color:var(--ink-soft); margin-bottom:8px; }
   .shift-rule-card .src-days .daypick label{ min-width:44px; padding:6px 8px; font-size:12px; }
@@ -1972,7 +1994,7 @@
       <!-- ── Staff shifts ── -->
       <section class="set-sec" data-sec="shifts">
         <h2>Staff</h2>
-        <p class="lede">Two punch windows per category. Both scanned is a full day, one is a half day, outside both is ignored. Tick "Duration mode" on a card to count by time-worked instead &mdash; useful for a category that doesn't cleanly split into two windows.</p>
+        <p class="lede">Tap a category to open it. Two punch windows per category &mdash; both scanned is a full day, one is a half day, outside both is ignored. Tick "Duration mode" on a card to count by time-worked instead &mdash; useful for a category that doesn't cleanly split into two windows.</p>
         <div id="shift-rules-grid"></div>
 
         <div class="group">
@@ -3936,7 +3958,6 @@ function renderDailyTable(){
       {value: absent, label: 'Absent', color:'var(--absent-ink)', statuses:['absent']}
     ];
     if(lateDay) dailyCards.push({value: lateDay, label:'Late', color:'var(--absent-ink)', statuses:['late']});
-    if(offDay) dailyCards.push({value: offDay, label:'Week off', statuses:['off']});
     if(pendingDay) dailyCards.push({value: pendingDay, label:'Not in yet', statuses:['pending']});
   }
   setSummary(dailyCards);
@@ -4379,6 +4400,37 @@ function loadSettingsFormFromLocal(){
   renderCutoffList();
   renderDeviceList();
 }
+// One line summarising a category's card for its collapsed state.
+function shiftCardSummary(rule, mode, defaultTh){
+  if(mode === 'duration'){
+    const a = (rule.absentBelowMin === 0 || rule.absentBelowMin) ? rule.absentBelowMin : defaultTh.absentBelowMin;
+    const f = (rule.fullAboveMin === 0 || rule.fullAboveMin) ? rule.fullAboveMin : defaultTh.fullAboveMin;
+    return `Duration \u00b7 absent under ${a}m \u00b7 full over ${f}m`;
+  }
+  const parts = [];
+  if(rule.mFrom && rule.mTo) parts.push(`${rule.mFrom}\u2013${rule.mTo}`);
+  if(mode === 'double' && rule.eFrom && rule.eTo) parts.push(`${rule.eFrom}\u2013${rule.eTo}`);
+  if(!parts.length) parts.push('No window set');
+  if(rule.arriveBy) parts.push(`arrive by ${rule.arriveBy}`);
+  if(mode === 'single' && rule.halfDayMode && rule.halfDayMode !== 'off') parts.push('half day on');
+  return parts.join(' \u00b7 ');
+}
+// Recomputes a card's collapsed-state summary from whatever is currently in
+// its own fields \u2014 not the rule it was rendered with \u2014 so an edit shows
+// up correctly the moment the card is collapsed again.
+function refreshCardSummary(card){
+  const summaryEl = card.querySelector('.src-summary');
+  if(!summaryEl) return;
+  const mode = card.classList.contains('mode-duration') ? 'duration' : (card.classList.contains('mode-double') ? 'double' : 'single');
+  const g = sel => { const el = card.querySelector(sel); return el ? el.value.trim() : ''; };
+  const rule = {
+    mFrom: g('.scw-m-from'), mTo: g('.scw-m-to'),
+    eFrom: g('.scw-e-from'), eTo: g('.scw-e-to'),
+    arriveBy: g('.src-arrive-by'), halfDayMode: g('.src-half-mode'),
+    absentBelowMin: g('.src-dur-absent'), fullAboveMin: g('.src-dur-full')
+  };
+  summaryEl.textContent = shiftCardSummary(rule, mode, getStaffDurationThresholds());
+}
 function buildShiftRulesGrid(){
   const map = getShiftRulesMap();
   const grid = document.getElementById('shift-rules-grid');
@@ -4391,15 +4443,21 @@ function buildShiftRulesGrid(){
     const dayPills = WEEKDAY_NAMES.map((n, i) =>
       `<label><input type="checkbox" class="src-day" data-day="${i}" ${days.includes(i) ? 'checked' : ''}>${n}</label>`
     ).join('');
+    const summary = shiftCardSummary(rule, mode, defaultTh);
     return `<div class="shift-rule-card mode-${mode}" data-cat="${escapeHtml(cat)}">
       <div class="src-head">
-        <strong>${escapeHtml(cat)}</strong>
+        <button type="button" class="src-toggle">
+          <svg class="src-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+          <strong>${escapeHtml(cat)}</strong>
+          <span class="src-summary">${escapeHtml(summary)}</span>
+        </button>
         <select class="src-mode-select" title="How this category's day is judged">
           <option value="single" ${mode==='single'?'selected':''}>Single shift</option>
           <option value="double" ${mode==='double'?'selected':''}>Double shift</option>
           <option value="duration" ${mode==='duration'?'selected':''}>Duration mode</option>
         </select>
       </div>
+      <div class="src-body">
       <div class="src-windows">
         <div class="field morning-field"><label class="win-label-m-from">${mode==='single' ? 'Punch window from' : 'Morning punch from'}</label><input type="time" class="scw-m-from" value="${escapeHtml(rule.mFrom || '')}"></div>
         <div class="field morning-field"><label class="win-label-m-to">${mode==='single' ? 'Punch window to' : 'Morning punch to'}</label><input type="time" class="scw-m-to" value="${escapeHtml(rule.mTo || '')}"></div>
@@ -4407,35 +4465,44 @@ function buildShiftRulesGrid(){
         <div class="field evening-field"><label>Evening punch to</label><input type="time" class="scw-e-to" value="${escapeHtml(rule.eTo || '')}"></div>
         <div class="field min-shift-field"><label>Min hours per shift (min)</label><input type="number" class="scw-min-shift" placeholder="off &mdash; any punch counts" value="${rule.minShiftMin === 0 || rule.minShiftMin ? escapeHtml(String(rule.minShiftMin)) : ''}"></div>
       </div>
-      <p class="hint src-min-shift-hint">Leave blank and any punch inside a window counts as that shift done, like before. Set a number and a shift only counts if the gap between its first and last scan in that window reaches it &mdash; a shift that falls short (or never got a matching scan) makes the day Half, even if the other shift was a full punch-in/punch-out.</p>
+      <p class="hint src-min-shift-hint">Blank &mdash; any punch in the window counts. Set a number and the shift only counts once its first-to-last scan gap reaches it; short of that makes the day Half.</p>
       <p class="src-duration-note">Punch whenever &mdash; only the gap between first and last scan matters.</p>
       <div class="src-duration-fields">
         <div class="field"><label>Absent under (min)</label><input type="number" class="src-dur-absent" placeholder="${escapeHtml(String(defaultTh.absentBelowMin))}" value="${rule.absentBelowMin === 0 || rule.absentBelowMin ? escapeHtml(String(rule.absentBelowMin)) : ''}"></div>
         <div class="field"><label>Full day over (min)</label><input type="number" class="src-dur-full" placeholder="${escapeHtml(String(defaultTh.fullAboveMin))}" value="${rule.fullAboveMin === 0 || rule.fullAboveMin ? escapeHtml(String(rule.fullAboveMin)) : ''}"></div>
       </div>
       <div class="src-arrive">
-        <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" placeholder="auto — school start" value="${escapeHtml(rule.arriveBy || '')}"></div>
+        <div class="field"><label>Must arrive by</label><input type="time" class="src-arrive-by" placeholder="auto" value="${escapeHtml(rule.arriveBy || '')}"></div>
         <div class="field"><label>Season shift (min)</label><input type="number" step="5" class="src-season-shift" placeholder="auto" value="${escapeHtml(rule.seasonShift === 0 || rule.seasonShift ? String(rule.seasonShift) : '')}"></div>
       </div>
-      <p class="hint src-arrive-hint">Left blank: a category with a punch window (morning trip before school even opens, for Driver/Cleaner) uses that window's own close time as the deadline. A category with no window falls back to the school start time set on the Seasons page. Either way it shifts with the season. Set a time here only to override that.</p>
+      <p class="hint src-arrive-hint">Blank &mdash; uses the window's own close time (or school start, if no window), shifted with the season.</p>
       <div class="src-half-fields half-mode-${escapeHtml(rule.halfDayMode || 'off')}">
         <div class="field"><label>Half day</label>
           <select class="src-half-mode">
             <option value="off" ${(!rule.halfDayMode || rule.halfDayMode==='off')?'selected':''}>Off</option>
-            <option value="duration" ${rule.halfDayMode==='duration'?'selected':''}>By duration (min)</option>
+            <option value="duration" ${rule.halfDayMode==='duration'?'selected':''}>By duration</option>
             <option value="time" ${rule.halfDayMode==='time'?'selected':''}>By checkout time</option>
           </select>
         </div>
-        <div class="field src-half-min-field"><label>Half day under (min)</label><input type="number" class="src-half-min" value="${rule.halfDayMin === 0 || rule.halfDayMin ? escapeHtml(String(rule.halfDayMin)) : ''}"></div>
-        <div class="field src-half-before-field"><label>Half day if checkout before</label><input type="time" class="src-half-before" value="${escapeHtml(rule.halfDayBefore || '')}"></div>
+        <div class="field src-half-min-field"><label>Under (min)</label><input type="number" class="src-half-min" value="${rule.halfDayMin === 0 || rule.halfDayMin ? escapeHtml(String(rule.halfDayMin)) : ''}"></div>
+        <div class="field src-half-before-field"><label>Before</label><input type="time" class="src-half-before" value="${escapeHtml(rule.halfDayBefore || '')}"></div>
       </div>
-      <p class="hint src-half-hint">Single shift only. "By duration" makes a short first-to-last-scan gap a Half day instead of Present. "By checkout time" makes leaving before that clock time a Half day, whatever time they arrived.</p>
+      <p class="hint src-half-hint">Single shift only &mdash; downgrades an otherwise Full day to Half, by a short punch gap or an early checkout.</p>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 school default'}</span>
         <div class="daypick">${dayPills}</div>
       </div>
+      </div>
     </div>`;
   }).join('');
+
+  grid.querySelectorAll('.src-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.shift-rule-card');
+      refreshCardSummary(card);
+      card.classList.toggle('expanded');
+    });
+  });
 
   grid.querySelectorAll('.src-half-mode').forEach(sel => {
     const apply = () => {
@@ -4460,6 +4527,7 @@ function buildShiftRulesGrid(){
         mFromLabel.textContent = 'Morning punch from';
         mToLabel.textContent = 'Morning punch to';
       }
+      refreshCardSummary(card);
     });
   });
 
@@ -4531,8 +4599,14 @@ document.getElementById('night-staff-id').addEventListener('keydown', (e) => {
 
 // Category tick-boxes shown under Holidays and Repeating holidays when the
 // scope is "Staff only" — leaving them all unticked means every category.
+// Only categories that actually have staff in them — a role no one holds
+// yet (still in PREFERRED_STAFF_CATEGORY_ORDER for the shift-rules cards,
+// but empty) has nothing to pick a holiday or single-shift-day for.
 function knownStaffCategories(){
-  return [...new Set(PREFERRED_STAFF_CATEGORY_ORDER.concat(STAFF_ALL_CATEGORIES).filter(Boolean))];
+  const withStaff = new Set(STAFF_ALL_CATEGORIES);
+  const ordered = PREFERRED_STAFF_CATEGORY_ORDER.filter(c => withStaff.has(c));
+  const extras = STAFF_ALL_CATEGORIES.filter(c => !PREFERRED_STAFF_CATEGORY_ORDER.includes(c));
+  return [...new Set(ordered.concat(extras).filter(Boolean))];
 }
 function buildCategoryPickers(){
   const cats = knownStaffCategories();
