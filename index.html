@@ -2339,7 +2339,7 @@ function absenteeList(node){
   return [];
 }
 
-const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Maid','Cleaner','Driver','Security','Gardner'];
+const PREFERRED_STAFF_CATEGORY_ORDER = ['Teacher','Lady Attendant','Cleaner','Driver','Security','Gardner'];
 const ROLE_MERGE_MAP = { 'Driver Online': 'Driver', 'Cleaner Online': 'Cleaner' };
 // Shift rules: 'any' = one scan counts as a full day. 'shifts' = staff must scan inside
 // specific from-to time windows (up to 2 shifts) to be marked present.
@@ -2362,7 +2362,7 @@ const DEFAULT_WINDOWS = {
   Driver:   { mFrom:'03:30', mTo:'09:30', eFrom:'12:00', eTo:'20:00' },
   Cleaner:  { mFrom:'04:00', mTo:'10:00', eFrom:'12:00', eTo:'20:00' },
   Teacher:  { mFrom:'06:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' },
-  Maid:     { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' },
+  'Lady Attendant': { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' },
   Security: { mFrom:'04:00', mTo:'11:00', eFrom:'11:00', eTo:'23:00' },
   Gardner:  { mFrom:'05:00', mTo:'11:00', eFrom:'11:00', eTo:'21:00' }
 };
@@ -2578,7 +2578,7 @@ function dateOnly(timeStr){
    full day", which is what an unconfigured category used to do. */
 const DEFAULT_SHIFT_RULES = {
   Teacher:  {},
-  Maid:     {},
+  'Lady Attendant': {},
   Cleaner:  {},
   Driver:   {},
   Security: {},
@@ -4302,6 +4302,46 @@ async function hashPass(pw){
 function storedPassHash(){ return localStorage.getItem(LS.settingsPassHash) || ''; }
 function passIsSet(){ return !!storedPassHash(); }
 
+// One-time cleanup: the "Maid" category was renamed to "Lady Attendant" to
+// match the role staff are actually registered under (the old "Maid" card
+// was never matching anyone, so it never got a Present/Absent verdict).
+// Anyone who already configured the Maid card keeps those settings, just
+// filed under the new name, and it's pushed back up so every device picks
+// it up on next sync.
+async function migrateMaidCategoryName(){
+  try{
+    const rules = JSON.parse(localStorage.getItem(LS.shiftHours) || '{}');
+    if(rules && typeof rules === 'object' && rules.Maid && !rules['Lady Attendant']){
+      rules['Lady Attendant'] = rules.Maid;
+      delete rules.Maid;
+      localStorage.setItem(LS.shiftHours, JSON.stringify(rules));
+      const base = attBase();
+      if(base){
+        await fetchJson(`${base}/app_settings.json`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ shiftHours: rules })
+        });
+      }
+    }
+  }catch(e){}
+  const renameCatsIn = (key) => {
+    try{
+      const list = JSON.parse(localStorage.getItem(key) || '[]');
+      if(!Array.isArray(list)) return;
+      let touched = false;
+      list.forEach(entry => {
+        if(entry && Array.isArray(entry.cats) && entry.cats.includes('Maid')){
+          entry.cats = entry.cats.map(c => c === 'Maid' ? 'Lady Attendant' : c);
+          touched = true;
+        }
+      });
+      if(touched) localStorage.setItem(key, JSON.stringify(list));
+    }catch(e){}
+  };
+  renameCatsIn(LS.holidays);
+  renameCatsIn(LS.singleShiftDays);
+  renameCatsIn(LS.holidayRules);
+}
+
 async function syncPassToCloud(){
   // Use whatever is typed in the connection fields if it hasn't been saved yet
   const typedUrl = (document.getElementById('r-url').value || '').trim().replace(/\/+$/, '');
@@ -5466,9 +5506,11 @@ function isThisDeviceEditor(){
 updateModeSwitchVisibility();
 updateDisplaySwitchVisibility();
 syncSettingsFromCloud().finally(() => {
-  registerThisDevice();
-  setDisplay(getStudentDefaultView());
-  refreshNow();
+  migrateMaidCategoryName().finally(() => {
+    registerThisDevice();
+    setDisplay(getStudentDefaultView());
+    refreshNow();
+  });
 });
 </script>
 
