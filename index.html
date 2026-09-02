@@ -1635,7 +1635,7 @@
     <!-- Masthead for the printed sheet only -->
     <div class="print-head" id="print-head">
       <p class="ph-school" id="ph-school">Lotus International School</p>
-      <h2 class="ph-title" id="ph-title">Admission Register</h2>
+      <h2 class="ph-title" id="ph-title">Daily Attendance Register</h2>
       <p class="ph-date" id="ph-date"></p>
       <p class="ph-meta" id="ph-meta"></p>
     </div>
@@ -3692,7 +3692,7 @@ function updateViewTitle(){
   const pt = document.getElementById('ph-title');
   if(pt){
     pt.textContent = VIEW === 'student'
-      ? (MODE === 'monthly' ? 'Monthly Attendance Register' : 'Admission Register')
+      ? (MODE === 'monthly' ? 'Monthly Attendance Register' : 'Daily Attendance Register')
       : (MODE === 'monthly' ? 'Monthly Staff Register' : 'Staff Attendance Register');
   }
   const ps = document.getElementById('ph-school');
