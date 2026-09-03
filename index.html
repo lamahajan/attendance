@@ -661,6 +661,7 @@
   .badge.absent{ background:var(--absent); color:#fff; border-color:var(--absent); }
   .badge.absent::before{ background:rgba(255,255,255,.85); }
   .badge.off{ background:var(--row-alt); color:var(--ink-soft); border-color:var(--border); }
+  .badge.marked-in-class{ background:var(--pending-bg); color:var(--pending-ink); border-color:var(--pending-line); font-weight:600; }
   .plus-day{ font-size:10px; font-weight:700; color:var(--pending-ink); }
   .src-duration-toggle{ margin-top:0; font-size:11.5px; white-space:nowrap; }
   .review-actions{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; max-width:100%; }
@@ -3613,7 +3614,7 @@ function dayTimesFor(allDates, dayScans, id, isDouble){
     const outRecs = sorted.filter(r => r.action === 'night_out' || r.action === 'morning_exit' || r.action === 'evening_exit' || r.action === 'gatepass_exit');
     if(!isDouble){
       return {
-        in: inRecs.length ? timeOnly(inRecs[0].time) : null,
+        in: inRecs.length ? (inRecs[0].markedInClass ? 'Marked in Class' : timeOnly(inRecs[0].time)) : null,
         out: outRecs.length ? timeOnly(outRecs[outRecs.length - 1].time) : null
       };
     }
@@ -3857,7 +3858,7 @@ function renderDailyTable(){
       if(!sortedRecs.length){ status = 'absent'; absent++; }
       else if(outRec){ status = outStatus === 'NoGatepass_Flagged' ? 'flagged' : 'gatepass'; exit++; }
       else { status = (inRec.status === 'Late') ? 'late' : 'present'; present++; }
-      const morningLabel = inRec ? escapeHtml(timeOnly(inRec.time)) : '\u2014';
+      const morningLabel = inRec ? (inRec.markedInClass ? '<span class="badge marked-in-class" title="No biometric scan — marked present in class">Marked in Class</span>' : escapeHtml(timeOnly(inRec.time))) : '\u2014';
       const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
       const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
         : status === 'flagged' ? '<span class="badge late" title="Left before dismissal, no gatepass">Unauthorised exit</span>'
