@@ -2673,6 +2673,16 @@ function splitScansByWindow(recs, category){
 
    "Must arrive by" changes nothing about how the day is paid. It only paints
    the status red, so a full day that started late still reads as a full day. */
+// Gap between first and last scan, clipped so time BEFORE "must arrive by"
+// never counts — someone who shows up at 6:30 for a 7:45 start and leaves
+// at 7:40 gets a gap of 0, not 70 minutes. Both scans landing before
+// arriveBy clip to the same point, giving 0. No arriveBy set → raw gap,
+// unchanged from before.
+function clippedGap(times, arriveByMin){
+  if(arriveByMin == null) return Math.max(...times) - Math.min(...times);
+  const clipped = times.map(t => Math.max(t, arriveByMin));
+  return Math.max(...clipped) - Math.min(...clipped);
+}
 function computeStaffDayStatus(recs, category){
   if(!recs.length) return 'absent';
   const rule = shiftedRuleFor(category, dateOnly(recs[0].time)) || {};
@@ -2700,7 +2710,7 @@ function computeStaffDayStatus(recs, category){
       if(p === 'needsReview') return 'needsReview'; // only one scan — counts as half until someone resolves it
       return 'half';
     }
-    const duration = Math.max(...times) - Math.min(...times);
+    const duration = clippedGap(times, by);
     let status;
     if(duration < th.absentBelowMin) status = 'absent';
     else if(duration <= th.fullAboveMin) status = 'half';
@@ -2749,18 +2759,30 @@ function computeStaffDayStatus(recs, category){
   if(hit < need) return 'half';
 
   // Single shift only — there's just the one window, so "punched inside it"
-  // can't tell full from half on its own. This is an extra, opt-in check on
-  // top: too short a gap between first and last scan, or a checkout before
-  // a set time, downgrades an otherwise-full day to Half.
-  if(hasM && !hasE && winRule.halfDayMode && winRule.halfDayMode !== 'off'){
+  // can't tell full from half on its own. Two extra, opt-in checks on top
+  // (both measured on a gap clipped to "must arrive by" — see clippedGap —
+  // so time spent on campus before the shift even starts never counts):
+  //   1) Absent under (min) — a punch gap shorter than this marks the day
+  //      Absent outright (e.g. an accidental double-tap scan, or someone
+  //      who arrived early and left again before the shift started).
+  //      Checked first, so it overrides the Half day downgrade below.
+  //   2) Half day — too short a gap (above the Absent threshold, if any)
+  //      or a checkout before a set time downgrades an otherwise-full day
+  //      to Half.
+  if(hasM && !hasE){
     const times = morning.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
     if(times.length){
-      if(winRule.halfDayMode === 'duration'){
-        const halfMin = (winRule.halfDayMin === 0 || winRule.halfDayMin) ? winRule.halfDayMin : null;
-        if(halfMin != null && (Math.max(...times) - Math.min(...times)) < halfMin) return 'half';
-      }else if(winRule.halfDayMode === 'time'){
-        const beforeMin = timeStrToMinutes(winRule.halfDayBefore);
-        if(beforeMin != null && Math.max(...times) < beforeMin) return 'half';
+      const gap = clippedGap(times, by);
+      const absentUnder = (winRule.absentUnderMin === 0 || winRule.absentUnderMin) ? winRule.absentUnderMin : null;
+      if(absentUnder != null && gap < absentUnder) return 'absent';
+      if(winRule.halfDayMode && winRule.halfDayMode !== 'off'){
+        if(winRule.halfDayMode === 'duration'){
+          const halfMin = (winRule.halfDayMin === 0 || winRule.halfDayMin) ? winRule.halfDayMin : null;
+          if(halfMin != null && gap < halfMin) return 'half';
+        }else if(winRule.halfDayMode === 'time'){
+          const beforeMin = timeStrToMinutes(winRule.halfDayBefore);
+          if(beforeMin != null && Math.max(...times) < beforeMin) return 'half'; // actual checkout clock-time, deliberately NOT clipped
+        }
       }
     }
   }
@@ -4461,6 +4483,7 @@ function shiftCardSummary(rule, mode, defaultTh){
   if(mode === 'double' && rule.eFrom && rule.eTo) parts.push(`${rule.eFrom}\u2013${rule.eTo}`);
   if(!parts.length) parts.push('No window set');
   if(rule.arriveBy) parts.push(`arrive by ${rule.arriveBy}`);
+  if(mode === 'single' && (rule.absentUnderMin === 0 || rule.absentUnderMin)) parts.push(`absent under ${rule.absentUnderMin}m`);
   if(mode === 'single' && rule.halfDayMode && rule.halfDayMode !== 'off') parts.push('half day on');
   return parts.join(' \u00b7 ');
 }
@@ -4476,7 +4499,8 @@ function refreshCardSummary(card){
     mFrom: g('.scw-m-from'), mTo: g('.scw-m-to'),
     eFrom: g('.scw-e-from'), eTo: g('.scw-e-to'),
     arriveBy: g('.src-arrive-by'), halfDayMode: g('.src-half-mode'),
-    absentBelowMin: g('.src-dur-absent'), fullAboveMin: g('.src-dur-full')
+    absentBelowMin: g('.src-dur-absent'), fullAboveMin: g('.src-dur-full'),
+    absentUnderMin: g('.src-absent-min')
   };
   summaryEl.textContent = shiftCardSummary(rule, mode, getStaffDurationThresholds());
 }
@@ -4526,6 +4550,7 @@ function buildShiftRulesGrid(){
       </div>
       <p class="hint src-arrive-hint">Blank &mdash; uses the window's own close time (or school start, if no window), shifted with the season.</p>
       <div class="src-half-fields half-mode-${escapeHtml(rule.halfDayMode || 'off')}">
+        <div class="field src-absent-min-field"><label>Absent under (min)</label><input type="number" class="src-absent-min" placeholder="off" value="${rule.absentUnderMin === 0 || rule.absentUnderMin ? escapeHtml(String(rule.absentUnderMin)) : ''}"></div>
         <div class="field"><label>Half day</label>
           <select class="src-half-mode">
             <option value="off" ${(!rule.halfDayMode || rule.halfDayMode==='off')?'selected':''}>Off</option>
@@ -4536,7 +4561,7 @@ function buildShiftRulesGrid(){
         <div class="field src-half-min-field"><label>Under (min)</label><input type="number" class="src-half-min" value="${rule.halfDayMin === 0 || rule.halfDayMin ? escapeHtml(String(rule.halfDayMin)) : ''}"></div>
         <div class="field src-half-before-field"><label>Before</label><input type="time" class="src-half-before" value="${escapeHtml(rule.halfDayBefore || '')}"></div>
       </div>
-      <p class="hint src-half-hint">Single shift only &mdash; downgrades an otherwise Full day to Half, by a short punch gap or an early checkout.</p>
+      <p class="hint src-half-hint">Single shift only &mdash; a punch gap under "Absent under" marks the day Absent outright; the Half day setting below only kicks in above that.</p>
       <div class="src-days">
         <span>Works on${days.length ? '' : ' \u2014 school default'}</span>
         <div class="daypick">${dayPills}</div>
@@ -5119,6 +5144,8 @@ function collectSettingsObject(){
     // Half day (single shift only) — still written when the card is on a
     // different mode so a value typed in doesn't linger invisibly if the
     // category gets switched back to Single shift later.
+    const aum = g('.src-absent-min');
+    shiftRulesObj[cat].absentUnderMin = aum === '' ? '' : Number(aum);
     const hm = g('.src-half-mode');
     shiftRulesObj[cat].halfDayMode = hm || 'off';
     const hmin = g('.src-half-min');
