@@ -2772,6 +2772,28 @@ function computeStaffDayStatus(recs, category){
   if(hasM && !hasE){
     const times = morning.map(r => timeStrToMinutes(timeOnly(r.time))).filter(v => v != null);
     if(times.length){
+      // BUGFIX: sirf EK scan (IN ho gaya, OUT abhi baaki hai) ke liye
+      // clippedGap() ek hi value ka max-min leta hai jo hamesha 0 aata
+      // hai — is se "Absent under" rule (jo asal me chhote in-out gap,
+      // jaise galti se double-tap, pakadne ke liye hai) galti se fire ho
+      // jaata tha aur staff ko turant "Absent" dikha deta tha, chahe
+      // shift abhi chal hi rahi ho. Ab duration-mode jaisa hi: aaj ka din
+      // ho aur "needs review after" time abhi nahi aaya to day abhi
+      // "present" (pending) maano; uske baad singleScanPolicy
+      // (half/absent/needsReview — default half) apply hoga, gap-based
+      // Absent/Half-day rules ek scan par kabhi nahi chalenge.
+      if(times.length === 1){
+        const dayStr = dateOnly(recs[0].time);
+        if(dayStr === TODAY){
+          const cutoff = timeStrToMinutes(getReviewAfterTime());
+          const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+          if(cutoff != null && nowMin < cutoff) return lateCheck(morning, recs) ? 'late' : 'present';
+        }
+        const p = getSingleScanPolicy();
+        if(p === 'absent') return 'absent';
+        if(p === 'needsReview') return 'needsReview';
+        return 'half';
+      }
       const gap = clippedGap(times, by);
       const absentUnder = (winRule.absentUnderMin === 0 || winRule.absentUnderMin) ? winRule.absentUnderMin : null;
       if(absentUnder != null && gap < absentUnder) return 'absent';
