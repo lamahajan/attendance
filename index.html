@@ -4252,7 +4252,7 @@ function renderBreakdown(enriched, mode){
   // Students only. The staff breakdown was a single row repeating the
   // summary above it, so it earned no space.
   if(VIEW !== 'student') return;
-  const groupFields = [{key:'class', label:'Class'}, {key:'busNumber', label:'Bus'}];
+  const groupFields = [{key:'class', label:'Class'}];
 
   groupFields.forEach(gf => {
     const map = {};
