@@ -2777,18 +2777,19 @@ function computeStaffDayStatus(recs, category){
       // hai — is se "Absent under" rule (jo asal me chhote in-out gap,
       // jaise galti se double-tap, pakadne ke liye hai) galti se fire ho
       // jaata tha aur staff ko turant "Absent" dikha deta tha, chahe
-      // shift abhi chal hi rahi ho. Ab duration-mode jaisa hi: aaj ka din
-      // ho aur "needs review after" time abhi nahi aaya to day abhi
-      // "present" (pending) maano; uske baad singleScanPolicy
-      // (half/absent/needsReview — default half) apply hoga, gap-based
-      // Absent/Half-day rules ek scan par kabhi nahi chalenge.
+      // shift abhi chal hi rahi ho.
+      //
+      // NOTE: pehle yahan duration-mode jaisa ek "reviewAfterTime tak
+      // ruko, tab tak present dikhao" gate laga tha — lekin uska default
+      // (19:00) is category ki apni punch-window-to (bhi 19:00) se same
+      // nikal gaya, isliye "abhi wait karo" hamesha true reh jaata tha
+      // aur din khatam hone tak "Full day" dikhta rehta tha, chahe
+      // checkout kabhi hua hi na ho. Single-shift categories ke liye
+      // ye global gate fit nahi baithta (inki apni window/half-day
+      // settings hi is baat ka faisla karti hain) — isliye hata diya.
+      // Ab ek scan wale din par seedha singleScanPolicy (Settings →
+      // default "half") lagta hai, koi wait nahi.
       if(times.length === 1){
-        const dayStr = dateOnly(recs[0].time);
-        if(dayStr === TODAY){
-          const cutoff = timeStrToMinutes(getReviewAfterTime());
-          const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-          if(cutoff != null && nowMin < cutoff) return lateCheck(morning, recs) ? 'late' : 'present';
-        }
         const p = getSingleScanPolicy();
         if(p === 'absent') return 'absent';
         if(p === 'needsReview') return 'needsReview';
