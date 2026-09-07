@@ -3769,7 +3769,7 @@ function buildDailyHead(){
   const tbl = document.getElementById('register-table');
   tbl.dataset.view = VIEW; tbl.dataset.mode = 'daily';
   if(VIEW === 'student'){
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th><th>Status</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th><th>Status</th></tr>`;
   }else{
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">In</th><th class="mono-col">Out</th><th>Status</th></tr>`;
   }
@@ -3779,7 +3779,7 @@ function buildMonthlyHead(){
   const tbl = document.getElementById('register-table');
   tbl.dataset.view = VIEW; tbl.dataset.mode = 'monthly';
   if(VIEW === 'student'){
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
+    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
   }else{
     head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Days off</th><th>Attendance</th><th>Review</th></tr>`;
   }
@@ -3923,7 +3923,7 @@ function renderDailyTable(){
         : status === 'gatepass' ? '<span class="badge gatepass">Went home</span>'
         : status === 'late' ? '<span class="badge late">In school &middot; late</span>'
         : '<span class="badge present">In school</span>';
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
     }else{
       const category = normalizedRole(s.role || '');
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
@@ -4053,7 +4053,7 @@ function renderMonthlyTable(){
     enriched.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct });
     const tr = document.createElement('tr');
     if(VIEW === 'student'){
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }else{
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
       // What payroll deducts: a whole day for every absence, half for every
