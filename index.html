@@ -2177,6 +2177,7 @@ const LS = {
   studentDefaultView:'reg_student_default_view',
   devices:'reg_devices',
   deviceName:'reg_device_name',
+  deviceId:'reg_device_id',
   theme:'reg_theme'
 };
 
@@ -2913,6 +2914,18 @@ function getDeviceName(){
     localStorage.setItem(LS.deviceName, name);
   }
   return name;
+}
+// Stable per-browser identity that survives renames — the display NAME is
+// just a label and can be changed from any device (see renameDevice), but
+// this id never changes once created, so a device can always recognise its
+// own entry in the shared map even after someone else renamed it.
+function getOrCreateDeviceId(){
+  let id = localStorage.getItem(LS.deviceId);
+  if(!id){
+    id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    localStorage.setItem(LS.deviceId, id);
+  }
+  return id;
 }
 function getDevices(){
   try{
@@ -5109,14 +5122,37 @@ function renameDevice(from, to){
    Nobody types a device in. The moment a phone, iPad or desk PC opens
    the register it adds itself to the shared list, so the hide-category
    switches for it appear on every other device automatically.
-   ═══════════════════════════════════════════════════════════ */
+
+   BUGFIX: a device renamed FROM ANOTHER DEVICE never used to find out
+   about it locally — renameDevice() only updates LS.deviceName on the
+   device that PERFORMED the rename (`if(from === getDeviceName())`).
+   The renamed device itself kept using its old, now-stale local name.
+   On its very next open, this function used to look for `devices[oldName]`,
+   not find it (since the rename had already deleted that key remotely
+   and syncSettingsFromCloud() had just pulled that deletion in), and so
+   it RECREATED a fresh blank entry under the old name and pushed it back
+   to Firebase — resurrecting the old name (and silently resetting any
+   canEdit/hidden-category settings that lived under the new name) a few
+   moments after the rename, on whatever device was renamed.
+   Fix: every device also keeps a private, never-renamed id (getOrCreateDeviceId).
+   On open, look for OUR id inside the shared devices map (by id, not by
+   our locally-cached name) — if a different key now holds it, someone
+   renamed us elsewhere; adopt that name locally instead of recreating
+   the old one. ═══════════════════════════════════════════════════════════ */
 async function registerThisDevice(){
-  const name = getDeviceName();
+  const id = getOrCreateDeviceId();
   const devices = getDevices();
-  if(!devices[name]){
-    devices[name] = { hiddenStaffCategories: [] };
-    localStorage.setItem(LS.devices, JSON.stringify(devices));
+
+  let name = getDeviceName();
+  const foundName = Object.keys(devices).find(k => devices[k] && devices[k].id === id);
+  if(foundName && foundName !== name){
+    // Renamed from another device since we last opened — adopt it.
+    name = foundName;
+    localStorage.setItem(LS.deviceName, name);
   }
+
+  if(!devices[name]) devices[name] = { hiddenStaffCategories: [] };
+  devices[name].id = id; // backfill for pre-existing entries too
   devices[name].lastSeen = todayKolkata();
   localStorage.setItem(LS.devices, JSON.stringify(devices));
 
