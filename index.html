@@ -62,6 +62,7 @@
     --accent-soft:#FFFFB0;
     --teal:#0D758A;
     --teal-bg:#E0F2F6;
+    --teal-line:#A9D9E3;
     --magenta:#B0348C;
     --magenta-bg:#FBE8F5;
     --magenta-line:#EBB8DE;
@@ -109,6 +110,7 @@
     --accent-soft:rgba(255,255,0,.16);
     --teal:#3ECBE8;
     --teal-bg:rgba(62,203,232,.14);
+    --teal-line:rgba(62,203,232,.45);
     --magenta:#E978C7;
     --magenta-bg:rgba(233,120,199,.16);
     --magenta-line:rgba(233,120,199,.45);
@@ -672,7 +674,7 @@
     background:currentColor; flex:none;
   }
   .badge.present{ background:var(--present-bg); color:var(--present-ink); border-color:var(--present-line); }
-  .badge.gatepass{ background:var(--magenta-bg); color:var(--magenta); border-color:var(--magenta-line); }
+  .badge.gatepass{ background:var(--teal-bg); color:var(--teal); border-color:var(--teal-line); }
   .badge.wenthome{ background:var(--pending-bg); color:var(--pending-ink); border-color:var(--pending-line); }
   .badge.half{ background:var(--half-bg); color:var(--half); border-color:var(--half-line); }
   .badge.late{ background:var(--late-amber-bg); color:var(--late-amber-ink); border-color:var(--late-amber-line); font-weight:700; }
@@ -1031,7 +1033,7 @@
       background:var(--border);
     }
     #register-table tr[data-status="present"]::before{ background:var(--present); }
-    #register-table tr[data-status="gatepass"]::before{ background:var(--magenta); }
+    #register-table tr[data-status="gatepass"]::before{ background:var(--teal); }
     #register-table tr[data-status="wenthome"]::before{ background:var(--pending); }
     #register-table tr[data-status="half"]::before,
     #register-table tr[data-status="needsReview"]::before{ background:var(--half); }
@@ -4018,7 +4020,7 @@ function renderDailyTable(){
       const eveningLabel = outRec ? escapeHtml(timeOnly(outRec.time)) : '\u2014';
       const badge = status === 'absent' ? '<span class="badge absent">Absent</span>'
         : status === 'flagged' ? '<span class="badge flagged" title="Left before dismissal, no gatepass">Unauthorised exit</span>'
-        : status === 'gatepass' ? '<span class="badge gatepass" title="Left with a gatepass">Went home &middot; Gatepass</span>'
+        : status === 'gatepass' ? '<span class="badge gatepass" title="Left with a gatepass">Gatepass</span>'
         : status === 'wenthome' ? '<span class="badge wenthome" title="Left after dismissal">Went home</span>'
         : status === 'late' ? '<span class="badge late">In school &middot; late</span>'
         : '<span class="badge present">In school</span>';
@@ -4473,7 +4475,7 @@ function updateReportMeta(count){
     tally[k] = (tally[k] || 0) + 1;
   });
   const label = VIEW === 'student'
-    ? { present:'In school', gatepass:'Went home \u00b7 Gatepass', wenthome:'Went home', absent:'Absent' }
+    ? { present:'In school', gatepass:'Gatepass', wenthome:'Went home', absent:'Absent' }
     : { present:'Full day', late:'Late', half:'Half day', absent:'Absent', off:'Week off' };
   Object.keys(label).forEach(k => { if(tally[k]) bits.push(label[k] + ': ' + tally[k]); });
 
