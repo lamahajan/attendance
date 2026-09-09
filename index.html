@@ -626,6 +626,12 @@
   td.mono{ font-size:12.5px; font-variant-numeric:tabular-nums; }
   th.mono-col{ font-variant-numeric:tabular-nums; }
 
+  /* ── Sortable column headers ── */
+  thead th.sortable{ cursor:pointer; user-select:none; }
+  thead th.sortable:hover{ color:var(--ink); }
+  thead th.sortable:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+  .sort-arrow{ display:inline-block; margin-left:3px; font-size:9px; letter-spacing:0; color:var(--accent); }
+
   /* ── Live refresh chip ── */
   .live-chip{ display:inline-flex; align-items:center; gap:8px; }
   .live-dot{
@@ -2216,6 +2222,11 @@ applyTheme(currentTheme());
 
 let VIEW = 'student';
 let MODE = 'daily';
+// Column sort for the register table. null = default (Adm. No. / Staff ID,
+// ascending). Reset to null whenever VIEW or MODE changes, since the
+// column set is different in each combination.
+let SORT_KEY = null;
+let SORT_DIR = 'asc';
 let DISPLAY = 'both';
 let STAFF_CATEGORY = 'All';
 let ROSTER = [];
@@ -2968,6 +2979,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     VIEW = tab.dataset.type;
+    SORT_KEY = null; SORT_DIR = 'asc';
     STAFF_CATEGORY = 'All';
     STATUS_FILTER = null;
     document.getElementById('search-input').placeholder = VIEW === 'student' ? 'Name or admission no.' : 'Name or staff ID';
@@ -2991,6 +3003,7 @@ function updateModeSwitchVisibility(){
   document.getElementById('mode-switch').style.display = show ? 'flex' : 'none';
   if(VIEW === 'student' && MODE !== 'daily'){
     MODE = 'daily';
+    SORT_KEY = null; SORT_DIR = 'asc';
     document.getElementById('view-daily').classList.add('on');
     document.getElementById('view-monthly').classList.remove('on');
     document.getElementById('date-field').style.display = 'flex';
@@ -3023,6 +3036,7 @@ document.getElementById('register-body').addEventListener('click', async (e) => 
   const reviewBtn = e.target.closest('.review-badge');
   if(reviewBtn){
     VIEW = 'staff'; MODE = 'daily';
+    SORT_KEY = null; SORT_DIR = 'asc';
     document.getElementById('date-input').value = reviewBtn.dataset.date;
     document.getElementById('view-daily').classList.add('on');
     document.getElementById('view-monthly').classList.remove('on');
@@ -3154,6 +3168,7 @@ document.getElementById('view-daily').addEventListener('click', () => setMode('d
 document.getElementById('view-monthly').addEventListener('click', () => setMode('monthly'));
 function setMode(m){
   MODE = m;
+  SORT_KEY = null; SORT_DIR = 'asc';
   STATUS_FILTER = null;
   document.getElementById('view-daily').classList.toggle('on', m === 'daily');
   document.getElementById('view-monthly').classList.toggle('on', m === 'monthly');
@@ -3766,25 +3781,32 @@ function updateViewTitle(){
   if(pd && dl) pd.textContent = dl.textContent;
 }
 
+// key === null renders a plain, non-sortable header (S.No); any other key
+// gets a clickable header plus an arrow slot that updateSortArrows() fills.
+function thCell(label, key, mono){
+  const cls = (mono ? 'mono-col' : '') + (key ? (mono ? ' sortable' : 'sortable') : '');
+  if(!key) return `<th class="${cls}">${label}</th>`;
+  return `<th class="${cls}" data-sort="${key}" tabindex="0" role="button" aria-label="Sort by ${label}">${label}<span class="sort-arrow" data-arrow="${key}"></span></th>`;
+}
 function buildDailyHead(){
   const head = document.getElementById('register-head');
   const tbl = document.getElementById('register-table');
   tbl.dataset.view = VIEW; tbl.dataset.mode = 'daily';
-  if(VIEW === 'student'){
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th>Bus</th><th class="mono-col">Morning in</th><th class="mono-col">Evening out</th><th>Status</th></tr>`;
-  }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">In</th><th class="mono-col">Out</th><th>Status</th></tr>`;
-  }
+  const cols = VIEW === 'student'
+    ? [['S.No',null,true],['Adm. No.','id',true],['Name','name',false],['Class','class',false],['Bus','bus',false],['Morning in','morningIn',true],['Evening out','eveningOut',true],['Status','status',false]]
+    : [['S.No',null,true],['Staff ID','id',true],['Name','name',false],['Role','role',false],['In','in',true],['Out','out',true],['Status','status',false]];
+  head.innerHTML = '<tr>' + cols.map(c => thCell(c[0], c[1], c[2])).join('') + '</tr>';
+  updateSortArrows();
 }
 function buildMonthlyHead(){
   const head = document.getElementById('register-head');
   const tbl = document.getElementById('register-table');
   tbl.dataset.view = VIEW; tbl.dataset.mode = 'monthly';
-  if(VIEW === 'student'){
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Adm. No.</th><th>Name</th><th>Class</th><th class="mono-col">Present</th><th class="mono-col">Absent</th><th>Attendance</th></tr>`;
-  }else{
-    head.innerHTML = `<tr><th class="mono-col">S.No</th><th class="mono-col">Staff ID</th><th>Name</th><th>Role</th><th class="mono-col">Full days</th><th class="mono-col">Half days</th><th class="mono-col">Absent</th><th class="mono-col">Days off</th><th>Attendance</th><th>Review</th></tr>`;
-  }
+  const cols = VIEW === 'student'
+    ? [['S.No',null,true],['Adm. No.','id',true],['Name','name',false],['Class','class',false],['Present','present',true],['Absent','absent',true],['Attendance','pct',false]]
+    : [['S.No',null,true],['Staff ID','id',true],['Name','name',false],['Role','role',false],['Full days','present',true],['Half days','half',true],['Absent','absent',true],['Days off','daysOff',true],['Attendance','pct',false],['Review','review',false]];
+  head.innerHTML = '<tr>' + cols.map(c => thCell(c[0], c[1], c[2])).join('') + '</tr>';
+  updateSortArrows();
 }
 
 function populateClassFilter(){
@@ -3794,6 +3816,65 @@ function populateClassFilter(){
   sel.innerHTML = '<option value="">All classes</option>' + values.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   sel.value = values.includes(current) ? current : '';
 }
+
+// Sorts an array of {..., sort:{key:value}} row records in place by the
+// currently-selected column (SORT_KEY/SORT_DIR), falling back to
+// defaultKey ascending when no column has been picked. Rows missing a
+// value for the active column (e.g. no scan yet) always sink to the
+// bottom, regardless of direction.
+function applySort(list, defaultKey){
+  const key = SORT_KEY || defaultKey;
+  const dir = SORT_KEY ? SORT_DIR : 'asc';
+  const mult = dir === 'asc' ? 1 : -1;
+  list.sort((a, b) => {
+    const av = a.sort[key], bv = b.sort[key];
+    const aMissing = av === null || av === undefined || av === '';
+    const bMissing = bv === null || bv === undefined || bv === '';
+    if(aMissing && bMissing) return 0;
+    if(aMissing) return 1;
+    if(bMissing) return -1;
+    if(typeof av === 'number' && typeof bv === 'number') return (av - bv) * mult;
+    return String(av).localeCompare(String(bv), undefined, {numeric:true, sensitivity:'base'}) * mult;
+  });
+  return list;
+}
+
+function updateSortArrows(){
+  document.querySelectorAll('#register-head .sort-arrow').forEach(el => {
+    const key = el.dataset.arrow;
+    if(SORT_KEY === key){
+      el.textContent = SORT_DIR === 'asc' ? ' \u25B2' : ' \u25BC';
+      el.classList.add('active');
+    }else{
+      el.textContent = '';
+      el.classList.remove('active');
+    }
+  });
+}
+
+// Delegated once on the (persistent) <thead> element — its innerHTML is
+// replaced on every buildDailyHead/buildMonthlyHead call, but the element
+// itself never is.
+document.getElementById('register-head').addEventListener('click', (e) => {
+  const th = e.target.closest('th.sortable');
+  if(!th) return;
+  const key = th.dataset.sort;
+  if(SORT_KEY === key){
+    SORT_DIR = SORT_DIR === 'asc' ? 'desc' : 'asc';
+  }else{
+    SORT_KEY = key;
+    SORT_DIR = 'asc';
+  }
+  updateSortArrows();
+  MODE === 'daily' ? renderDailyTable() : renderMonthlyTable();
+});
+document.getElementById('register-head').addEventListener('keydown', (e) => {
+  if(e.key !== 'Enter' && e.key !== ' ') return;
+  const th = e.target.closest('th.sortable');
+  if(!th) return;
+  e.preventDefault();
+  th.click();
+});
 
 function filteredRows(){
   const categoryFilter = VIEW === 'student' ? document.getElementById('category-filter').value : '';
@@ -3900,15 +3981,15 @@ function renderDailyTable(){
   let present = 0, exit = 0, absent = 0, half = 0, offDay = 0, lateDay = 0, pendingDay = 0;
   const body = document.getElementById('register-body');
   body.innerHTML = '';
-  const enriched = [];
   REVIEW_QUEUE = [];
+  const built = [];
 
-  rows.forEach((s, i) => {
+  rows.forEach((s) => {
     const idField = personId(s);
     const nameField = VIEW === 'student' ? s.studentName : s.name;
     const recs = RECORDS[idField] || [];
     const markedAbsent = ABSENT_IDS.has(idField);
-    let status, tr = document.createElement('tr');
+    let status, restHtml, sort;
 
     if(VIEW === 'student'){
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
@@ -3925,7 +4006,13 @@ function renderDailyTable(){
         : status === 'gatepass' ? '<span class="badge gatepass">Went home</span>'
         : status === 'late' ? '<span class="badge late">In school &middot; late</span>'
         : '<span class="badge present">In school</span>';
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
+      restHtml = `<td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td data-l="Bus">${escapeHtml(s.busNumber||'\u2014')}</td><td class="mono" data-l="Morning in">${morningLabel}</td><td class="mono" data-l="Evening out">${eveningLabel}</td><td data-l="Status">${badge}</td>`;
+      sort = {
+        id: idField, name: nameField || '', class: s.class || '', bus: s.busNumber || '',
+        morningIn: inRec ? parseTimeMs(inRec.time) : null,
+        eveningOut: outRec ? parseTimeMs(outRec.time) : null,
+        status
+      };
     }else{
       const category = normalizedRole(s.role || '');
       const sortedRecs = recs.slice().filter(r => parseTimeMs(r.time) != null).sort((a,b) => parseTimeMs(a.time) - parseTimeMs(b.time));
@@ -4004,10 +4091,24 @@ function renderDailyTable(){
       }
       const inCell = [latestPerAction(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || latestPerAction(inList);
       const roleCell = escapeHtml(s.role||'\u2014') + (getNightStaffIds().includes(idField) ? ' <span class="night-tag">(Night Duty)</span>' : '');
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${roleCell}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${latestPerAction(outList)}</td><td data-l="Status">${badge}</td>`;
+      restHtml = `<td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${roleCell}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${latestPerAction(outList)}</td><td data-l="Status">${badge}</td>`;
+      sort = {
+        id: idField, name: nameField || '', role: s.role || '',
+        in: inList.length ? parseTimeMs(inList[0].time) : null,
+        out: outList.length ? parseTimeMs(outList[outList.length-1].time) : null,
+        status
+      };
     }
-    tr.dataset.status = status;
-    enriched.push({ s, status });
+    built.push({ s, status, restHtml, sort });
+  });
+
+  applySort(built, 'id');
+  const enriched = [];
+  built.forEach((b, i) => {
+    const tr = document.createElement('tr');
+    tr.dataset.status = b.status;
+    tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td>` + b.restHtml;
+    enriched.push({ s: b.s, status: b.status });
     body.appendChild(tr);
   });
 
@@ -4042,9 +4143,9 @@ function renderMonthlyTable(){
   const body = document.getElementById('register-body');
   body.innerHTML = '';
   let sumPresent = 0, sumHalf = 0, sumAbsent = 0, totalDays = 0;
-  const enriched = [];
+  const built = [];
 
-  rows.forEach((s, i) => {
+  rows.forEach((s) => {
     const idField = VIEW === 'student' ? String(s.admissionNumber) : String(s.id);
     const nameField = VIEW === 'student' ? s.studentName : s.name;
     const m = MONTHLY[idField] || {present:0, half:0, absent:0, totalDays:0};
@@ -4053,26 +4154,43 @@ function renderMonthlyTable(){
     const effectivePresent = m.present + (m.half || 0) * 0.5;
     const pct = m.totalDays ? Math.round((effectivePresent / m.totalDays) * 100) : 0;
     const pctColor = pct >= 90 ? 'var(--present-ink)' : pct >= 75 ? 'var(--half)' : 'var(--absent-ink)';
-    enriched.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct });
-    const tr = document.createElement('tr');
+    let restHtml, daysOff = 0, reviewCount = 0;
     if(VIEW === 'student'){
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
+      restHtml = `<td class="mono" data-l="Adm. No.">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Class">${escapeHtml(s.class||'\u2014')}</td><td class="mono" data-l="Present">${m.present}</td><td class="mono" data-l="Absent">${m.absent}</td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td>`;
     }else{
       const absorbNote = m.absorbed ? ` <span class="sandwich-tag" title="Holidays counted as leave because they sit next to an absence">+${m.absorbed}</span>` : '';
       // What payroll deducts: a whole day for every absence, half for every
       // half day. 5 absent and 3 half days is 6.5.
-      const daysOff = m.absent + (m.half || 0) * 0.5;
+      daysOff = m.absent + (m.half || 0) * 0.5;
       const flagged = m.flaggedDates || [];
+      reviewCount = flagged.length;
       const reviewBadge = flagged.length
         ? `<button type="button" class="review-badge" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(flagged[flagged.length-1])}" title="Single scan, no window match — needs a manual full/half/absent">${flagged.length} to review</button>`
         : '';
       const roleCellM = escapeHtml(s.role||'\u2014') + (getNightStaffIds().includes(idField) ? ' <span class="night-tag">(Night Duty)</span>' : '');
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${roleCellM}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td><td data-l="Review">${reviewBadge}</td>`;
+      restHtml = `<td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${roleCellM}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td><td data-l="Review">${reviewBadge}</td>`;
     }
     // the left stripe reads as a pass/watch/fail band in the monthly view
-    tr.dataset.status = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
+    const rowStatus = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
+    const sort = {
+      id: idField, name: nameField || '', class: s.class || '', role: s.role || '',
+      present: m.present, half: m.half || 0, absent: m.absent, daysOff, pct, review: reviewCount
+    };
+    built.push({ s, present: m.present, half: m.half || 0, absent: m.absent, totalDays: m.totalDays, pct, restHtml, rowStatus, sort });
+  });
+
+  applySort(built, 'id');
+  const enriched = [];
+  const sortedRows = [];
+  built.forEach((b, i) => {
+    enriched.push({ s: b.s, present: b.present, half: b.half, absent: b.absent, totalDays: b.totalDays, pct: b.pct });
+    sortedRows.push(b.s);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td>` + b.restHtml;
+    tr.dataset.status = b.rowStatus;
     body.appendChild(tr);
-  }); 
+  });
+  const rowsForPrint = sortedRows;
 
   // Staff monthly is a table, not a dashboard — the sums repeated what the
   // columns already say, and two of them were figures we shouldn't compute.
@@ -4093,8 +4211,8 @@ function renderMonthlyTable(){
     ]);
   }
   renderBreakdown(enriched, 'monthly');
-  MONTHLY_PRINT_ROWS = rows;
-  buildPrintGrid(rows);
+  MONTHLY_PRINT_ROWS = rowsForPrint;
+  buildPrintGrid(rowsForPrint);
   finishRender(rows.length);
 }
 
