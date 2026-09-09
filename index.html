@@ -1097,6 +1097,8 @@
     #register-table{ table-layout:fixed; }
     #register-table td[data-l="Name"]{ white-space:normal; }
     #register-table td[data-l="Role"], #register-table td[data-l="Class"]{ white-space:nowrap; }
+    #register-table td[data-l="Staff ID"]{ white-space:normal; }
+    .night-tag{ color:var(--ink-soft); font-weight:400; font-size:.85em; white-space:nowrap; }
 
     /* Students, daily: S.No · Adm · Name · Class · Bus · In · Out · Status */
     #register-table[data-view="student"][data-mode="daily"] th:nth-child(1){ width:5%; }
@@ -1120,8 +1122,8 @@
 
     /* Staff, daily: S.No · ID · Name · Role · In · Out · Status — seven */
     #register-table[data-view="staff"][data-mode="daily"] th:nth-child(1){ width:5%; }
-    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(2){ width:12%; }
-    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(3){ width:30%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(2){ width:17%; }
+    #register-table[data-view="staff"][data-mode="daily"] th:nth-child(3){ width:25%; }
     #register-table[data-view="staff"][data-mode="daily"] th:nth-child(4){ width:16%; }
     #register-table[data-view="staff"][data-mode="daily"] th:nth-child(5){ width:13%; }
     #register-table[data-view="staff"][data-mode="daily"] th:nth-child(6){ width:13%; }
@@ -1129,8 +1131,8 @@
 
     /* Staff, monthly: … · Full · Half · Absent · Attendance */
     #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(1){ width:5%; }
-    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(2){ width:12%; }
-    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(3){ width:26%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(2){ width:17%; }
+    #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(3){ width:21%; }
     #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(4){ width:16%; }
     #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(5){ width:11%; }
     #register-table[data-view="staff"][data-mode="monthly"] th:nth-child(6){ width:10%; }
@@ -4001,7 +4003,8 @@ function renderDailyTable(){
         if(override) badge += ' <span class="plus-day" title="Manually set">(reviewed)</span>';
       }
       const inCell = [latestPerAction(inList), ignoredHtml].filter(x => x && x !== '\u2014').join('<br>') || latestPerAction(inList);
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${latestPerAction(outList)}</td><td data-l="Status">${badge}</td>`;
+      const idCell = escapeHtml(idField) + (getNightStaffIds().includes(idField) ? ' <span class="night-tag">(Night Duty)</span>' : '');
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${idCell}</td><td data-l="Name">${escapeHtml(nameField || '\u2014')}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="In">${inCell}</td><td class="mono" data-l="Out">${latestPerAction(outList)}</td><td data-l="Status">${badge}</td>`;
     }
     tr.dataset.status = status;
     enriched.push({ s, status });
@@ -4063,7 +4066,8 @@ function renderMonthlyTable(){
       const reviewBadge = flagged.length
         ? `<button type="button" class="review-badge" data-id="${escapeHtml(idField)}" data-date="${escapeHtml(flagged[flagged.length-1])}" title="Single scan, no window match — needs a manual full/half/absent">${flagged.length} to review</button>`
         : '';
-      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${escapeHtml(idField)}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td><td data-l="Review">${reviewBadge}</td>`;
+      const idCellM = escapeHtml(idField) + (getNightStaffIds().includes(idField) ? ' <span class="night-tag">(Night Duty)</span>' : '');
+      tr.innerHTML = `<td class="mono" data-l="S.No">${i+1}</td><td class="mono" data-l="Staff ID">${idCellM}</td><td data-l="Name">${escapeHtml(nameField)}</td><td data-l="Role">${escapeHtml(s.role||'\u2014')}</td><td class="mono" data-l="Full days">${m.present}</td><td class="mono" data-l="Half days">${m.half||0}</td><td class="mono" data-l="Absent">${m.absent}${absorbNote}</td><td class="mono" data-l="Days off"><b>${daysOff % 1 ? daysOff.toFixed(1) : daysOff}</b></td><td class="pct" data-l="Attendance" style="color:${pctColor}">${pct}%</td><td data-l="Review">${reviewBadge}</td>`;
     }
     // the left stripe reads as a pass/watch/fail band in the monthly view
     tr.dataset.status = pct >= 90 ? 'present' : pct >= 75 ? 'half' : 'absent';
